@@ -1,0 +1,5 @@
+# Dotenv file
+.env
+.envrc
+
+.DS_Store

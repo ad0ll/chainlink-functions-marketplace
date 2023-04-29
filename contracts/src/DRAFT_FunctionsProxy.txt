@@ -1,0 +1,131 @@
+
+//Everything in functions consumer except with a lot more metadata
+
+
+pragma solidity ^0.8.17;
+
+import "./FunctionTemplate.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+
+contract FunctionsManager {
+    using EnumerableMap for EnumerableMap.AddressToUintMap;
+    // mapping(address => Function) public registeredFunctions;
+
+    // TODO Have two collections because experimenting
+    EnumerableMap.AddressToUintMap private registeredFunctions2;
+    mapping(address => bool) registeredFunctions;
+
+    uint32 baseFee = 1000000000; // TODO This probably isn't right. Think the base fee is 0.2 LINK?
+
+    event FunctionAdded(
+        address indexed proxyContractAddress,
+        address indexed owner,
+        address _oracle,
+        uint32 _fee,
+        uint64 _subscriptionId,
+        string _name,
+        string _description,
+        string _imageUrl,
+        string _source,
+        bytes _secrets,
+        string[] _expectedArgs
+    );
+
+    address functionsOracle;
+
+    constructor(address _functionsOracle) {
+        functionsOracle = _functionsOracle;
+    }
+
+    /*
+    * @notice Deploys a new instance of FunctionTemplate contract
+    *
+    * @param fee Function fee
+    * @param subscriptionId Funtions billing subscription ID
+    * @param oracle The FunctionsOracle contract
+    * @param feeTokenContract The ERC20 token used to pay the function fee
+    * @param name Function name
+    * @param description Function description
+    * @param imageUrl Function image URL
+    * @param source JavaScript source code
+    * @param secrets Encrypted secrets payload
+    * @param expectedArgs List of expected arguments, format: "['argName:type(:OPTIONAL_DEFAULT)','argName:type','argName:type']"
+    * @return FunctionTemplate contract address
+    */
+    function deployFunctionTemplate(
+        uint32 _fee,
+        uint64 _subscriptionId,
+        address _oracle,
+        address _feeTokenContract,
+        string calldata _name,
+        string calldata _description,
+        string calldata _imageUrl,
+        string calldata _source,
+        bytes calldata _secrets,
+        string[] calldata _expectedArgs
+    ) external returns (address) {
+        FunctionTemplate functionTemplate = new FunctionTemplate(
+            _fee,
+            _subscriptionId,
+            _oracle,
+            address(this),
+            _feeTokenContract,
+            _name,
+            _description,
+            _imageUrl,
+            _source,
+            _secrets,
+            _expectedArgs
+        );
+        // TODO Have two collections because experimenting
+        registeredFunctions[address(functionTemplate)] = true;
+        registeredFunctions2.set(address(functionTemplate), 1);
+
+        emit FunctionAdded(
+            address(functionTemplate),
+            msg.sender,
+            _oracle,
+            _fee,
+            _subscriptionId,
+            _name,
+            _description,
+            _imageUrl,
+            _source,
+            _secrets,
+            _expectedArgs
+        );
+        return address(functionTemplate);
+    }
+
+    function executeFunction(address proxyContractAddress, string[] calldata args, uint32 gasLimit)
+        public
+        returns (bytes32)
+    {
+        
+        FunctionTemplate proxyContract = FunctionTemplate(proxyContractAddress);
+        return proxyContract.executeRequest(args, gasLimit);
+    }
+
+    function isFunctionRegistered(address proxyContractAddress) public view returns (bool) {
+        return registeredFunctions2.contains(proxyContractAddress);
+    }
+    /**
+     * @notice Collects the function fee and executes the function
+     *
+     * @param functionTemplateAddress The address of the FunctionTemplate contract to execute
+     * @param args List of arguments to pass to the function
+     * @param gasLimit The maximum amount of gas to use when executing the function
+     */
+
+    function payAndExecuteFunction(address payable functionTemplateAddress, string[] calldata args, uint32 gasLimit)
+        external
+        payable
+    {
+        FunctionTemplate functionTemplate = FunctionTemplate(functionTemplateAddress);
+        require(msg.value >= functionTemplate.fee() + baseFee, "Incorrect fee");
+        // functionTemplate.executeRequest{value: msg.value}(args, gasLimit);
+        // Place fees into tank
+
+    }
+}
