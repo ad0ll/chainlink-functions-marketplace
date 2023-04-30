@@ -1,4 +1,4 @@
-import {Container, createTheme, CssBaseline, ThemeProvider, Typography} from '@mui/material';
+import {Container, createTheme, CssBaseline, Divider, ThemeProvider, Typography} from '@mui/material';
 import React from 'react';
 import {initializeConnector, Web3ReactHooks, Web3ReactProvider} from "@web3-react/core";
 import {MetaMask} from "@web3-react/metamask";
@@ -8,7 +8,7 @@ import {NavBar} from "./Navbar";
 import {DefaultSuspense} from "./common";
 import {Home} from "./Home";
 import Buy from "./Buy";
-import Sell from "./Sell";
+import {Sell} from "./Sell";
 import Author from "./Author";
 
 
@@ -77,7 +77,7 @@ function App() {
                     <Routes>
                         <Route path="/" element={<DefaultSuspense><Home/></DefaultSuspense>}/>
                         <Route path="/buy/:functionId" element={<DefaultSuspense><Buy/></DefaultSuspense>}/>
-                        <Route path="/sell/:functionId" element={<DefaultSuspense><Sell/></DefaultSuspense>}/>
+                        <Route path="/sell" element={<DefaultSuspense><Sell/></DefaultSuspense>}/>
                         <Route path="/author/:authorId" element={<DefaultSuspense><Author/></DefaultSuspense>}/>
                     </Routes>
                 </BrowserRouter>

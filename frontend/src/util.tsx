@@ -22,7 +22,7 @@ export const generateRandomFunction = (): ChainlinkFunction => {
         COINGECKO_IMAGE_URL
     ]
     const randName = randomWords({
-        exactly: getRandomInt(3, 10),
+        exactly: getRandomInt(3, 20),
         formatter: (word) => word.slice(0, 1).toUpperCase().concat(word.slice(1))
     }).join(" ")
     const randDesc = randomWords({

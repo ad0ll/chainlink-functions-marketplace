@@ -1,4 +1,4 @@
-import {Grid, Typography} from "@mui/material";
+import {Box, Grid, Stack, Typography} from "@mui/material";
 import {RecentlyAddedCard} from "./Cards";
 import React from "react";
 import Logo from "./icons/logo.svg";
@@ -8,16 +8,16 @@ import {generateRandomFunction} from "./util";
 
 
 export const SplashTop: React.FC = () => {
-    return (<Grid item container xs={12} spacing={0}>
-        <Grid item container justifyContent={"center"} xs={12} spacing={0}>
-            <Logo style={{maxHeight: 150, verticalAlign: "middle"}}/>
-        </Grid>
-        <Grid item container justifyContent={"center"} xs={12}>
+    return (<Box
+        sx={{width: "100%", display: "flex", alignItems: "center", flexDirection: "column"}}
+    >
+        <Stack>
+            <Logo style={{maxHeight: 80}}/>
             <Typography variant={"h3"}>
                 Functions Marketplace
             </Typography>
-        </Grid>
-    </Grid>)
+        </Stack>
+    </Box>)
 }
 
 export const RecentlyAddedTop: React.FC = () => {
@@ -25,25 +25,24 @@ export const RecentlyAddedTop: React.FC = () => {
         <Grid item xs={12}>
             <Typography variant={"h4"}>Recently added</Typography>
         </Grid>
-        <Grid item xs={4}>
-            <RecentlyAddedCard func={generateRandomFunction()}/>
-        </Grid>
-        <Grid item xs={4}>
-            <RecentlyAddedCard func={generateRandomFunction()}/>
-        </Grid>
-        <Grid item xs={4}>
-            <RecentlyAddedCard func={generateRandomFunction()}/>
+            <Grid item xs={4}>
+                <RecentlyAddedCard func={generateRandomFunction()}/>
+            </Grid>
+            <Grid item xs={4}>
+                <RecentlyAddedCard func={generateRandomFunction()}/>
+            </Grid>
+            <Grid item xs={4}>
+                <RecentlyAddedCard func={generateRandomFunction()}/>
         </Grid>
     </Grid>)
 }
 export const Home: React.FC = () => {
     const functions: ChainlinkFunction[] = []
-    for(let i = 0; i < 50; i++) {
+    for (let i = 0; i < 50; i++) {
         functions.push(generateRandomFunction())
     }
 
     return (<Grid container spacing={4}>
-        {/*<NavBar/>*/}
         <SplashTop/>
         <RecentlyAddedTop/>
         <Grid item container xs={12} spacing={2}>
