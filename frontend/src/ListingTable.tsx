@@ -1,3 +1,4 @@
+//ListingTable.tsx, used  for the function listing on the homepage.
 import React from "react";
 import {
     Box,
@@ -11,12 +12,12 @@ import {
     TableRow,
     Typography
 } from "@mui/material";
-import LinkTokenIcon from "./icons/link-token-blue.svg";
+import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {toast} from "react-toastify";
 import {Link} from "react-router-dom";
 import {ChainlinkFunction} from "./common";
-import {addressToJazziconSeed, truncateIfAddress} from "./util";
+import {addressToJazziconSeed, truncateIfAddress} from "./utils/util";
 import Jazzicon from "./Jazzicon";
 
 

@@ -1,5 +1,3 @@
-// based on: https://github.com/MetaMask/jazzicon
-
 import React from "react";
 
 // This class was copied from: https://gist.github.com/thiloplanz/6abf04f957197e9e3912

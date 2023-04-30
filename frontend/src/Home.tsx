@@ -1,10 +1,11 @@
 import {Box, Grid, Stack, Typography} from "@mui/material";
 import {RecentlyAddedCard} from "./Cards";
 import React from "react";
-import Logo from "./icons/logo.svg";
+import Logo from "./assets/icons/logo.svg";
 import ListingTable from "./ListingTable";
 import {ChainlinkFunction} from "./common";
-import {generateRandomFunction} from "./util";
+
+import {generateRandomFunction} from "./utils/generators";
 
 
 export const SplashTop: React.FC = () => {

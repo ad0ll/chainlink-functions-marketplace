@@ -1,10 +1,11 @@
 import React from "react";
 import {Box, Card, CardActionArea, CardContent, CardMedia, Typography} from "@mui/material";
 import {ChainlinkFunction} from "./common";
-import {fallbackToJazzicon, jazziconImageString} from "./util";
+import {fallbackToJazzicon, jazziconImageString} from "./utils/util";
 import {Link} from "react-router-dom";
 
 
+// Used in the "Recently Added" carousel of the homepage
 export const RecentlyAddedCard: React.FC<{ func: ChainlinkFunction }> = ({func}) => {
     // const imageElem = <Jazzicon diameter={80} seed={jsNumberForAddress(func.address)}/>
     return <Card elevation={2}

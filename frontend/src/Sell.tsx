@@ -4,9 +4,9 @@ import {Autocomplete, Box, Button, MenuItem, Select, Stack, SvgIcon, TextField, 
 import {useForm} from "react-hook-form";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import LogoIcon from "./icons/logo.svg";
-import UsdcIcon from "./icons/usd-coin-logo.svg";
-import LinkIcon from "./icons/link-token-blue.svg";
+import LogoIcon from "./assets/icons/logo.svg";
+import UsdcIcon from "./assets/icons/usd-coin-logo.svg";
+import LinkIcon from "./assets/icons/link-token-blue.svg";
 import {networkConfig} from "./common";
 
 type FormValues = {

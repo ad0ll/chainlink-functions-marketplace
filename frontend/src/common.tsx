@@ -21,6 +21,7 @@ export const networkConfig = {
         functionsBillingRegistryProxy: "0xEe9Bf52E5Ea228404bB54BCFbbDa8c21131b9039",
         functionsPublicKey:
             "a30264e813edc9927f73e036b7885ee25445b836979cb00ef112bc644bd16de2db866fa74648438b34f52bb196ffa386992e94e0a3dc6913cee52e2e98f1619c",
+        getScannerUrl: (address: string) => `https://mumbai.polygonscan.com/address/${address}`,
     },
     sepolia: {
         linkToken: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
@@ -29,6 +30,7 @@ export const networkConfig = {
         functionsBillingRegistryProxy: "0x3c79f56407DCB9dc9b852D139a317246f43750Cc",
         functionsPublicKey:
             "a30264e813edc9927f73e036b7885ee25445b836979cb00ef112bc644bd16de2db866fa74648438b34f52bb196ffa386992e94e0a3dc6913cee52e2e98f1619c",
+        getScannerUrl: (address: string) => `https://sepolia.vercel.app/${address}`,
     },
 }
 
@@ -36,7 +38,7 @@ export const networkConfig = {
 export type FunctionArg = {
     name: string
     type: string
-    default?: string
+    defaultValue?: string
 }
 
 export type ChainlinkFunction = {
