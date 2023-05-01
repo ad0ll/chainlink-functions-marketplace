@@ -10,6 +10,7 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    Tooltip,
     Typography
 } from "@mui/material";
 import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
@@ -19,6 +20,7 @@ import {Link} from "react-router-dom";
 import {ChainlinkFunction} from "./common";
 import {addressToJazziconSeed, truncateIfAddress} from "./utils/util";
 import Jazzicon from "./Jazzicon";
+import {generateDefaultSnippetString, SoliditySyntaxHighlighter} from "./Snippets";
 
 
 const ListingTable: React.FC<{ functions: ChainlinkFunction[] }> = ({functions}) => {
@@ -46,7 +48,7 @@ const ListingTable: React.FC<{ functions: ChainlinkFunction[] }> = ({functions})
                 {functions.map((f) => <TableRow>
                     <TableCell>
                         {/*TODO Fix overflow*/}
-                        <Link to={`/buy/${f.address}`} >
+                        <Link to={`/buy/${f.address}`}>
                             <Typography>
                                 {f.name}
                             </Typography>
@@ -91,8 +93,16 @@ const ListingTable: React.FC<{ functions: ChainlinkFunction[] }> = ({functions})
                             </Typography>
                         </Box>
                     </TableCell>
-                    <TableCell onClick={notify}>
-                        <ContentCopyIcon/>
+
+                    <TableCell>
+                        <Tooltip placement={"bottom-start"}  title={<Box sx={{minWidth: 450}}>
+                            <Typography variant={"h6"}>Click to copy contract snippet</Typography>
+                            <SoliditySyntaxHighlighter>
+                                {generateDefaultSnippetString(f)}
+                            </SoliditySyntaxHighlighter>
+                        </Box>}>
+                            <ContentCopyIcon onClick={notify}/>
+                        </Tooltip>
                     </TableCell>
                 </TableRow>)}
             </TableBody>

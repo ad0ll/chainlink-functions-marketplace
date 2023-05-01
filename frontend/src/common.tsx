@@ -1,4 +1,5 @@
 import React, {Suspense} from "react";
+import {garbageAddressGenerator} from "./utils/generators";
 
 export const MAINNET_CHAIN_ID = 1
 export const GOERLI_CHAIN_ID = 5
@@ -15,6 +16,8 @@ export const networkConfig = {
         linkToken: "0xb0897686c545045afc77cf20ec7a532e3120e0f1",
     },
     mumbai: {
+        // TODO replace with the actual function manager address
+        functionManagerContract: garbageAddressGenerator(),
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
         linkEthPriceFeed: "0x12162c3E810393dEC01362aBf156D7ecf6159528",
         functionsOracleProxy: "0xeA6721aC65BCeD841B8ec3fc5fEdeA6141a0aDE4",
@@ -24,6 +27,7 @@ export const networkConfig = {
         getScannerUrl: (address: string) => `https://mumbai.polygonscan.com/address/${address}`,
     },
     sepolia: {
+        functionManagerContract: garbageAddressGenerator(),
         linkToken: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
         linkEthPriceFeed: "0x42585eD362B3f1BCa95c640FdFf35Ef899212734",
         functionsOracleProxy: "0x649a2C205BE7A3d5e99206CEEFF30c794f0E31EC",
@@ -50,7 +54,7 @@ export type ChainlinkFunction = {
     imageUrl?: string
     fee: number
     functionType: "Price Feed" | "Oracle" | "API Fetch" | "Other"
-    expectedArgs?: FunctionArg[]
+    expectedArgs: FunctionArg[]
     estimatedGas?: number
     estimatedGasToken?: string
 }

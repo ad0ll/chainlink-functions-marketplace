@@ -85,7 +85,7 @@ function getRandomAlphaNum(length: number) {
 }
 
 
-function getRandomAlphaNumHex(length: number) {
+export function getRandomAlphaNumHex(length: number) {
     let result = '';
     const characters = 'ABCDEFabcdef0123456789';
     const charactersLength = characters.length;
@@ -97,6 +97,6 @@ function getRandomAlphaNumHex(length: number) {
     return result;
 }
 
-function garbageAddressGenerator(): string {
+export function garbageAddressGenerator(): string {
     return "0x" + getRandomAlphaNumHex(40)
 }
