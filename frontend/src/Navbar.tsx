@@ -55,6 +55,11 @@ export const NavBar: React.FC = ({}) => {
                     Sell
                 </Typography>
             </Link>
+            <Link to={"/dashboard/:owner"}>
+                <Typography variant={"h6"} style={{marginLeft: 16}}>
+                    Dashboard
+                </Typography>
+            </Link>
             <Tooltip title={tooltipText} placement={"bottom"} disableHoverListener={tooltipText === ""}>
                 {isActive ?
                     <Button variant={"contained"} color={"secondary"}

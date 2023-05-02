@@ -10,6 +10,8 @@ import {Home} from "./Home";
 import Buy from "./Buy";
 import {Sell} from "./Sell";
 import Author from "./Author";
+import {OwnerDashboard} from "./OwnerDashboard";
+
 
 
 declare module '@mui/material/styles' {
@@ -79,6 +81,7 @@ function App() {
                         <Route path="/buy/:functionId" element={<DefaultSuspense><Buy/></DefaultSuspense>}/>
                         <Route path="/sell" element={<DefaultSuspense><Sell/></DefaultSuspense>}/>
                         <Route path="/author/:authorId" element={<DefaultSuspense><Author/></DefaultSuspense>}/>
+                        <Route path="/owner/:ownerId" element={<DefaultSuspense><OwnerDashboard/></DefaultSuspense>}/>
                     </Routes>
                 </BrowserRouter>
             </Container>

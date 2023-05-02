@@ -8,9 +8,7 @@ import {Link} from "react-router-dom";
 // Used in the "Recently Added" carousel of the homepage
 export const RecentlyAddedCard: React.FC<{ func: ChainlinkFunction }> = ({func}) => {
     // const imageElem = <Jazzicon diameter={80} seed={jsNumberForAddress(func.address)}/>
-    return <Card elevation={2}
-
-    >
+    return <Card elevation={4}>
         <CardActionArea
             sx={{display: "flex",
                 // flexDirection: "column",

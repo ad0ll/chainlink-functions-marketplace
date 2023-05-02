@@ -98,3 +98,17 @@ export const generateSnippetString = (func: ChainlinkFunction, opts: GenerateSni
 export const generateDefaultSnippetString = (func: ChainlinkFunction) => {
     return generateSnippetString(func, {useCall: true, hardcodeParameters: true, callbackFunction: "storeFull", returnRequestId: true})
 }
+
+
+
+/* TODO Callback generator:
+A guided UI that lets you add steps to build and deploy your own custom callback function
+Steps allowed:
+- Store permanent, full error
+- Store permanent, bool error
+- Store latest, full error
+- Store latest, bool error
+- Call another callback function
+- Call another function
+- Emit an event
+ */

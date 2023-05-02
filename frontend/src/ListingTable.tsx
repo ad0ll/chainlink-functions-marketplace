@@ -45,7 +45,7 @@ const ListingTable: React.FC<{ functions: ChainlinkFunction[] }> = ({functions})
                 </TableRow>
             </TableHead>
             <TableBody>
-                {functions.map((f) => <TableRow>
+                {functions.map((f, i) => <TableRow key={i}>
                     <TableCell>
                         {/*TODO Fix overflow*/}
                         <Link to={`/buy/${f.address}`}>
@@ -55,7 +55,7 @@ const ListingTable: React.FC<{ functions: ChainlinkFunction[] }> = ({functions})
                         </Link>
                     </TableCell>
                     <TableCell>
-                        <Card elevation={1}>
+                        <Card elevation={2}>
                             <CardActionArea
                                 component={Link}
                                 to={`/author/${f.owner}`}

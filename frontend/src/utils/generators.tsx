@@ -100,3 +100,11 @@ export function getRandomAlphaNumHex(length: number) {
 export function garbageAddressGenerator(): string {
     return "0x" + getRandomAlphaNumHex(40)
 }
+
+export function generateFunctions(n: number): ChainlinkFunction[] {
+    const functions: ChainlinkFunction[] = []
+    for (let i = 0; i < n; i++) {
+        functions.push(generateRandomFunction())
+    }
+    return functions
+}

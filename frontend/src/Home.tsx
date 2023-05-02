@@ -5,7 +5,7 @@ import Logo from "./assets/icons/logo.svg";
 import ListingTable from "./ListingTable";
 import {ChainlinkFunction} from "./common";
 
-import {generateRandomFunction} from "./utils/generators";
+import {generateFunctions, generateRandomFunction} from "./utils/generators";
 
 
 export const SplashTop: React.FC = () => {
@@ -38,10 +38,7 @@ export const RecentlyAddedTop: React.FC = () => {
     </Grid>)
 }
 export const Home: React.FC = () => {
-    const functions: ChainlinkFunction[] = []
-    for (let i = 0; i < 50; i++) {
-        functions.push(generateRandomFunction())
-    }
+    const functions = generateFunctions(50)
 
     return (<Grid container spacing={4}>
         <SplashTop/>

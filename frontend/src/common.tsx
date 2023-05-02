@@ -1,5 +1,9 @@
-import React, {Suspense} from "react";
+import React, {ReactNode, Suspense} from "react";
 import {garbageAddressGenerator} from "./utils/generators";
+import {Box, SvgIcon, Typography, TypographyProps} from "@mui/material";
+import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
+import LinkIcon from "./assets/icons/link-token-blue.svg";
+
 
 export const MAINNET_CHAIN_ID = 1
 export const GOERLI_CHAIN_ID = 5
@@ -68,4 +72,11 @@ export const DefaultSuspense: React.FC<{children: React.ReactNode}> = ({children
 }
 
 
+export const TypographyWithLinkIcon: React.FC< {height?: number, width?: number, children: ReactNode} & TypographyProps>  = ({height="inherit", width="inherit", children, style}, props) => {
+    return <Box style={{"display": "flex", "alignItems": "center"}}>
+            <SvgIcon component={LinkTokenIcon} viewBox="0 0 800 800" height={height} width={width} style={{marginRight: 4, ...style}}/>
+            <Typography {...props}>{children}</Typography>
+        </Box>
+
+}
 // export const
