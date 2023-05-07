@@ -15,3 +15,21 @@
 <p style="background-color:#31ff87;color:black">Secondary</p>
 <p style="background-color:#31ff87;color:black">successGreen</p>
 <p style="background-color:#ff3131;color:black">errorRed</p>
+
+# Jazzicon colors (WIP)
+<p style="background-color:#09FBD3;color:black">errorRed</p>
+<p style="background-color:#00FECA;color:black">errorRed</p>
+<p style="background-color:#13CA91;color:black">errorRed</p>
+<p style="background-color:#02B8A2;color:black">errorRed</p>
+<p style="background-color:#011FFD;color:black">errorRed</p>
+<p style="background-color:#7122FA;color:black">errorRed</p>
+<p style="background-color:#B76CFD;color:black">errorRed</p>
+<p style="background-color:#75D55D;color:black">errorRed</p>
+<p style="background-color:#FF2281;color:black">errorRed</p>
+<p style="background-color:#e136c7;color:black">errorRed</p>
+<p style="background-color:#E847AE;color:black">errorRed</p>
+<p style="background-color:#FFD300;color:black">errorRed</p>
+<p style="background-color:#FE6B35;color:black">errorRed</p>
+<p style="background-color:#F21A1D;color:black">errorRed</p>
+<p style="background-color:#7FFF00;color:black">errorRed</p>
+<p style="background-color:#0310EA;color:black">errorRed</p>
