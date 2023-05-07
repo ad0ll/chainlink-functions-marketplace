@@ -47,7 +47,7 @@ contract FunctionsManager {
     // FunctionError event
     // FunctionSuccess event
     function registerFunction(FunctionsMetadata calldata metadata) public returns (address) {
-        // 1. NEW create or address and check
+        // 1. Create a subscription
         // 2. Fund w/ initial deposit if NEW
         // 3. Add self (FunctionManager) to authorized users
         // 4?. Check owner is registered with OracleProxy (i.e is registered in function beta)
@@ -72,6 +72,7 @@ contract FunctionsManager {
     function createSubscription() internal returns (uint64) {
         uint64 subId = BILLING_REGISTRY.createSubscription();
         // TODO: Fund subscription link transferAndCall
+        // TODO register function manager as authorized user
         return subId;
     }
 

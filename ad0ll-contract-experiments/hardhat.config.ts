@@ -2,6 +2,16 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-watcher";
 
+const MUMBAI_RPC_URL = process.env.MUMBAI_RPC_URL;
+const MUMBAI_PRIVATE_KEYS = process.env.MUMBAI_PRIVATE_KEYS;
+const keys = MUMBAI_PRIVATE_KEYS?.split(",") || [];
+
+if (!MUMBAI_RPC_URL || keys.length === 0) {
+  throw new Error(
+    "Please set your MUMBAI_RPC_URL and MUMBAI_PRIVATE_KEY in a .env file"
+  );
+}
+
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
@@ -49,6 +59,10 @@ const config: HardhatUserConfig = {
     },
     localhost: {
       allowUnlimitedContractSize: true,
+    },
+    mumbai: {
+      url: MUMBAI_RPC_URL,
+      accounts: keys,
     },
   },
   gasReporter: {

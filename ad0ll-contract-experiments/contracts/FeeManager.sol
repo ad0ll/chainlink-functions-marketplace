@@ -155,9 +155,6 @@ contract FeeManager is Ownable {
         // Require that the sender includes a deposit equal to or greater than the fee
         require(linkBalance >= baseFee + chainlinkFunction.fee, "Fee not met");
 
-        console.log(tx.gasprice);
-        console.log(tx.gasprice * 300000);
-
         FeePool storage feePool = feePools[_proxyAddress];
         require(feePool.exists, "Fee pool does not exist");
         feePool.subscriptionPool += baseFee;
