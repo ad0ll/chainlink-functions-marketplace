@@ -20,6 +20,7 @@ const callFunction = async (
   proxyAddress: string,
   callback: string
 ) => {
+  console.log("callFunction", caller, proxyAddress, callback);
   const feeManagerWithCaller = feeManager.connect(caller);
   const callFunctionTransaction = await feeManagerWithCaller.callFunction(
     proxyAddress,
@@ -230,80 +231,48 @@ describe("FeeManager", function () {
 
         const feeManagerCaller = feeManager.connect(external3);
         const { receipt: callReceipt, requestId } = await callFunction(
-          feeManagerCaller,
+          feeManager,
           external3,
           proxyAddress,
           "callbackFunction"
         );
 
-        
+        const callbackTransaction = await feeManager.handleFunctionCallback(
+          requestId,
+          Buffer.from("Sample callback response"),
+          Buffer.from("Sample callback error")
+        );
+        const callbackReceipt = await callbackTransaction.wait();
+        console.log(callbackReceipt);
+
+        const event = callbackReceipt.events?.find(
+          (e) => e.event === "FunctionCallCompleted"
+        );
+        expect(event).to.not.be.undefined;
+        const { args } = event!;
+        expect(args).to.not.be.undefined;
+        expect(args?.proxyAddress).to.equal(proxyAddress);
+        expect(args?.caller).to.be.equal(external3.address);
+        expect(args?.requestId).to.not.be.undefined;
+        expect(args?.requestId).to.equal(requestId);
+        expect(args?.owner).to.equal(owner.address);
+        expect(args?.callbackFunction).to.equal(
+          formatBytes32String("callbackFunction")
+        );
+        expect(args?.response).to.equal(
+          "0x" + Buffer.from("Sample callback response").toString("hex")
+        );
+        expect(args?.err).to.equal(
+          "0x" + Buffer.from("Sample callback error").toString("hex")
+        );
+
+        const feeManagerProfitPool = await feeManager.feeManagerProfitPool();
+        expect(feeManagerProfitPool).to.equal(managerCut);
+        const func = await feeManager.getFunction(proxyAddress);
+        expect(func.unlockedProfitPool).to.equal(fee.sub(managerCut));
+        expect(func.lockedProfitPool).to.equal(0);
+        const res = await feeManager.getFunctionResponse(requestId);
       });
     });
   });
-
-  //   describe("Withdrawals", function () {
-  //     describe("Validations", function () {
-  //       it("Should revert with the right error if called too soon", async function () {
-  //         const { lock } = await loadFixture(deployOneYearLockFixture);
-
-  //         await expect(lock.withdraw()).to.be.revertedWith(
-  //           "You can't withdraw yet"
-  //         );
-  //       });
-
-  //       it("Should revert with the right error if called from another account", async function () {
-  //         const { lock, unlockTime, otherAccount } = await loadFixture(
-  //           deployOneYearLockFixture
-  //         );
-
-  //         // We can increase the time in Hardhat Network
-  //         await time.increaseTo(unlockTime);
-
-  //         // We use lock.connect() to send a transaction from another account
-  //         await expect(lock.connect(otherAccount).withdraw()).to.be.revertedWith(
-  //           "You aren't the owner"
-  //         );
-  //       });
-
-  //       it("Shouldn't fail if the unlockTime has arrived and the owner calls it", async function () {
-  //         const { lock, unlockTime } = await loadFixture(
-  //           deployOneYearLockFixture
-  //         );
-
-  //         // Transactions are sent using the first signer by default
-  //         await time.increaseTo(unlockTime);
-
-  //         await expect(lock.withdraw()).not.to.be.reverted;
-  //       });
-  //     });
-
-  //     describe("Events", function () {
-  //       it("Should emit an event on withdrawals", async function () {
-  //         const { lock, unlockTime, lockedAmount } = await loadFixture(
-  //           deployOneYearLockFixture
-  //         );
-
-  //         await time.increaseTo(unlockTime);
-
-  //         await expect(lock.withdraw())
-  //           .to.emit(lock, "Withdrawal")
-  //           .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
-  //       });
-  //     });
-
-  //     describe("Transfers", function () {
-  //       it("Should transfer the funds to the owner", async function () {
-  //         const { lock, unlockTime, lockedAmount, owner } = await loadFixture(
-  //           deployOneYearLockFixture
-  //         );
-
-  //         await time.increaseTo(unlockTime);
-
-  //         await expect(lock.withdraw()).to.changeEtherBalances(
-  //           [owner, lock],
-  //           [lockedAmount, -lockedAmount]
-  //         );
-  //       });
-  //     });
-  //   });
 });

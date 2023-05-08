@@ -36,6 +36,7 @@ contract FeeManager is Ownable {
 
     struct FunctionResponse {
         address caller;
+        address proxyAddress;
         bytes32 callbackFunction;
         bytes response;
         bytes err;
@@ -66,7 +67,7 @@ contract FeeManager is Ownable {
         uint256 fee
     );
 
-    event CallbackCompletedWithData(
+    event FunctionCallCompleted(
         address indexed proxyAddress,
         address indexed caller,
         bytes32 indexed requestId,
@@ -117,7 +118,6 @@ contract FeeManager is Ownable {
         console.log("getCallbackFunction");
         return callbackFunctions[_requestId];
     }
-
 
     //The _proxyAddress is the address functions proxy contract that we help the owner deploy
     function registerFunction(address _proxyAddress, string calldata _name, string calldata _description, uint256 _fee)
@@ -190,7 +190,15 @@ contract FeeManager is Ownable {
         // TODO not the actual request ID
         bytes32 requestId =
             keccak256(abi.encodePacked(_proxyAddress, chainlinkFunction.name, msg.sender, block.timestamp));
-        functionResponses[requestId].caller = msg.sender;
+        FunctionResponse memory res = FunctionResponse({
+            caller: msg.sender,
+            proxyAddress: _proxyAddress,
+            callbackFunction: _callbackFunction,
+            response: "",
+            err: ""
+        });
+        functionResponses[requestId] = res;
+        console.log("calling function %s with caller %s", chainlinkFunction.name, msg.sender);
         emit FunctionCalled({
             proxyAddress: _proxyAddress,
             owner: chainlinkFunction.owner,
@@ -203,19 +211,16 @@ contract FeeManager is Ownable {
         return requestId;
     }
 
-    function handleFunctionCallback(
-        address _proxyAddress,
-        bytes32 requestId,
-        bytes calldata response,
-        bytes calldata err
-    ) external {
-        ChainlinkFunction storage chainlinkFunction = chainlinkFunctions[_proxyAddress];
+    // TODO only the proxy contract should be able to call this
+    function handleFunctionCallback(bytes32 _requestId, bytes calldata _response, bytes calldata _err) external {
+        require(functionResponses[_requestId].caller != address(0), "Attempted callback with unknown request ID");
+        functionResponses[_requestId].response = _response;
+        functionResponses[_requestId].err = _err;
+
+        ChainlinkFunction storage chainlinkFunction = chainlinkFunctions[functionResponses[_requestId].proxyAddress];
         require(chainlinkFunction.owner != address(0), "Function does not exist");
         // Check if the caller of this function is the ProxyContract, can't do this right now becau,
         // Add a new functionReponses entry for this requestId
-        require(functionResponses[requestId].caller != address(0), "Attempted callback with unknown request ID");
-        functionResponses[requestId].response = response;
-        functionResponses[requestId].err = err;
 
         // Function manager has already taken its cut, so calculate the amount owed to the function owner
         // by taking the FunctionManager cut from the fee and adding it to the owner profit pool
@@ -223,14 +228,16 @@ contract FeeManager is Ownable {
         chainlinkFunction.lockedProfitPool -= unlockAmount;
         chainlinkFunction.unlockedProfitPool += unlockAmount;
 
-        emit CallbackCompletedWithData({
-            proxyAddress: _proxyAddress,
+        console.log("unlockAmount %d", unlockAmount);
+        console.log("function caller %s", functionResponses[_requestId].caller);
+        emit FunctionCallCompleted({
+            proxyAddress: functionResponses[_requestId].proxyAddress,
             owner: chainlinkFunction.owner,
-            caller: functionResponses[requestId].caller,
-            callbackFunction: functionResponses[requestId].callbackFunction,
-            requestId: requestId,
-            response: response,
-            err: err
+            caller: functionResponses[_requestId].caller,
+            callbackFunction: functionResponses[_requestId].callbackFunction,
+            requestId: _requestId,
+            response: _response,
+            err: _err
         });
     }
 
