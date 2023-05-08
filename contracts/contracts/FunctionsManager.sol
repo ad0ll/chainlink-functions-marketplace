@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import { FunctionsClient } from './functions/FunctionsClient.sol';
-import { Functions } from './functions/Functions.sol';
-import { FunctionsBillingRegistry } from './functions/FunctionsBillingRegistry.sol';
-import { FunctionsOracleInterface } from './functions/interfaces/FunctionsOracleInterface.sol';
-import { LinkTokenInterface } from "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
-import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import {FunctionsClient} from "./functions/FunctionsClient.sol";
+import {Functions} from "./functions/Functions.sol";
+import {FunctionsBillingRegistry} from "./functions/FunctionsBillingRegistry.sol";
+import {FunctionsOracleInterface} from "./functions/interfaces/FunctionsOracleInterface.sol";
+import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
+import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 
 contract FunctionsManager {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
@@ -19,24 +19,22 @@ contract FunctionsManager {
 
     // Functions metadata
     struct FunctionsMetadata {
-        uint64 totalFees;
+        uint256 fee;
+        address owner;
         uint64 subId;
         string functionName;
         string desc;
         string imageUrl;
-        // TODO: Need to store request during register?
-        // Functions.Request request;
     }
+    // TODO: Need to store request during register?
+    // Functions.Request request;
 
     // Event emitted when a Function is registered
-    event FunctionRegistered(
-        address indexed proxyAddress, 
-        address indexed owner, 
-        FunctionsMetadata metadata
-    );
+    // Recording owner twice isn't ideal, but we want to be able to filter on owner
+    event FunctionRegistered(address indexed proxyAddress, address indexed owner, FunctionsMetadata metadata);
 
     // Initialize with the Chainlink proxies that are commonly interacted with
-    constructor(address link, address billingRegistryProxy, address oracleProxy){
+    constructor(address link, address billingRegistryProxy, address oracleProxy) {
         LINK = LinkTokenInterface(link);
         BILLING_REGISTRY = FunctionsBillingRegistry(billingRegistryProxy);
         ORACLE = FunctionsOracleInterface(oracleProxy);
@@ -60,7 +58,7 @@ contract FunctionsManager {
 
         // Emit FunctionRegistered event
         emit FunctionRegistered(address(proxy), msg.sender, metadata);
-        
+
         return address(proxy);
     }
 
@@ -76,12 +74,9 @@ contract FunctionsManager {
         return subId;
     }
 
-    function executeFunction() public{
-
-    }
-    function executeFunctionCallback() public{
+    function executeFunction() public {}
+    function executeFunctionCallback() public {
         // Emit metrics and return response to the person executing the function through the FuncionsManager
         // We need to make sure that the downstream contract can't conceal execution results since we need it to record metrics.
     }
-
 }
