@@ -5,7 +5,7 @@ import { formatBytes32String } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import crypto from "crypto";
 import randomWords from "random-words";
-import { EventSpammer } from "../typechain-types";
+import { EventSpammer } from "../../ad0ll-contract-experiments/typechain-types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { start } from "repl";
 
