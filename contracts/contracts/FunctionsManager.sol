@@ -122,37 +122,49 @@ contract FunctionsManager is Ownable {
         // ??? Ensure interface is correct, probably not important ???
 
         //Perfrom basic validation on metadata
+        console.log("validating function metadata");
         require(metadata.fee >= 0, "Fee must be greater than or equal to 0");
         require(bytes(metadata.name).length > 0, "Function name cannot be empty");
         metadata.owner = msg.sender; // Force owner to sender since sender will own subscription
 
         // 1. Create a subscription if subId is 0,
         if (metadata.subId == 0) {
+            console.log("creating subscription");
             metadata.subId = createSubscription();
+            // TODO when we have keepers, authorize the keeper to consume
         }
         // 1.5 TODO Check if subscription exists if supplied
 
         // 4. Deploy proxy contact, get address
+        console.log("deploying FunctionsClient contract");
         address proxy = deployFunctionsProxy(metadata.subId);
         //Below shouldn't be possible since we just deployed the proxy
         require(chainlinkFunctions[proxy].owner == address(0), "Function already registered");
 
         // 5. Add function to FunctionsManager
+        console.log("adding function to FunctionsManager");
         chainlinkFunctions[proxy] = metadata;
         console.log("registered function %s with address %s", metadata.name, proxy);
 
         // 6. Emit event
+        console.log("emitting FunctionRegistered event");
         emit FunctionRegistered(address(proxy), msg.sender, metadata);
         return address(proxy);
     }
 
     function deployFunctionsProxy(uint64 subId) internal returns (address) {
+        console.log("deploying FunctionsClient contract");
         FunctionsClient proxy = new FunctionsClient(address(ORACLE));
+        console.log("deployed FunctionsClient contract at address %s", address(proxy));
         return address(proxy);
     }
 
     function createSubscription() internal returns (uint64) {
+        console.log("creating subscription");
         uint64 subId = BILLING_REGISTRY.createSubscription();
+        console.log("created subscription with id %s", subId);
+        BILLING_REGISTRY.addConsumer(subId, address(this));
+        console.log("added the FunctionsManager as a consumer to the subscription");
         // TODO: Fund subscription link transferAndCall
         // TODO register function manager as authorized user
         return subId;

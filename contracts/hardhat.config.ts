@@ -9,7 +9,7 @@ const DEFAULT_VERIFICATION_BLOCK_CONFIRMATIONS = 2;
 const SHARED_DON_PUBLIC_KEY =
   "a30264e813edc9927f73e036b7885ee25445b836979cb00ef112bc644bd16de2db866fa74648438b34f52bb196ffa386992e94e0a3dc6913cee52e2e98f1619c";
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const PRIVATE_KEYS = process.env.PRIVATE_KEYS;
 
 const networks = {
   hardhat: {
@@ -20,7 +20,7 @@ const networks = {
   },
   ethereumSepolia: {
     url: process.env.ETHEREUM_SEPOLIA_RPC_URL || "UNSET",
-    accounts: PRIVATE_KEY !== undefined ? PRIVATE_KEY.split(",") : [],
+    accounts: PRIVATE_KEYS !== undefined ? PRIVATE_KEYS.split(",") : [],
     verifyApiKey: process.env.ETHERSCAN_API_KEY || "UNSET",
     chainId: 11155111,
     confirmations: DEFAULT_VERIFICATION_BLOCK_CONFIRMATIONS,
@@ -32,7 +32,7 @@ const networks = {
   },
   polygonMumbai: {
     url: process.env.POLYGON_MUMBAI_RPC_URL || "UNSET",
-    accounts: PRIVATE_KEY !== undefined ? PRIVATE_KEY.split(",") : [],
+    accounts: PRIVATE_KEYS !== undefined ? PRIVATE_KEYS.split(",") : [],
     verifyApiKey: process.env.POLYGONSCAN_API_KEY || "UNSET",
     chainId: 80001,
     confirmations: DEFAULT_VERIFICATION_BLOCK_CONFIRMATIONS,
@@ -44,7 +44,7 @@ const networks = {
   },
   avalancheFuji: {
     url: process.env.AVALANCHE_FUJI_RPC_URL || "UNSET",
-    accounts: PRIVATE_KEY !== undefined ? PRIVATE_KEY.split(",") : [],
+    accounts: PRIVATE_KEYS !== undefined ? PRIVATE_KEYS.split(",") : [],
     verifyApiKey: process.env.SNOWTRACE_API_KEY || "UNSET",
     chainId: 43113,
     confirmations: 2 * DEFAULT_VERIFICATION_BLOCK_CONFIRMATIONS,

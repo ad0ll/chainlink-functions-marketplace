@@ -24,10 +24,10 @@ contract EventSpammer is Ownable {
     address[] public registeredFunctions;
     // Event emitted when a Function is registered
 
-    event FunctionRegistered(address indexed proxyAddress, address indexed owner, FunctionMetadata metadata);
+    event FunctionRegistered(bytes32 indexed functionId, address indexed owner, FunctionMetadata metadata);
 
     event FunctionCalled(
-        address indexed proxyAddress,
+        bytes32 indexed functionId,
         address indexed caller,
         bytes32 indexed requestId,
         address owner,
@@ -36,7 +36,7 @@ contract EventSpammer is Ownable {
         uint256 fee
     );
     event FunctionCallCompleted(
-        address indexed proxyAddress,
+        bytes32 indexed functionId,
         address indexed caller,
         bytes32 indexed requestId,
         address owner,
@@ -46,7 +46,7 @@ contract EventSpammer is Ownable {
     );
 
     function emitRegisterFunction(
-        address _proxyAddress,
+        bytes32 _functionId,
         address _owner,
         string calldata _name,
         string calldata _desc,
@@ -65,11 +65,11 @@ contract EventSpammer is Ownable {
             unlockedProfitPool: 0,
             lockedProfitPool: 0
         });
-        emit FunctionRegistered(_proxyAddress, msg.sender, metadata);
+        emit FunctionRegistered(_functionId, msg.sender, metadata);
     }
 
     function emitCallFunction(
-        address _proxyAddress,
+        bytes32 _functionId,
         bytes32 _requestId,
         bytes32 _callbackFunction,
         address _owner,
@@ -77,7 +77,7 @@ contract EventSpammer is Ownable {
         uint256 _fee
     ) external {
         emit FunctionCalled({
-            proxyAddress: _proxyAddress,
+            functionId: _functionId,
             caller: _caller,
             requestId: _requestId,
             owner: _owner,
@@ -88,7 +88,7 @@ contract EventSpammer is Ownable {
     }
 
     function emitCallbackWithData(
-        address _proxyAddress,
+        bytes32 _functionId,
         address _owner,
         address _caller,
         bytes32 _requestId,
@@ -97,7 +97,7 @@ contract EventSpammer is Ownable {
         bytes memory _err
     ) external {
         emit FunctionCallCompleted({
-            proxyAddress: _proxyAddress,
+            functionId: _functionId,
             caller: _caller,
             requestId: _requestId,
             owner: _owner,
