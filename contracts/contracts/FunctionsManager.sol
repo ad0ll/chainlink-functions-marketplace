@@ -153,6 +153,15 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     }
 
     /**
+     * 
+     * @param functionsId The functions Id to identify which functions results needs to be read
+     * @return FunctionsResponse struct with the latest requestId, answer, and error
+     */
+    function readResults(bytes32 functionsId) external view returns (FunctionsResponse memory) {
+        return responseMapping[functionsId];
+    }
+
+    /**
      * @notice Allows the Functions oracle address to be updated
      *
      * @param oracle New oracle address
