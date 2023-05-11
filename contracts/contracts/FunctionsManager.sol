@@ -13,7 +13,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     using Functions for Functions.Request;
 
     mapping(bytes32 => FunctionsMetadata) private metadataMapping;
-    mapping(bytes32 => FunctionsResponse) private responseMapping;
+    mapping(bytes32 => FunctionsResponse) public responseMapping;
     mapping(bytes32 => bytes32) private requestToFunctionsMapping;
     mapping(uint64 => address) private subscriptionOwnerMapping;
 
@@ -150,15 +150,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         // Delete requestId to functionsId entry to avoid an ever growing mapping
         delete requestToFunctionsMapping[requestId];
         emit OCRResponse(requestId, response, err);
-    }
-
-    /**
-     * 
-     * @param functionsId The functions Id to identify which functions results needs to be read
-     * @return FunctionsResponse struct with the latest requestId, answer, and error
-     */
-    function readResults(bytes32 functionsId) external view returns (FunctionsResponse memory) {
-        return responseMapping[functionsId];
     }
 
     /**
