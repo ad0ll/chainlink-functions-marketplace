@@ -11,9 +11,9 @@ describe('FunctionsManager', function () {
     const [owner, otherAccount] = await ethers.getSigners()
 
     const FunctionsManager = await ethers.getContractFactory('FunctionsManager')
+    const oracle = '0x779877A7B0D9E8603169DdbD7836e478b4624789'
     const linkAddress = '0x779877A7B0D9E8603169DdbD7836e478b4624789'
     const billingRegistry = '0x3c79f56407DCB9dc9b852D139a317246f43750Cc'
-    const oracle = '0x649a2C205BE7A3d5e99206CEEFF30c794f0E31EC'
     const functionsManager = await FunctionsManager.deploy(
       linkAddress,
       billingRegistry,
@@ -39,50 +39,58 @@ describe('FunctionsManager', function () {
         )
 
         const proxyAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
-        const totalFees = '1000000000000000000'
+        const fees = '1000000000000000000'
         const subId = 1
         const functionName = 'test'
         const desc = 'test desc'
         const imageUrl = 'https://image.url'
-        const sourceUrl = 'https://source.url'
-        const secretsUrl = 'https://secrets.url'
-        const expectedArgs = ['arg1', 'arg2', 'arg3']
+        const source = 'https://source.url'
+        const secrets = ethers.utils.defaultAbiCoder.encode(
+          ['bytes'],
+          [['https://secrets.url']]
+        )
+        const args: string[] = ['arg1', 'arg2', 'arg3']
 
         await expect(
           functionsManager.registerFunction({
-            totalFees,
-            subId,
+            fees,
             functionName,
             desc,
             imageUrl,
-            // request: {
-            //   codeLocation: 1,
-            //   secretsLocation: 1,
-            //   language: 1,
-            //   source: sourceUrl,
-            //   secrets: secretsUrl,
-            //   args: expectedArgs,
-            // },
+            codeLocation: 1,
+            secretsLocation: 1,
+            language: 0,
+            source,
+            secrets,
+            args,
           })
         )
           .to.emit(functionsManager, 'FunctionRegistered')
-          .withArgs(proxyAddress, owner.address, {
-            proxyAddress,
-            totalFees,
+          .withArgs({
+            fees,
+            owner: owner.address,
             subId,
             functionName,
             desc,
             imageUrl,
-            // request: {
-            //   codeLocation: 1,
-            //   secretsLocation: 1,
-            //   language: 1,
-            //   source: sourceUrl,
-            //   secrets: secretsUrl,
-            //   args: expectedArgs,
-            // },
+            request: {
+              codeLocation: 1,
+              secretsLocation: 1,
+              language: 1,
+              source,
+              secrets,
+              args,
+            },
           })
       })
     })
+  })
+
+  describe('Execute Request', function () {
+    it('Should send request and generate request Id', async function () {})
+  })
+
+  describe('Fulfill Request', function () {
+    it('Should emit an event on register function', async function () {})
   })
 })

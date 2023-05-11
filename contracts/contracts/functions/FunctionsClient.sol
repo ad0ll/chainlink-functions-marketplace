@@ -9,7 +9,7 @@ import "./interfaces/FunctionsOracleInterface.sol";
  * @title The Chainlink Functions client contract
  * @notice Contract writers can inherit this contract in order to create Chainlink Functions requests
  */
-contract FunctionsClient is FunctionsClientInterface {
+abstract contract FunctionsClient is FunctionsClientInterface {
   FunctionsOracleInterface internal s_oracle;
   mapping(bytes32 => address) internal s_pendingRequests;
 
@@ -73,9 +73,7 @@ contract FunctionsClient is FunctionsClientInterface {
    * @param err Aggregated error from the user code or from the execution pipeline
    * Either response or error parameter will be set, but never both
    */
-  function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal virtual {
-    emit FulfillRequest(requestId, response, err);
-  }
+  function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal virtual;
 
   /**
    * @inheritdoc FunctionsClientInterface
