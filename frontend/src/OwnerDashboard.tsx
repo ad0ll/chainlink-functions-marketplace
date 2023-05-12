@@ -19,13 +19,38 @@ import {ResponsiveLine} from '@nivo/line'
 import styled from "@emotion/styled";
 import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RechartTooltip, XAxis, YAxis} from "recharts";
 import {TypographyWithLinkIcon} from "./common";
+import {gql} from "@apollo/client";
+
+const OWNER_DASHBOARD_QUERY = gql`
+    query EventSpammerOwnerPage($owner: Bytes!){
+        functionRegistereds(
+            orderBy: metadata_unlockedProfitPool
+            orderDirection: desc
+            where: {
+                owner: $owner
+            }
+        ){
+            id
+            functionId
+            owner
+            metadata_fee
+            metadata_subId
+            metadata_name
+            metadata_imageUrl
+            metadata_subscriptionPool
+            metadata_lockedProfitPool
+            metadata_unlockedProfitPool
+        }
+    }`
 
 export const OwnerDashboard: React.FC = () => {
 
+    // PATH PARAM IS ownerAddress
     const callData = Array.from(Array(7).keys()).map((day) => ({
         date: new Date(Date.now() - (6 - day) * 24 * 60 * 60 * 1000).toLocaleDateString(),
         calls: getRandomInt(0, 100)
     }))
+
     // const feesCollectedData: { id: string, color: string, data: { x: string, y: number }[] }[] = [{
     //     id: "calls",
     //     color: "hsl(89, 70%, 50%)",
@@ -43,6 +68,7 @@ export const OwnerDashboard: React.FC = () => {
     })
     const functions = generateFunctions(10)
     console.log(feesCollectedData)
+
     //TODO Should make sure that the signed in account is the owner of the contracts
     return <Stack spacing={2}>
         <Typography variant={"h3"} style={{textAlign: "center"}}>Owner Dashboard</Typography>

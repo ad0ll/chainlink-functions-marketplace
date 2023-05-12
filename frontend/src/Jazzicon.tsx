@@ -20,26 +20,6 @@ class MersenneTwister {
         this.init_genrand(seed);
     }
 
-    /* initializes mt[N] with a seed */
-    private init_genrand(s: number) {
-        this.mt[0] = s >>> 0;
-        for (this.mti = 1; this.mti < this.N; this.mti++) {
-            s = this.mt[this.mti - 1] ^ (this.mt[this.mti - 1] >>> 30);
-            this.mt[this.mti] = (((((s & 0xffff0000) >>> 16) * 1812433253) << 16) + (s & 0x0000ffff) * 1812433253)
-                + this.mti;
-            /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
-            /* In the previous versions, MSBs of the seed affect   */
-            /* only MSBs of the array mt[].                        */
-            /* 2002/01/09 modified by Makoto Matsumoto             */
-            this.mt[this.mti] >>>= 0;
-            /* for >32 bit machines */
-        }
-    }
-
-    /* initialize by an array with array-length */
-    /* init_key is the array for initializing keys */
-    /* key_length is its length */
-
     /* slight change for C++, 2004/2/26 */
     init_by_array(init_key: number[], key_length: number) {
         var i, j, k;
@@ -75,10 +55,14 @@ class MersenneTwister {
         this.mt[0] = 0x80000000; /* MSB is 1; assuring non-zero initial array */
     }
 
+    /* initialize by an array with array-length */
+    /* init_key is the array for initializing keys */
+    /* key_length is its length */
+
     /* generates a random number on [0,0xffffffff]-interval */
     genrand_int32() {
         var y;
-        var mag01 = new Array(0x0, this.MATRIX_A);
+        var mag01 = [0x0, this.MATRIX_A];
         /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
         if (this.mti >= this.N) { /* generate N words at one time */
@@ -139,6 +123,22 @@ class MersenneTwister {
     genrand_res53() {
         var a = this.genrand_int32() >>> 5, b = this.genrand_int32() >>> 6;
         return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0);
+    }
+
+    /* initializes mt[N] with a seed */
+    private init_genrand(s: number) {
+        this.mt[0] = s >>> 0;
+        for (this.mti = 1; this.mti < this.N; this.mti++) {
+            s = this.mt[this.mti - 1] ^ (this.mt[this.mti - 1] >>> 30);
+            this.mt[this.mti] = (((((s & 0xffff0000) >>> 16) * 1812433253) << 16) + (s & 0x0000ffff) * 1812433253)
+                + this.mti;
+            /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
+            /* In the previous versions, MSBs of the seed affect   */
+            /* only MSBs of the array mt[].                        */
+            /* 2002/01/09 modified by Makoto Matsumoto             */
+            this.mt[this.mti] >>>= 0;
+            /* for >32 bit machines */
+        }
     }
 
     /* These real versions are due to Isaku Wada, 2002/01/09 added */
@@ -203,7 +203,6 @@ const genShape = (
 
 const genColor = (colors: HSL[], generator: MersenneTwister): HSL => {
     // const _rand = generator.random(); // eslint-disable-line
-    console.log("colors length: ", colors.length)
     const idx = Math.floor(colors.length * generator.random());
     return colors.splice(idx, 1)[0];
 };

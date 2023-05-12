@@ -1,0 +1,83 @@
+# Welcome to GraphiQL
+#
+# GraphiQL is an in-browser tool for writing, validating, and
+# testing GraphQL queries.
+#
+# Type queries into this side of the screen, and you will see intelligent
+# typeaheads aware of the current GraphQL type schema and live syntax and
+# validation errors highlighted within the text.
+#
+# GraphQL queries typically start with a "{" character. Lines that start
+# with a # are ignored.
+#
+# An example GraphQL query might look like:
+#
+#     {
+#       field(arg: "value") {
+#         subField
+#       }
+#     }
+#
+# Keyboard shortcuts:
+#
+#   Prettify query:  Shift-Ctrl-P (or press the prettify button)
+#
+#  Merge fragments:  Shift-Ctrl-M (or press the merge button)
+#
+#        Run Query:  Ctrl-Enter (or press the play button)
+#
+#    Auto Complete:  Ctrl-Space (or just start typing)
+#
+
+fragment FrontPageFields on FunctionRegistered {
+    id
+    functionId
+    owner
+    metadata_fee
+    metadata_subId
+    metadata_name
+    metadata_desc
+    metadata_imageUrl
+}
+
+fragment OwnerFields on FunctionRegistered {
+
+}
+
+
+query EventSpammerFunctionRegistered{
+    functionRegistereds(
+        orderBy: blockNumber
+        orderDirection: desc
+
+    ){
+        ...FrontPageFields
+
+    }
+}
+
+query EventSpammerOwnerPage($functionId: Bytes!){
+    functionRegistereds(
+        orderBy: metadata_unlockedProfitPool
+        orderDirection: desc
+        where: {
+            functionId: $functionId
+        }
+    ){
+        id
+        functionId
+        owner
+        metadata_fee
+        metadata_owner
+        metadata_subId
+        metadata_name
+        metadata_desc
+        metadata_imageUrl
+        metadata_subscriptionPool
+        metadata_lockedProfitPool
+        metadata_unlockedProfitPool
+    }
+}
+
+
+

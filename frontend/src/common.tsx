@@ -2,7 +2,6 @@ import React, {ReactNode, Suspense} from "react";
 import {garbageAddressGenerator} from "./utils/generators";
 import {Box, SvgIcon, Typography, TypographyProps} from "@mui/material";
 import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
-import LinkIcon from "./assets/icons/link-token-blue.svg";
 
 
 export const MAINNET_CHAIN_ID = 1
@@ -65,18 +64,24 @@ export type ChainlinkFunction = {
 
 
 // TODO This should be a branded, better looking suspense component
-export const DefaultSuspense: React.FC<{children: React.ReactNode}> = ({children}) => {
+export const DefaultSuspense: React.FC<{ children: React.ReactNode }> = ({children}) => {
     return <Suspense fallback={<div>Loading...</div>}>
         {children}
     </Suspense>
 }
 
 
-export const TypographyWithLinkIcon: React.FC< {height?: number, width?: number, children: ReactNode} & TypographyProps>  = ({height="inherit", width="inherit", children, style}, props) => {
+export const TypographyWithLinkIcon: React.FC<{
+    height?: number,
+    width?: number,
+    children: ReactNode
+} & TypographyProps> = ({height = "inherit", width = "inherit", children, style}, props) => {
     return <Box style={{"display": "flex", "alignItems": "center"}}>
-            <SvgIcon component={LinkTokenIcon} viewBox="0 0 800 800" height={height} width={width} style={{marginRight: 4, ...style}}/>
-            <Typography {...props}>{children}</Typography>
-        </Box>
+        <SvgIcon component={LinkTokenIcon} viewBox="0 0 800 800" height={height} width={width}
+                 style={{marginRight: 4, ...style}}/>
+        <Typography {...props} style={{...props.style, marginRight: 4}}>{children}</Typography>
+        <Typography>LINK</Typography>
+    </Box>
 
 }
 // export const

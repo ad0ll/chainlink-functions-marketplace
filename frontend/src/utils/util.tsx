@@ -27,3 +27,10 @@ export const truncateIfAddress = (s: string) => {
     }
     return s
 }
+
+export const renderCurrency = (amount: number | string, fixed: number = 3, decimals: number = 18) => {
+    if (typeof amount === "string") {
+        amount = parseFloat(amount)
+    }
+    return (amount / Math.pow(10, decimals)).toFixed(fixed)
+}

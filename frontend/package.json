@@ -16,6 +16,7 @@
     "@web3-react/metamask": "^8.2.1",
     "ethers": "^6.3.0",
     "graphql": "^16.6.0",
+    "graphql-tag": "^2.12.6",
     "jazzicon": "^1.5.0",
     "mersenne-twister": "^1.1.0",
     "mersennetwister": "^0.2.3",
@@ -35,9 +36,11 @@
     "start": "webpack serve --mode development --open --config webpack.development.js",
     "build": "webpack --mode production --config webpack.production.js",
     "generate:contracts": "typechain --target=ethers-v6 --out-dir=src/abi/types src/abi/*.json",
-    "test": "jest"
+    "test": "jest",
+    "codegen": "graphql-codegen --config graphql-codegen.ts"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "3.3.1",
     "@svgr/webpack": "^7.0.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
@@ -61,6 +64,8 @@
     "typescript": "^5.0.4",
     "webpack": "^5.78.0",
     "webpack-cli": "^5.0.1",
-    "webpack-dev-server": "^4.13.2"
+    "webpack-dev-server": "^4.13.2",
+    "@graphql-codegen/introspection": "3.0.1",
+    "@graphql-codegen/client-preset": "3.0.1"
   }
 }
