@@ -22,13 +22,14 @@ contract FeeManager is Ownable {
     address public linkAddress = 0x326C977E6efc84E512bB9C30f76E30c160eD06FB;
     LinkTokenInterface private linkToken = LinkTokenInterface(linkAddress);
 
-    struct ChainlinkFunction {
+    struct FunctionMetadata {
         address owner;
         uint64 subId;
         uint256 fee;
         string name;
         string description;
         string imageUrl;
+        string[] expectedArgs
         uint256 subscriptionPool; //Owner cannot withdraw this unless they delete their function (deleting function probably won't make it into the hackathon)
         uint256 unlockedProfitPool; //Owner can withdraw this at will
         uint256 lockedProfitPool; //Profits are unlocked when the proxy contract uses the FunctionManager to fullfill the callback
@@ -42,19 +43,15 @@ contract FeeManager is Ownable {
         bytes err;
     }
 
-    struct FunctionOwner {
-        bytes32 name;
-    }
 
     // Permanent storage of function responses
     mapping(bytes32 => FunctionResponse) functionResponses;
     // Mapping of FunctionProxy contract addresses to ChainlinkFunction
-    mapping(address => ChainlinkFunction) chainlinkFunctions;
-
+    mapping(address => FunctionMetadata) chainlinkFunctions;
     //Currently this is a simple counter that increments when a callback function is invoked
     mapping(bytes32 => uint256) callbackFunctions;
 
-    event FunctionRegistered(address indexed proxyAddress, address indexed owner, ChainlinkFunction metadata);
+    event FunctionRegistered(address indexed proxyAddress, address indexed owner, FunctionMetadata metadata);
 
     //TIL max number of indexed fields is 3 unless you use an anonymous event, which lets you do 4
     event FunctionCalled(
@@ -77,9 +74,6 @@ contract FeeManager is Ownable {
         bytes err
     );
 
-    event CallbackCompletedNoData(
-        address indexed _proxyAddress, address indexed _owner, bytes32 indexed _requestId, bool error
-    );
 
     modifier _onlyFunctionOwner(address _proxyAddress) {
         // Require that the person initiating the transaction owns the proxy contract at _proxyAddress
@@ -104,7 +98,7 @@ contract FeeManager is Ownable {
         feeManagerCut = _feeManagerCut;
     }
 
-    function getFunction(address _proxyAddress) external view returns (ChainlinkFunction memory) {
+    function getFunction(address _proxyAddress) external view returns (FunctionMetadata memory) {
         console.log("getFunction");
         return chainlinkFunctions[_proxyAddress];
     }
@@ -138,17 +132,19 @@ contract FeeManager is Ownable {
         require(chainlinkFunctions[_proxyAddress].owner == address(0), "Function already registeres");
 
         // Add the ChainlinkFunction to chainlinkFunctions
-        ChainlinkFunction memory newFunction = ChainlinkFunction({
+        FunctionMetadata memory newFunction = FunctionMetadata({
             owner: msg.sender,
             name: _name,
             description: _description,
             fee: _fee,
             subId: 0,
             imageUrl: "",
+
             subscriptionPool: 0,
             unlockedProfitPool: 0,
             lockedProfitPool: 0
         });
+        
         chainlinkFunctions[_proxyAddress] = newFunction;
         emit FunctionRegistered({proxyAddress: _proxyAddress, owner: msg.sender, metadata: newFunction});
     }
@@ -156,7 +152,7 @@ contract FeeManager is Ownable {
     // TODO needs to take gas deposit
     function callFunction(address _proxyAddress, bytes32 _callbackFunction) external payable returns (bytes32) {
         // Get the function from chainlinkFunctions, require it exists
-        ChainlinkFunction storage chainlinkFunction = chainlinkFunctions[_proxyAddress];
+        FunctionMetadata storage chainlinkFunction = chainlinkFunctions[_proxyAddress];
         require(chainlinkFunction.owner != address(0), "Function does not exist");
         // Require that the sender includes a deposit equal to or greater than the fee
         console.log("linkToken.address %s, linkAddress %s", address(linkToken), linkAddress);
@@ -217,7 +213,7 @@ contract FeeManager is Ownable {
         functionResponses[_requestId].response = _response;
         functionResponses[_requestId].err = _err;
 
-        ChainlinkFunction storage chainlinkFunction = chainlinkFunctions[functionResponses[_requestId].proxyAddress];
+        FunctionMetadata storage chainlinkFunction = chainlinkFunctions[functionResponses[_requestId].proxyAddress];
         require(chainlinkFunction.owner != address(0), "Function does not exist");
         // Check if the caller of this function is the ProxyContract, can't do this right now becau,
         // Add a new functionReponses entry for this requestId
@@ -250,7 +246,7 @@ contract FeeManager is Ownable {
 
     // Full withdrawl of the function owner profit pool to the function owner
     function withdrawProfitToFuncOwner(address _proxyAddress) external _onlyFunctionOwner(_proxyAddress) {
-        ChainlinkFunction storage chainlinkFunction = chainlinkFunctions[_proxyAddress];
+        FunctionMetadata storage chainlinkFunction = chainlinkFunctions[_proxyAddress];
         require(chainlinkFunction.owner == msg.sender, "Only func owner can withdraw");
         require(
             linkToken.transferFrom(address(this), chainlinkFunction.owner, chainlinkFunction.unlockedProfitPool),

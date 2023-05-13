@@ -1,4 +1,4 @@
-import {Container, createTheme, CssBaseline, Divider, ThemeProvider, Typography} from '@mui/material';
+import {Container, createTheme, CssBaseline, ThemeProvider} from '@mui/material';
 import React from 'react';
 import {initializeConnector, Web3ReactHooks, Web3ReactProvider} from "@web3-react/core";
 import {MetaMask} from "@web3-react/metamask";
@@ -11,7 +11,6 @@ import Buy from "./Buy";
 import {Sell} from "./Sell";
 import Author from "./Author";
 import {OwnerDashboard} from "./OwnerDashboard";
-
 
 
 declare module '@mui/material/styles' {
@@ -28,8 +27,8 @@ declare module '@mui/material/styles' {
     }
 }
 
-export const [metaMask, metaMaskHooks] = initializeConnector<MetaMask>((actions) => new MetaMask({ actions }))
-const connectors: [MetaMask , Web3ReactHooks][] = [
+export const [metaMask, metaMaskHooks] = initializeConnector<MetaMask>((actions) => new MetaMask({actions}))
+const connectors: [MetaMask, Web3ReactHooks][] = [
     [metaMask, metaMaskHooks],
 ]
 
@@ -66,7 +65,7 @@ function App() {
 
 
     return (<ThemeProvider theme={theme}>
-        <Web3ReactProvider connectors={connectors} >
+        <Web3ReactProvider connectors={connectors}>
             <ToastContainer
                 position={"bottom-right"}
                 theme={"dark"}
@@ -80,12 +79,14 @@ function App() {
                         <Route path="/" element={<DefaultSuspense><Home/></DefaultSuspense>}/>
                         <Route path="/buy/:functionId" element={<DefaultSuspense><Buy/></DefaultSuspense>}/>
                         <Route path="/sell" element={<DefaultSuspense><Sell/></DefaultSuspense>}/>
-                        <Route path="/author/:authorId" element={<DefaultSuspense><Author/></DefaultSuspense>}/>
-                        <Route path="/owner/:ownerId" element={<DefaultSuspense><OwnerDashboard/></DefaultSuspense>}/>
+                        <Route path="/author/:ownerAddress" element={<DefaultSuspense><Author/></DefaultSuspense>}/>
+                        <Route path="/dashboard/:ownerAddress"
+                               element={<DefaultSuspense><OwnerDashboard/></DefaultSuspense>}/>
                     </Routes>
                 </BrowserRouter>
             </Container>
         </Web3ReactProvider>
     </ThemeProvider>);
 }
+
 export default App;

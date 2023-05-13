@@ -1,6 +1,6 @@
 import {AppBar, Button, Toolbar, Tooltip, Typography} from "@mui/material";
 import Logo from "./assets/icons/logo.svg";
-import React, {startTransition} from "react";
+import React from "react";
 import {useWeb3React} from "@web3-react/core";
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import {Link} from "react-router-dom";
@@ -18,13 +18,13 @@ export const NavBar: React.FC = ({}) => {
             setTooltipText("")
             await connector.activate()
         } catch (err: any) {
-            startTransition(() => {
-                console.log("setting error", err.message)
-                setTooltipText(err.message)
-                //TODO set to error color
-                // setConnectIcon(<ErrorOutline color={"primary"}/>)
-                setConnectIcon(<ErrorOutline/>)
-            })
+            // startTransition(() => {
+            console.log("setting error", err.message)
+            setTooltipText(err.message)
+            //TODO set to error color
+            // setConnectIcon(<ErrorOutline color={"primary"}/>)
+            setConnectIcon(<ErrorOutline/>)
+            // })
         }
     }
 
@@ -55,6 +55,8 @@ export const NavBar: React.FC = ({}) => {
                     Sell
                 </Typography>
             </Link>
+
+            {/*TODO below should be the currently signed in user*/}
             <Link to={"/dashboard/:owner"}>
                 <Typography variant={"h6"} style={{marginLeft: 16}}>
                     Dashboard
