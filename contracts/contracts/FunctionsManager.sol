@@ -12,10 +12,11 @@ import "hardhat/console.sol";
 contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     using Functions for Functions.Request;
 
-    mapping(bytes32 => FunctionMetadata) private functionMetadatas;
+    mapping(bytes32 => FunctionMetadata) public functionMetadatas;
     mapping(bytes32 => FunctionResponse) public functionResponses;
     mapping(uint64 => address) private subscriptionOwnerMapping;
     mapping(bytes32 => bool) private existingNameOwnerPair;
+    mapping(address => AuthorMetadata) public authorMetadata;
 
     LinkTokenInterface private LINK;
     FunctionsBillingRegistry private BILLING_REGISTRY;
@@ -27,7 +28,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     uint256 requestIdNonce;
 
     // TODO Support authorMetadata
-    // TODO Set minimum deposit at 3 LINK
+
     // (Not in this contract) Set keeper threshold at 1 LINK
     struct FunctionsRegisterRequest {
         uint256 fees;
@@ -38,8 +39,15 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         Functions.Location codeLocation;
         Functions.Location secretsLocation;
         Functions.CodeLanguage language;
+        uint64 subId;
         string source; // Source code for Location.Inline or url for Location.Remote
         bytes secrets; // Encrypted secrets blob for Location.Inline or url for Location.Remote
+    }
+
+    struct AuthorMetadata {
+        string name;
+        string imageUrl;
+        string websiteUrl;
     }
 
     // Functions metadata
@@ -140,7 +148,13 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         metadata.expectedArgs = request.expectedArgs;
 
         // Create subscription for every Function registered
-        metadata.subId = createSubscription();
+        if(request.subId == 0){
+            console.log("creating new subscription");
+            metadata.subId = createSubscription();
+        } else {
+            console.log("using existing subscription %d", request.subId);
+            metadata.subId = request.subId;
+        }
 
         // Initialize Functions request into expected format
         Functions.Request memory functionsRequest;
@@ -189,7 +203,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
      * @return Functions request ID
      */
     //TODO Needs to take args as a parameter
-    function executeRequest(bytes32 functionId, uint32 gasLimit) public onlyOwner returns (bytes32) {
+    function executeRequest(bytes32 functionId, uint32 gasLimit, bool dummy) public onlyOwner returns (bytes32) {
         FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
         require(bytes(functionMetadatas[functionId].name).length != 0, "function is not registered");
 
@@ -198,8 +212,15 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         // if (request.args.length > 0) functionsRequest.addArgs(request.args);
 
         collectAndLockFees(chainlinkFunction);
-        bytes32 assignedReqID =
-            sendRequest(functionMetadatas[functionId].request, functionMetadatas[functionId].subId, gasLimit);
+        bytes32 assignedReqID;
+        // We can remove this later, lets us get around the fact that we have to register the functionManager as a subscriber
+        if (dummy) {
+            assignedReqID = keccak256(abi.encodePacked("dummy", functionId, block.timestamp));
+        } else {
+            assignedReqID =
+                sendRequest(functionMetadatas[functionId].request, functionMetadatas[functionId].subId, gasLimit);
+        }
+        require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");
         functionResponses[assignedReqID].functionId = functionId;
         functionResponses[assignedReqID].caller = msg.sender;
 
@@ -279,7 +300,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         );
     }
 
-    function unlockFees(FunctionMetadata storage chainlinkFunction) private {
+    function unlockFees(FunctionMetadata storage chainlinkFunction) private onlyOwner {
         // Function manager has already taken its cut, so calculate the amount owed to the function owner
         // by taking the FunctionManager cut from the fee and adding it to the owner profit pool
         uint256 unlockAmount = (chainlinkFunction.fee * (100 - feeManagerCut)) / 100;
@@ -287,9 +308,30 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         chainlinkFunction.unlockedProfitPool += unlockAmount;
     }
 
+    // TODO If we keep this function, we need to let the keeper call it
+    function forceUnlockFees(bytes32 functionId) external onlyOwner {
+        FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
+        require(chainlinkFunction.owner != address(0), "Function does not exist");
+        unlockFees(chainlinkFunction);
+    }
+
+    // TODO Should not exist
+    function moveSubscriptionToUnlock(bytes32 functionId) external {
+        FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
+        require(chainlinkFunction.owner != address(0), "Function does not exist");
+        chainlinkFunction.unlockedProfitPool += chainlinkFunction.subscriptionPool;
+        chainlinkFunction.subscriptionPool = 0;
+    }
+
+    // TODO This function should no
+    // Remove me later, lets us manually fulfill requests
+    function dummyFullfill(bytes32 requestId, bytes memory response, bytes memory err) public onlyOwner {
+        fulfillRequest(requestId, response, err);
+    }
     /*
         EVERYTHING BELOW IS MINUTAE
     */
+
     function setBaseFee(uint256 _baseFee) external onlyOwner {
         baseFee = _baseFee;
         emit BaseFeeUpdated(_baseFee);
