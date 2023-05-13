@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.18;
 
 import {FunctionsClient} from "./functions/FunctionsClient.sol";
 import {Functions} from "./functions/Functions.sol";
@@ -184,6 +184,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         console.log("creating subscription with %s as sender and %s as tx.origin", msg.sender, tx.origin);
         // Automatically sets msg sender (FunctionsManager) as subscription owner
         uint64 subId = BILLING_REGISTRY.createSubscription();
+
+        // Add FunctionsManager as a consumer of the subscription
+        BILLING_REGISTRY.addConsumer(subId, address(this));
+
         // Maintaining subscription ownership internally to allow ownership transfer later
         subscriptionOwnerMapping[subId] = msg.sender;
         // TODO Make sure owner can fund subscription. Might not require any changes
@@ -203,15 +207,14 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
      * @return Functions request ID
      */
     //TODO Needs to take args as a parameter
-    function executeRequest(bytes32 functionId, uint32 gasLimit, bool dummy) public onlyOwner returns (bytes32) {
+    function executeRequest(bytes32 functionId, string[] memory args, uint32 gasLimit, bool dummy) public onlyOwner returns (bytes32) {
         console.log("executeRequest called with functionId:");
         console.logBytes32(functionId);
         FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
-        require(bytes(functionMetadatas[functionId].name).length != 0, "function is not registered");
+        require(bytes(chainlinkFunction.name).length != 0, "function is not registered");
 
-        //TODO implement
-        // Functions.Request memory functionsRequest = chainlinkFunction.request;
-        // if (request.args.length > 0) functionsRequest.addArgs(request.args);
+        Functions.Request memory functionsRequest = chainlinkFunction.request;
+        if (args.length > 0) functionsRequest.addArgs(args);
 
         console.log("collecting and locking fees");
         collectAndLockFees(chainlinkFunction);
@@ -221,7 +224,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             assignedReqID = keccak256(abi.encodePacked("dummy", functionId, block.timestamp));
         } else {
             assignedReqID =
-                sendRequest(functionMetadatas[functionId].request, functionMetadatas[functionId].subId, gasLimit);
+                sendRequest(chainlinkFunction.request, chainlinkFunction.subId, gasLimit);
         }
         console.log("requestId is:");
         console.logBytes32(assignedReqID);
