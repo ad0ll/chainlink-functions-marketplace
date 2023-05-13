@@ -148,7 +148,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         metadata.expectedArgs = request.expectedArgs;
 
         // Create subscription for every Function registered
-        if(request.subId == 0){
+        if (request.subId == 0) {
             console.log("creating new subscription");
             metadata.subId = createSubscription();
         } else {
@@ -204,6 +204,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
      */
     //TODO Needs to take args as a parameter
     function executeRequest(bytes32 functionId, uint32 gasLimit, bool dummy) public onlyOwner returns (bytes32) {
+        console.log("executeRequest called with functionId:");
+        console.logBytes32(functionId);
         FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
         require(bytes(functionMetadatas[functionId].name).length != 0, "function is not registered");
 
@@ -211,6 +213,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         // Functions.Request memory functionsRequest = chainlinkFunction.request;
         // if (request.args.length > 0) functionsRequest.addArgs(request.args);
 
+        console.log("collecting and locking fees");
         collectAndLockFees(chainlinkFunction);
         bytes32 assignedReqID;
         // We can remove this later, lets us get around the fact that we have to register the functionManager as a subscriber
@@ -220,10 +223,13 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             assignedReqID =
                 sendRequest(functionMetadatas[functionId].request, functionMetadatas[functionId].subId, gasLimit);
         }
+        console.log("requestId is:");
+        console.logBytes32(assignedReqID);
         require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");
         functionResponses[assignedReqID].functionId = functionId;
         functionResponses[assignedReqID].caller = msg.sender;
 
+        console.log("emitting FunctionCalled event");
         emit FunctionCalled({
             functionId: functionId,
             caller: msg.sender,

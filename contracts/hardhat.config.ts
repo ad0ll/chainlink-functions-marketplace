@@ -2,6 +2,8 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import dotenv from "dotenv";
 import "hardhat-watcher";
+import "./tasks/create-subscription";
+// import "./tasks/execute-request";
 
 dotenv.config();
 
@@ -113,6 +115,7 @@ const config: HardhatUserConfig = {
     outputFile: "gas-report.txt",
     noColors: true,
   },
+
   watcher: {
     compile: {
       tasks: ["compile"],
@@ -141,6 +144,7 @@ const config: HardhatUserConfig = {
       ],
     },
   },
+  hardhat: {},
   // paths: {
   //   sources: "./contracts",
   //   tests: "./test",
