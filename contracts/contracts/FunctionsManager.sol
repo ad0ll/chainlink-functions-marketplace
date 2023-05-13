@@ -6,31 +6,40 @@ import {Functions} from "./functions/Functions.sol";
 import {FunctionsBillingRegistry} from "./functions/FunctionsBillingRegistry.sol";
 import {FunctionsOracleInterface} from "./functions/interfaces/FunctionsOracleInterface.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
 import "hardhat/console.sol";
 
-contract FunctionsManager is Ownable {
+contract FunctionsManager is FunctionsClient, ConfirmedOwner {
+    using Functions for Functions.Request;
+
+    mapping(bytes32 => FunctionMetadata) private functionMetadatas;
+    mapping(bytes32 => FunctionResponse) public functionResponses;
+    mapping(uint64 => address) private subscriptionOwnerMapping;
+    mapping(bytes32 => bool) private existingNameOwnerPair;
+
     LinkTokenInterface private LINK;
     FunctionsBillingRegistry private BILLING_REGISTRY;
-    FunctionsOracleInterface private ORACLE;
 
-    uint256 public functionManagerProfitPool; // The fee manager's cut of fees
+    uint256 public functionManagerProfitPool; // The fee manager's cut of fees, whole number representing percentage
     uint256 public baseFee = 10 ** 18 * 0.2; // 0.2 LINK (18 decimals)
+    uint256 public minimumSubscriptionDeposit = 10 ** 18 * 3; // 3 LINK (18 decimals)
     uint32 public feeManagerCut;
+    uint256 requestIdNonce;
 
-    // Permanent storage of function responses
-    mapping(bytes32 => FunctionResponse) functionResponses;
-    // Mapping of FunctionProxy contract addresses to ChainlinkFunction
-    mapping(address => FunctionMetadata) chainlinkFunctions;
-    //Currently this is a simple counter that increments when a callback function is invoked
-    mapping(bytes32 => uint256) callbackFunctions;
-
-    struct FunctionResponse {
-        address caller;
-        address proxyAddress;
-        bytes32 callbackFunction;
-        bytes response;
-        bytes err;
+    // TODO Support authorMetadata
+    // TODO Set minimum deposit at 3 LINK
+    // (Not in this contract) Set keeper threshold at 1 LINK
+    struct FunctionsRegisterRequest {
+        uint256 fees;
+        string functionName;
+        string desc;
+        string imageUrl;
+        string[] expectedArgs;
+        Functions.Location codeLocation;
+        Functions.Location secretsLocation;
+        Functions.CodeLanguage language;
+        string source; // Source code for Location.Inline or url for Location.Remote
+        bytes secrets; // Encrypted secrets blob for Location.Inline or url for Location.Remote
     }
 
     // Functions metadata
@@ -41,187 +50,206 @@ contract FunctionsManager is Ownable {
         string name;
         string desc;
         string imageUrl;
+        string[] expectedArgs;
+        Functions.Request request;
         // Subscription fields
         uint256 subscriptionPool; // Reserved base fees collected, can't be withdrawn
         uint256 unlockedProfitPool; // Profits from completed functions, can be withdrawn on demand
         uint256 lockedProfitPool; // Profits from initialized calls that haven't had their callback completed yet
     }
 
-    // TODO: Need to store request during register?
-    // Functions.Request request;
+    struct FunctionResponse {
+        bytes32 functionId;
+        address caller;
+        bytes32 callbackFunction;
+        uint256 gasDeposit;
+        bytes response;
+        bytes err;
+    }
 
     // Event emitted when a Function is registered
     // Recording owner twice isn't ideal, but we want to be able to filter on owner
-    event FunctionRegistered(address indexed proxyAddress, address indexed owner, FunctionMetadata metadata);
+    event FunctionRegistered(bytes32 indexed functionId, address indexed owner, FunctionMetadata metadata);
+
     event FunctionCalled(
-        address indexed proxyAddress,
-        address indexed caller,
+        bytes32 indexed functionId,
         bytes32 indexed requestId,
+        address indexed caller,
         address owner,
         bytes32 callbackFunction,
+        uint256 gasDeposit,
         uint256 baseFee,
         uint256 fee
     );
 
     event FunctionCallCompleted(
-        address indexed proxyAddress,
-        address indexed caller,
+        bytes32 indexed functionId,
         bytes32 indexed requestId,
+        address indexed caller,
         address owner,
         bytes32 callbackFunction,
+        uint256 usedGas,
         bytes response,
         bytes err
     );
 
+    event OCRResponse(bytes32 indexed requestId, bytes result, bytes err);
+
     event BaseFeeUpdated(uint256 newBaseFee);
     event FeeManagerCutUpdated(uint256 newFeeManagerCut);
-    // Initialize with the Chainlink proxies that are commonly interacted with
+    event MinimumSubscriptionDepositUpdated(uint256 newMinimumDeposit);
+
     // Good default values for baseFee is 10 ** 18 * 0.2 (0.2 LINK), and for feeManagerCut (5)
-
-    modifier _onlyFunctionOwner(address _proxyAddress) {
-        // Require that the person initiating the transaction owns the proxy contract at _proxyAddress
-        require(msg.sender == chainlinkFunctions[_proxyAddress].owner, "Not the function owner");
-        _;
-    }
-
-    modifier _functionExists(address _proxyAddress) {
-        // Require that the function exists
-        require(chainlinkFunctions[_proxyAddress].owner != address(0), "Function does not exist");
-        _;
-    }
-
-    modifier _functionNotExists(address _proxyAddress) {
-        // Require that the function does not exist
-        require(chainlinkFunctions[_proxyAddress].owner == address(0), "Function already exists");
-        _;
-    }
-
     constructor(
         address link,
         address billingRegistryProxy,
         address oracleProxy,
         uint256 _baseFee,
-        uint32 _feeManagerCut
-    ) {
+        uint32 _feeManagerCut,
+        uint256 _minimumSubscriptionDeposit
+    ) FunctionsClient(oracleProxy) ConfirmedOwner(msg.sender) {
         require(_feeManagerCut <= 100, "Fee manager cut must be less than or equal to 100");
         LINK = LinkTokenInterface(link);
         BILLING_REGISTRY = FunctionsBillingRegistry(billingRegistryProxy);
-        ORACLE = FunctionsOracleInterface(oracleProxy);
         baseFee = _baseFee;
         feeManagerCut = _feeManagerCut;
+        minimumSubscriptionDeposit = _minimumSubscriptionDeposit;
     }
 
     // FunctionRegistered event - Will have metadata from register function params
     // FunctionCalled event (Probably not used by the webapp)
     // FunctionError event
     // FunctionSuccess event
-    function registerFunction(FunctionMetadata memory metadata) public returns (address) {
-        // 2. TODO Fund w/ initial deposit if NEW
-        // 3. TODO Add self (FunctionManager) to authorized users
-        // 4?. Check owner is registered with OracleProxy (i.e is registered in function beta)
-        // ??? Ensure interface is correct, probably not important ???
+    function registerFunction(FunctionsRegisterRequest calldata request) public returns (bytes32) {
+        // Require fee is greater than 0
+        require(request.fees >= 0, "Fee must be greater than or equal to 0");
+        // Require function name cannot be empty
+        require(bytes(request.functionName).length > 0, "Function name cannot be empty");
+        bytes32 dupeCheckBytes = keccak256(abi.encode(request.functionName, msg.sender));
+        require(!existingNameOwnerPair[dupeCheckBytes], "Function name already exists for this owner");
+        existingNameOwnerPair[dupeCheckBytes] = true;
 
-        //Perfrom basic validation on metadata
-        console.log("validating function metadata");
-        require(metadata.fee >= 0, "Fee must be greater than or equal to 0");
-        require(bytes(metadata.name).length > 0, "Function name cannot be empty");
-        metadata.owner = msg.sender; // Force owner to sender since sender will own subscription
+        //Require function doesn't already exist
+        FunctionMetadata memory metadata;
 
-        // 1. Create a subscription if subId is 0,
-        if (metadata.subId == 0) {
-            console.log("creating subscription");
-            metadata.subId = createSubscription();
-            // TODO when we have keepers, authorize the keeper to consume
+        metadata.owner = msg.sender;
+        metadata.fee = request.fees;
+        metadata.name = request.functionName;
+        metadata.desc = request.desc;
+        metadata.imageUrl = request.imageUrl;
+        metadata.expectedArgs = request.expectedArgs;
+
+        // Create subscription for every Function registered
+        metadata.subId = createSubscription();
+
+        // Initialize Functions request into expected format
+        Functions.Request memory functionsRequest;
+        functionsRequest.initializeRequest(request.codeLocation, request.language, request.source);
+        if (request.secrets.length > 0) {
+            functionsRequest.addRemoteSecrets(request.secrets);
         }
-        // 1.5 TODO Check if subscription exists if supplied
 
-        // 4. Deploy proxy contact, get address
-        console.log("deploying FunctionsClient contract");
-        address proxy = deployFunctionsProxy(metadata.subId);
-        //Below shouldn't be possible since we just deployed the proxy
-        require(chainlinkFunctions[proxy].owner == address(0), "Function already registered");
+        metadata.request = functionsRequest;
 
+        // ??? Ensure interface is correct, probably not important ???
         // 5. Add function to FunctionsManager
-        console.log("adding function to FunctionsManager");
-        chainlinkFunctions[proxy] = metadata;
-        console.log("registered function %s with address %s", metadata.name, proxy);
+        // Generate unique functions ID to be able to retrieve requests
+        bytes32 functionId = keccak256(abi.encode(metadata, requestIdNonce++));
 
-        // 6. Emit event
-        console.log("emitting FunctionRegistered event");
-        emit FunctionRegistered(address(proxy), msg.sender, metadata);
-        return address(proxy);
-    }
+        require(functionMetadatas[functionId].owner == address(0), "Function already exists");
 
-    function deployFunctionsProxy(uint64 subId) internal returns (address) {
-        console.log("deploying FunctionsClient contract");
-        FunctionsClient proxy = new FunctionsClient(address(ORACLE));
-        console.log("deployed FunctionsClient contract at address %s", address(proxy));
-        return address(proxy);
+        functionMetadatas[functionId] = metadata;
+
+        // Emit FunctionRegistered event
+        emit FunctionRegistered(functionId, msg.sender, metadata);
+
+        return functionId;
     }
 
     function createSubscription() internal returns (uint64) {
-        console.log("creating subscription");
+        console.log("creating subscription with %s as sender and %s as tx.origin", msg.sender, tx.origin);
+        // Automatically sets msg sender (FunctionsManager) as subscription owner
         uint64 subId = BILLING_REGISTRY.createSubscription();
-        console.log("created subscription with id %s", subId);
-        BILLING_REGISTRY.addConsumer(subId, address(this));
-        console.log("added the FunctionsManager as a consumer to the subscription");
-        // TODO: Fund subscription link transferAndCall
-        // TODO register function manager as authorized user
+        // Maintaining subscription ownership internally to allow ownership transfer later
+        subscriptionOwnerMapping[subId] = msg.sender;
+        // TODO Make sure owner can fund subscription. Might not require any changes
+
+        // Fund subscription with LINK transferAndCall
+        LINK.transferAndCall(address(BILLING_REGISTRY), msg.value, abi.encode(subId));
+
+        // TODO Transfer minimumSubscriptionDeposit to subscription
         return subId;
     }
 
-    function executeFunction(address _proxyAddress, bytes32 _callbackFunction) external payable returns (bytes32) {
-        FunctionMetadata storage chainlinkFunction = chainlinkFunctions[_proxyAddress];
-        require(chainlinkFunction.owner != address(0), "Function does not exist");
+    /**
+     * @notice Send a simple request
+     *
+     * @param functionId Uniquely generated ID from registerFunctions to identify functions
+     * @param gasLimit Maximum amount of gas used to call the client contract's `handleOracleFulfillment` function
+     * @return Functions request ID
+     */
+    //TODO Needs to take args as a parameter
+    function executeRequest(bytes32 functionId, uint32 gasLimit) public onlyOwner returns (bytes32) {
+        FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
+        require(bytes(functionMetadatas[functionId].name).length != 0, "function is not registered");
+
+        //TODO implement
+        // Functions.Request memory functionsRequest = chainlinkFunction.request;
+        // if (request.args.length > 0) functionsRequest.addArgs(request.args);
 
         collectAndLockFees(chainlinkFunction);
-        // TODO Make the below an actual function call
-        bytes32 requestId =
-            keccak256(abi.encodePacked(_proxyAddress, chainlinkFunction.name, msg.sender, block.timestamp));
+        bytes32 assignedReqID =
+            sendRequest(functionMetadatas[functionId].request, functionMetadatas[functionId].subId, gasLimit);
+        functionResponses[assignedReqID].functionId = functionId;
+        functionResponses[assignedReqID].caller = msg.sender;
 
-        FunctionResponse memory res = FunctionResponse({
-            caller: msg.sender,
-            proxyAddress: _proxyAddress,
-            callbackFunction: _callbackFunction,
-            response: "",
-            err: ""
-        });
-        functionResponses[requestId] = res;
-        console.log("calling function %s with caller %s", chainlinkFunction.name, msg.sender);
         emit FunctionCalled({
-            proxyAddress: _proxyAddress,
-            owner: chainlinkFunction.owner,
+            functionId: functionId,
             caller: msg.sender,
-            requestId: requestId,
-            callbackFunction: _callbackFunction,
+            requestId: assignedReqID,
+            owner: functionMetadatas[functionId].owner,
+            callbackFunction: bytes32(""),
             baseFee: baseFee,
-            fee: chainlinkFunction.fee
+            fee: functionMetadatas[functionId].fee,
+            gasDeposit: 0
         });
-        return requestId;
+        return assignedReqID;
     }
 
-    function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal virtual {
-        // Emit metrics and return response to the person executing the function through the FuncionsManager
-        // We need to make sure that the downstream contract can't conceal execution results since we need it to record metrics.
+    /**
+     * @notice Callback that is invoked once the DON has resolved the request or hit an error
+     *
+     * @param requestId The request ID, returned by sendRequest()
+     * @param response Aggregated response from the user code
+     * @param err Aggregated error from the user code or from the execution pipeline
+     * Either response or error parameter will be set, but never both
+     */
+    function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
+        // Require response is registered
 
         FunctionResponse storage functionResponse = functionResponses[requestId];
-        require(functionResponse.caller != address(0), "Attempted callback with unknown request ID");
+        require(functionResponse.caller != address(0), "Invalid request ID");
         functionResponse.response = response;
         functionResponse.err = err;
 
-        FunctionMetadata storage chainlinkFunction = chainlinkFunctions[functionResponse.proxyAddress];
+        FunctionMetadata storage chainlinkFunction = functionMetadatas[functionResponse.functionId];
         require(chainlinkFunction.owner != address(0), "Function does not exist");
         unlockFees(chainlinkFunction);
 
+        // Emit FunctionCallCompleted event
         emit FunctionCallCompleted({
-            proxyAddress: functionResponse.proxyAddress,
-            owner: chainlinkFunction.owner,
+            functionId: requestId,
             caller: functionResponse.caller,
-            callbackFunction: functionResponse.callbackFunction,
             requestId: requestId,
+            owner: chainlinkFunction.owner,
+            callbackFunction: functionResponse.callbackFunction,
             response: response,
-            err: err
+            err: err,
+            usedGas: 0
         });
+
+        // Delete requestId to functionId entry to avoid an ever growing mapping
+        emit OCRResponse(requestId, response, err);
     }
 
     function collectAndLockFees(FunctionMetadata storage chainlinkFunction) private {
@@ -230,6 +258,7 @@ contract FunctionsManager is Ownable {
             LINK.balanceOf(msg.sender) >= baseFee + chainlinkFunction.fee,
             "You do not have enough LINK to call this function"
         );
+
         // Doing the below transfer requires running ERC20's approve function first. See tests for example.
         require(
             LINK.transferFrom(msg.sender, address(this), chainlinkFunction.fee), "Failed to collect fees from caller"
@@ -258,31 +287,9 @@ contract FunctionsManager is Ownable {
         chainlinkFunction.unlockedProfitPool += unlockAmount;
     }
 
-        // Function that lets you withdraw all of this contracts balance to the FunctionManager owner
-    function withdrawContractBalToOwner() external onlyOwner {
-        require(msg.sender == owner(), "Only contract owner can withdraw");
-        require(LINK.transferFrom(address(this), owner(), functionManagerProfitPool), "Transfer failed");
-        functionManagerProfitPool = 0;
-    }
-
-    // Full withdrawl of the function owner profit pool to the function owner
-    function withdrawProfitToFuncOwner(address _proxyAddress) external _onlyFunctionOwner(_proxyAddress) {
-        FunctionMetadata storage chainlinkFunction = chainlinkFunctions[_proxyAddress];
-        require(chainlinkFunction.owner == msg.sender, "Only func owner can withdraw");
-        require(
-            LINK.transferFrom(address(this), chainlinkFunction.owner, chainlinkFunction.unlockedProfitPool),
-            "Transfer failed"
-        );
-        chainlinkFunction.unlockedProfitPool = 0;
-    }
-
-
     /*
-        ----------------------------------------------------
-        ALL CODE BELOW IS MINUTIAE FOR THE FUNCTIONS MANAGER
-        ----------------------------------------------------
+        EVERYTHING BELOW IS MINUTAE
     */
-
     function setBaseFee(uint256 _baseFee) external onlyOwner {
         baseFee = _baseFee;
         emit BaseFeeUpdated(_baseFee);
@@ -293,18 +300,18 @@ contract FunctionsManager is Ownable {
         emit FeeManagerCutUpdated(_feeManagerCut);
     }
 
-    function getFunction(address _proxyAddress) external view returns (FunctionMetadata memory) {
+    function setMinimumDeposit(uint256 _minimumDeposit) external onlyOwner {
+        minimumSubscriptionDeposit = _minimumDeposit;
+        emit MinimumSubscriptionDepositUpdated(_minimumDeposit);
+    }
+
+    function getFunction(bytes32 _functionId) external view returns (FunctionMetadata memory) {
         console.log("getFunction");
-        return chainlinkFunctions[_proxyAddress];
+        return functionMetadatas[_functionId];
     }
 
     function getFunctionResponse(bytes32 _requestId) external view returns (FunctionResponse memory) {
         console.log("getFunctionResponse");
         return functionResponses[_requestId];
-    }
-
-    function getCallbackFunction(bytes32 _requestId) external view returns (uint256) {
-        console.log("getCallbackFunction");
-        return callbackFunctions[_requestId];
     }
 }

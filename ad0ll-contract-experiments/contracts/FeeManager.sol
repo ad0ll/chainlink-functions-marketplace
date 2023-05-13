@@ -29,6 +29,7 @@ contract FeeManager is Ownable {
         string name;
         string description;
         string imageUrl;
+        string[] expectedArgs
         uint256 subscriptionPool; //Owner cannot withdraw this unless they delete their function (deleting function probably won't make it into the hackathon)
         uint256 unlockedProfitPool; //Owner can withdraw this at will
         uint256 lockedProfitPool; //Profits are unlocked when the proxy contract uses the FunctionManager to fullfill the callback
@@ -138,10 +139,12 @@ contract FeeManager is Ownable {
             fee: _fee,
             subId: 0,
             imageUrl: "",
+
             subscriptionPool: 0,
             unlockedProfitPool: 0,
             lockedProfitPool: 0
         });
+        
         chainlinkFunctions[_proxyAddress] = newFunction;
         emit FunctionRegistered({proxyAddress: _proxyAddress, owner: msg.sender, metadata: newFunction});
     }
