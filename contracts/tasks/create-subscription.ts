@@ -60,7 +60,6 @@ task(
       "Getting the Functions Oracle contract at",
       networkConfig[taskArgs.testNetwork]["functionsOracleProxy"]
     );
-    // TODO: Remove the following 6 lines on open access
     const Oracle = await ethers.getContractFactory("FunctionsOracle");
     const oracle = await Oracle.attach(
       networkConfig[taskArgs.testNetwork]["functionsOracleProxy"]
@@ -72,6 +71,7 @@ task(
     const [signer] = await ethers.getSigners();
     console.log("Signer: ", signer);
     console.log("Signer address: ", signer.address);
+    // TODO: Remove the following 6 lines on open access
 
     // const isWalletAllowed = await oracle.isAuthorizedSender(signer.address);
     // if (!isWalletAllowed) {

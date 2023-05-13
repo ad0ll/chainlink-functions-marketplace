@@ -49,3 +49,9 @@ test-network is set to the correct value below
 ```bash
 npx hardhat create-subscription --functions-manager $FUNCTIONS_MANAGER_ADDR --test-network mumbai --subscription-id 941  --network $HARDHAT_NETWORK
 ```
+
+### Do a run of a function:
+
+```bash
+npx hardhat execute-function --functions-manager $FUNCTION_MANAGER_ADDR --network $HARDHAT_NETWORK --function-id <hex-string-of-function-id>
+```

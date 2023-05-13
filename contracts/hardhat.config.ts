@@ -3,6 +3,7 @@ import "@nomicfoundation/hardhat-toolbox";
 import dotenv from "dotenv";
 import "hardhat-watcher";
 import "./tasks/create-subscription";
+import "./tasks/execute-function";
 // import "./tasks/execute-request";
 
 dotenv.config();

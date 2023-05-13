@@ -1,21 +1,18 @@
 import { task } from "hardhat/config";
-import { ArgumentType } from "hardhat/types";
-import { ethers } from "hardhat";
+// import { ethers } from "hardhat";
 
-task("myTask", "A task that takes an argument")
-  .addParam(
+task("execute-function", "runs a function")
+  .addOptionalParam(
     "privateKey",
     "The private key of the account to send tx from",
     process.env.PRIVATE_KEY,
-    undefined,
-    false
+    undefined
   )
-  .addParam(
-    "functionManager",
+  .addOptionalParam(
+    "functionsManager",
     "The address of the function manager",
-    process.env.FUNCTION_MANAGER_ADDRESS,
-    undefined,
-    false
+    process.env.FUNCTION_MANAGER_ADDR,
+    undefined
   )
   .addParam(
     "functionId",
@@ -24,40 +21,38 @@ task("myTask", "A task that takes an argument")
     undefined,
     false
   )
-  .addParam(
-    "gasLimit",
+  .addOptionalParam(
+    "callbackGasLimit",
     "The gas limit to use for the transaction",
-    300_000,
-    undefined,
-    true
-  ) //Max gas that can be used in callback
+    "300000", //Max gas that can be used in callback
+    undefined
+  )
   .setAction(async (taskArgs) => {
     if (!taskArgs.privateKey) {
       throw new Error("--privateKey must be specified");
     }
-    if (!taskArgs.functionManager) {
+    if (!taskArgs.functionsManager) {
       throw new Error("--functionManager must be specified");
     }
     if (!taskArgs.functionId) {
       throw new Error("--functionId must be specified");
     }
 
-    const FUNCTION_MANAGER_ADDRESS = process.env.FUNCTION_MANAGER_ADDRESS;
-    if (!FUNCTION_MANAGER_ADDRESS) {
-      throw new Error("FUNCTION_MANAGER_ADDRESS must be specified");
-    }
-
-    const functionsManager = await ethers.getContractAt(
+    const [signer] = await ethers.getSigners();
+    const functionsManagerRaw = await ethers.getContractAt(
       "FunctionsManager",
-      FUNCTION_MANAGER_ADDRESS,
-      taskArgs.privateKey
+      taskArgs.functionsManager
+    );
+    const functionsManager = await functionsManagerRaw.connect(signer);
+
+    console.log("Executing function: ", taskArgs.functionId);
+    const rawExecute = await functionsManager.executeRequest(
+      ethers.utils.formatBytes32String(taskArgs.functionId),
+      // taskArgs.functionId,
+      taskArgs.callbackGasLimit,
+      false //dummy call or not
     );
 
-    const rawExecute = await functionsManager.executeRequest(
-      taskArgs.functionId,
-      taskArgs.gasLimit,
-      false
-    );
     const receipt = await rawExecute.wait();
     console.log("Raw receipt: ", receipt);
     console.log("Transaction mined in block " + receipt.blockNumber);
