@@ -69,6 +69,7 @@ const config: HardhatUserConfig = {
             enabled: true,
             runs: 1_000,
           },
+          viaIR: true,
         },
       },
       {
@@ -78,6 +79,7 @@ const config: HardhatUserConfig = {
             enabled: true,
             runs: 1_000,
           },
+          viaIR: true,
         },
       },
       {
@@ -87,6 +89,7 @@ const config: HardhatUserConfig = {
             enabled: true,
             runs: 1_000,
           },
+          viaIR: true,
         },
       },
       {
@@ -96,6 +99,7 @@ const config: HardhatUserConfig = {
             enabled: true,
             runs: 1_000,
           },
+          viaIR: true,
         },
       },
       {
@@ -105,6 +109,7 @@ const config: HardhatUserConfig = {
             enabled: true,
             runs: 1_000,
           },
+          viaIR: true,
         },
       },
     ],

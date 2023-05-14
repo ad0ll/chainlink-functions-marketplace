@@ -1,10 +1,12 @@
 pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import {Functions} from "./functions/Functions.sol";
 
 contract EventSpammer is Ownable {
+    using Functions for Functions.Request;
     // Functions metadata
-    // Functions metadata
+
     struct FunctionMetadata {
         uint256 fee;
         address owner;
@@ -12,35 +14,36 @@ contract EventSpammer is Ownable {
         string name;
         string desc;
         string imageUrl;
+        string[] expectedArgs;
+        Functions.Request request;
         // Subscription fields
         uint256 subscriptionPool; // Reserved base fees collected, can't be withdrawn
         uint256 unlockedProfitPool; // Profits from completed functions, can be withdrawn on demand
         uint256 lockedProfitPool; // Profits from initialized calls that haven't had their callback completed yet
     }
 
-    // TODO: Need to store request during register?
-    // Functions.Request request;
-
-    address[] public registeredFunctions;
-    // Event emitted when a Function is registered
+    uint256 baseFee = 10 ** 18 / 10; // 0.1 LINK
 
     event FunctionRegistered(bytes32 indexed functionId, address indexed owner, FunctionMetadata metadata);
 
     event FunctionCalled(
         bytes32 indexed functionId,
-        address indexed caller,
         bytes32 indexed requestId,
+        address indexed caller,
         address owner,
         bytes32 callbackFunction,
+        uint256 gasDeposit,
         uint256 baseFee,
         uint256 fee
     );
+
     event FunctionCallCompleted(
         bytes32 indexed functionId,
-        address indexed caller,
         bytes32 indexed requestId,
+        address indexed caller,
         address owner,
         bytes32 callbackFunction,
+        uint256 usedGas,
         bytes response,
         bytes err
     );
@@ -51,29 +54,38 @@ contract EventSpammer is Ownable {
         string calldata _name,
         string calldata _desc,
         string calldata _imageUrl,
+        string[] memory _expectedArgs,
         uint64 _subId,
-        uint256 _fee
+        uint256 _fee,
+        Functions.Location _codeLocation,
+        string calldata _source
     ) external onlyOwner {
-        FunctionMetadata memory metadata = FunctionMetadata({
-            owner: _owner,
-            fee: _fee,
-            subId: _subId,
-            name: _name,
-            desc: _desc,
-            imageUrl: _imageUrl,
-            subscriptionPool: 0,
-            unlockedProfitPool: 0,
-            lockedProfitPool: 0
-        });
+        FunctionMetadata memory metadata;
+
+        metadata.owner = _owner;
+        metadata.fee = _fee;
+        metadata.subId = _subId;
+        metadata.name = _name;
+        metadata.desc = _desc;
+        metadata.imageUrl = _imageUrl;
+        metadata.expectedArgs = _expectedArgs;
+        metadata.subscriptionPool = 0;
+        metadata.unlockedProfitPool = 0;
+        metadata.lockedProfitPool = 0;
+
+        Functions.Request memory request;
+        request.initializeRequest(_codeLocation, Functions.CodeLanguage.JavaScript, _source);
+        metadata.request = request;
         emit FunctionRegistered(_functionId, msg.sender, metadata);
     }
 
     function emitCallFunction(
         bytes32 _functionId,
         bytes32 _requestId,
-        bytes32 _callbackFunction,
-        address _owner,
         address _caller,
+        address _owner,
+        bytes32 _callbackFunction,
+        uint256 _gasDeposit,
         uint256 _fee
     ) external {
         emit FunctionCalled({
@@ -82,7 +94,8 @@ contract EventSpammer is Ownable {
             requestId: _requestId,
             owner: _owner,
             callbackFunction: _callbackFunction,
-            baseFee: 10 ** 18 / 5,
+            gasDeposit: _gasDeposit,
+            baseFee: baseFee,
             fee: _fee
         });
     }
@@ -93,6 +106,7 @@ contract EventSpammer is Ownable {
         address _caller,
         bytes32 _requestId,
         bytes32 _callbackFunction,
+        uint256 _usedGas,
         bytes memory _response,
         bytes memory _err
     ) external {
@@ -102,6 +116,7 @@ contract EventSpammer is Ownable {
             requestId: _requestId,
             owner: _owner,
             callbackFunction: _callbackFunction,
+            usedGas: _usedGas,
             response: _response,
             err: _err
         });

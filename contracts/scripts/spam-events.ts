@@ -11,7 +11,7 @@ import { EventSpammer } from "../typechain-types";
 
 const ONE_LINK = BigNumber.from(10).pow(18);
 // let EVENT_SPAMMER_ADDR = process.env.EVENT_SPAMMER_ADDR;
-let EVENT_SPAMMER_ADDR = "0xf8964311C73E80a235cfaf06A57eaeb15FFE54Cb";
+let EVENT_SPAMMER_ADDR = "0x9011cceD51050d514Ba59a73efAa8E2f7789e0E1";
 async function deployEventSpammer() {
   //TODO deploy event spammer with real account
   const [deployer] = await ethers.getSigners();
@@ -35,16 +35,6 @@ async function resolveOrDeployEventSpammer() {
       EVENT_SPAMMER_ADDR
     );
   }
-  return { eventSpammer };
-}
-
-async function deployEmptyProxy() {
-  //TODO deploy event spammer with real account
-  const [deployer] = await ethers.getSigners();
-  console.log("Deploying empty proxy with the account:", deployer.address);
-  const EventSpammer = await ethers.getContractFactory("EventSpammer");
-  const eventSpammer = await EventSpammer.deploy();
-  console.log("EventSpammer address:", eventSpammer.address);
   return { eventSpammer };
 }
 
@@ -86,8 +76,11 @@ async function deployNProxyContracts(
       name,
       desc,
       "", //TODO Image url
+      randomWords({ exactly: Math.floor(Math.random() * 2) + 1 }), //expectedArgs
       BigNumber.from(Math.floor(Math.random() * 10000000) + 100000), // subId
-      ONE_LINK.div(10)
+      ONE_LINK.div(10), // fee
+      0, //location,
+      "console.log('hello world')" //source
     );
     const receipt = await registerTransaction.wait();
     const event = receipt.events?.find((e) => e.event === "FunctionRegistered");
@@ -134,9 +127,10 @@ const generateNFunctionCalls = async (
       await eventSpammer.emitCallFunction(
         func.functionId,
         formatBytes32String("requestId " + j),
-        formatBytes32String("callbackName"),
+        ethers.Wallet.createRandom().address, //Caller
         registeredFunctions[i].args.owner,
-        ethers.Wallet.createRandom().address,
+        formatBytes32String("callbackName"),
+        Math.floor(Math.random() * 300_000),
         ONE_LINK.div(100).mul(Math.floor(Math.random() * 100))
       );
       // );
@@ -183,9 +177,10 @@ const generateNFunctionResolved = async (
         eventSpammer.emitCallbackWithData(
           func.functionId,
           registeredFunctions[i].args.owner,
-          ethers.Wallet.createRandom().address,
+          ethers.Wallet.createRandom().address, //caller
           formatBytes32String("requestId " + j),
           formatBytes32String("callbackName"),
+          Math.floor(Math.random() * 300_000), //usedGas
           Buffer.from(randomWords({ exactly: 32, join: " " })),
           Buffer.from(randomWords({ exactly: 32, join: " " }))
         )
