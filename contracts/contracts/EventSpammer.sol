@@ -26,6 +26,8 @@ contract EventSpammer is Ownable {
 
     event FunctionRegistered(bytes32 indexed functionId, address indexed owner, FunctionMetadata metadata);
 
+    mapping(address => bool) public authorizedCallers;
+
     event FunctionCalled(
         bytes32 indexed functionId,
         bytes32 indexed requestId,
@@ -47,6 +49,13 @@ contract EventSpammer is Ownable {
         bytes response,
         bytes err
     );
+    constructor() Ownable() {
+        authorizedCallers[msg.sender] = true;
+    }
+    modifier onlyAuthorized() {
+        require(authorizedCallers[msg.sender], "Not authorized");
+        _;
+    }
 
     function emitRegisterFunction(
         bytes32 _functionId,
@@ -59,7 +68,7 @@ contract EventSpammer is Ownable {
         uint256 _fee,
         Functions.Location _codeLocation,
         string calldata _source
-    ) external onlyOwner {
+    ) external onlyAuthorized {
         FunctionMetadata memory metadata;
 
         metadata.owner = _owner;
@@ -87,7 +96,7 @@ contract EventSpammer is Ownable {
         bytes32 _callbackFunction,
         uint256 _gasDeposit,
         uint256 _fee
-    ) external {
+    ) external onlyAuthorized {
         emit FunctionCalled({
             functionId: _functionId,
             caller: _caller,
@@ -109,7 +118,7 @@ contract EventSpammer is Ownable {
         uint256 _usedGas,
         bytes memory _response,
         bytes memory _err
-    ) external {
+    ) external onlyAuthorized {
         emit FunctionCallCompleted({
             functionId: _functionId,
             caller: _caller,
@@ -120,5 +129,9 @@ contract EventSpammer is Ownable {
             response: _response,
             err: _err
         });
+    }
+
+    function addAuthorizedCaller(address _caller) external onlyOwner {
+        authorizedCallers[_caller] = true;
     }
 }

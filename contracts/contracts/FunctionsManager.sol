@@ -17,6 +17,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     mapping(uint64 => address) private subscriptionOwnerMapping;
     mapping(bytes32 => bool) private existingNameOwnerPair;
     mapping(address => AuthorMetadata) public authorMetadata;
+    mapping(uint64 => string) public categoryNames;
 
     LinkTokenInterface private LINK;
     FunctionsBillingRegistry private BILLING_REGISTRY;
@@ -26,7 +27,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     uint256 public minimumSubscriptionDeposit = 10 ** 18 * 3; // 3 LINK (18 decimals)
     uint32 public feeManagerCut;
     uint256 requestIdNonce;
-
     // TODO Support authorMetadata
 
     // (Not in this contract) Set keeper threshold at 1 LINK
@@ -39,6 +39,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         Functions.Location codeLocation;
         Functions.Location secretsLocation;
         Functions.CodeLanguage language;
+        bytes32 category;
         uint64 subId;
         string source; // Source code for Location.Inline or url for Location.Remote
         bytes secrets; // Encrypted secrets blob for Location.Inline or url for Location.Remote
@@ -60,6 +61,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         string imageUrl;
         string[] expectedArgs;
         Functions.Request request;
+        bytes32 category;
         // Subscription fields
         uint256 subscriptionPool; // Reserved base fees collected, can't be withdrawn
         uint256 unlockedProfitPool; // Profits from completed functions, can be withdrawn on demand
@@ -77,7 +79,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
     // Event emitted when a Function is registered
     // Recording owner twice isn't ideal, but we want to be able to filter on owner
-    event FunctionRegistered(bytes32 indexed functionId, address indexed owner, FunctionMetadata metadata);
+    event FunctionRegistered(
+        bytes32 indexed functionId, address indexed owner, bytes32 indexed category, FunctionMetadata metadata
+    );
 
     event FunctionCalled(
         bytes32 indexed functionId,
@@ -133,6 +137,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         require(request.fees >= 0, "Fee must be greater than or equal to 0");
         // Require function name cannot be empty
         require(bytes(request.functionName).length > 0, "Function name cannot be empty");
+        require(request.category.length > 0, "Category cannot be empty");
         bytes32 dupeCheckBytes = keccak256(abi.encode(request.functionName, msg.sender));
         require(!existingNameOwnerPair[dupeCheckBytes], "Function name already exists for this owner");
         existingNameOwnerPair[dupeCheckBytes] = true;
@@ -146,6 +151,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         metadata.desc = request.desc;
         metadata.imageUrl = request.imageUrl;
         metadata.expectedArgs = request.expectedArgs;
+        metadata.category = request.category;
 
         // Create subscription for every Function registered
         if (request.subId == 0) {
@@ -175,7 +181,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         functionMetadatas[functionId] = metadata;
 
         // Emit FunctionRegistered event
-        emit FunctionRegistered(functionId, msg.sender, metadata);
+        emit FunctionRegistered(functionId, msg.sender, metadata.category, metadata);
 
         return functionId;
     }
