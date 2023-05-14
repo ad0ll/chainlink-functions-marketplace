@@ -11,10 +11,8 @@ import { EventSpammer } from "../typechain-types";
 
 const ONE_LINK = BigNumber.from(10).pow(18);
 // let EVENT_SPAMMER_ADDR = process.env.EVENT_SPAMMER_ADDR;
-let EVENT_SPAMMER_ADDR = "0xf8964311C73E80a235cfaf06A57eaeb15FFE54Cb";
-async function deployEventSpammer() {
-  //TODO deploy event spammer with real account
-  const [deployer] = await ethers.getSigners();
+let EVENT_SPAMMER_ADDR = "0x0bdcF222aB9300b58fB13352401cb5894426dF17";
+async function deployEventSpammer(deployer: SignerWithAddress) {
   console.log("Deploying contracts with the account:", deployer.address);
   const EventSpammer = await ethers.getContractFactory("EventSpammer");
   const eventSpammer = await EventSpammer.deploy();
@@ -23,10 +21,10 @@ async function deployEventSpammer() {
   return { eventSpammer };
 }
 
-async function resolveOrDeployEventSpammer() {
+async function resolveOrDeployEventSpammer(deployer: SignerWithAddress) {
   let eventSpammer: EventSpammer;
   if (!EVENT_SPAMMER_ADDR) {
-    const { eventSpammer: output } = await deployEventSpammer();
+    const { eventSpammer: output } = await deployEventSpammer(deployer);
     eventSpammer = output;
   } else {
     console.log("Using existing event spamemer at ", EVENT_SPAMMER_ADDR);
@@ -35,16 +33,6 @@ async function resolveOrDeployEventSpammer() {
       EVENT_SPAMMER_ADDR
     );
   }
-  return { eventSpammer };
-}
-
-async function deployEmptyProxy() {
-  //TODO deploy event spammer with real account
-  const [deployer] = await ethers.getSigners();
-  console.log("Deploying empty proxy with the account:", deployer.address);
-  const EventSpammer = await ethers.getContractFactory("EventSpammer");
-  const eventSpammer = await EventSpammer.deploy();
-  console.log("EventSpammer address:", eventSpammer.address);
   return { eventSpammer };
 }
 
@@ -59,10 +47,20 @@ async function deployNProxyContracts(
   const { eventSpammer: rawEventSpammer } = await resolveOrDeployEventSpammer();
   let functions: string[] = [];
   let ownerAddr = ethers.Wallet.createRandom().address;
+  const categories = [
+    "Price Feed",
+    "NFT",
+    "Random X",
+    "Derivatives",
+    "Web2 API",
+    "Messaging",
+    "Weather",
+    "Meta",
+    "Other",
+    "The Literal Sun",
+  ];
   for (let i = 0; i < n; i++) {
     //Get a random deployer
-    const deployerIndex = Math.floor(Math.random() * deployers.length);
-    const deployer = deployers[deployerIndex];
     const eventSpammer = rawEventSpammer.connect(deployers[0]);
 
     const name = randomWords({
@@ -73,6 +71,13 @@ async function deployNProxyContracts(
       exactly: Math.floor(Math.random() * 10) + 10,
       join: " ",
     });
+
+    console.log(categories);
+    console.log(categories.length);
+    console.log(Math.floor(Math.random() * categories.length));
+    const category = ethers.utils.formatBytes32String(
+      categories[Math.floor(Math.random() * categories.length)]
+    );
 
     const functionId = keccak256(ethers.Wallet.createRandom().publicKey);
     console.log("Emitting registered event for", functionId);
@@ -86,8 +91,12 @@ async function deployNProxyContracts(
       name,
       desc,
       "", //TODO Image url
+      randomWords({ exactly: Math.floor(Math.random() * 2) + 1 }), //expectedArgs
+      category,
       BigNumber.from(Math.floor(Math.random() * 10000000) + 100000), // subId
-      ONE_LINK.div(10)
+      ONE_LINK.div(10), // fee
+      0, //location,
+      "console.log('hello world')" //source
     );
     const receipt = await registerTransaction.wait();
     const event = receipt.events?.find((e) => e.event === "FunctionRegistered");
@@ -134,9 +143,10 @@ const generateNFunctionCalls = async (
       await eventSpammer.emitCallFunction(
         func.functionId,
         formatBytes32String("requestId " + j),
-        formatBytes32String("callbackName"),
+        ethers.Wallet.createRandom().address, //Caller
         registeredFunctions[i].args.owner,
-        ethers.Wallet.createRandom().address,
+        formatBytes32String("callbackName"),
+        Math.floor(Math.random() * 300_000),
         ONE_LINK.div(100).mul(Math.floor(Math.random() * 100))
       );
       // );
@@ -174,7 +184,7 @@ const generateNFunctionResolved = async (
     );
 
     let promiseArray = [];
-    const numberOfCalls = Math.floor(Math.random() * 10) + 5;
+    const numberOfCalls = Math.floor(Math.random() * 5) + 2;
     for (let j = 0; j < numberOfCalls; j++) {
       console.log(
         `Calling function ${j} of ${numberOfCalls} for ${func.functionId}`
@@ -183,9 +193,10 @@ const generateNFunctionResolved = async (
         eventSpammer.emitCallbackWithData(
           func.functionId,
           registeredFunctions[i].args.owner,
-          ethers.Wallet.createRandom().address,
+          ethers.Wallet.createRandom().address, //caller
           formatBytes32String("requestId " + j),
           formatBytes32String("callbackName"),
+          Math.floor(Math.random() * 300_000), //usedGas
           Buffer.from(randomWords({ exactly: 32, join: " " })),
           Buffer.from(randomWords({ exactly: 32, join: " " }))
         )
@@ -196,10 +207,12 @@ const generateNFunctionResolved = async (
 };
 
 async function main() {
-  const { eventSpammer } = await resolveOrDeployEventSpammer();
   const [deployer, o2, o3, o4, o5] = await ethers.getSigners();
-  // await deployNProxyContracts([deployer], 10);
-  await generateNFunctionCalls(eventSpammer, 0);
+  // const [o1, deployer, o3, o4, o5] = await ethers.getSigners();
+  const { eventSpammer } = await resolveOrDeployEventSpammer(deployer);
+  
+  await deployNProxyContracts([deployer], 5);
+  // await generateNFunctionCalls(eventSpammer, 3);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

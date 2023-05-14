@@ -35,7 +35,8 @@ task(
     "if provided won't create a subscription",
     process.env.PRIVATE_KEY
   )
-  .setAction(async (taskArgs) => {
+  .setAction(async (taskArgs, hre) => {
+    const ethers = hre.ethers;
     console.log(taskArgs);
     if (taskArgs.testNetwork === "hardhat") {
       throw Error(

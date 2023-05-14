@@ -19,6 +19,7 @@ const SOLC_SETTINGS = {
     enabled: true,
     runs: 1_000,
   },
+  viaIR: true,
 }
 
 export const networks: Record<string, any> = {
@@ -65,19 +66,23 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.18',
-        settings: SOLC_SETTINGS,
-      },
-      {
-        version: '0.7.0',
-        settings: SOLC_SETTINGS,
-      },
-      {
-        version: '0.6.6',
+        version: '0.4.11',
         settings: SOLC_SETTINGS,
       },
       {
         version: '0.4.24',
+        settings: SOLC_SETTINGS,
+      },
+      {
+        version: '0.8.0',
+        settings: SOLC_SETTINGS,
+      },
+      {
+        version: '0.8.#',
+        settings: SOLC_SETTINGS,
+      },
+      {
+        version: '0.8.18',
         settings: SOLC_SETTINGS,
       },
     ],

@@ -12,6 +12,33 @@ npx hardhat node
 npx hardhat run scripts/deploy.ts
 ```
 
+# Deploying a new graph
+
+This is done wth the graph cli, QuickNode, and Satsuma
+
+1. Delete the `graph` directory
+2. Get your free credits for QuickNode (see Discord for links)
+3. Create a new endpoint w/ the Satsuma subgraph plugin
+4. Get your subgraph deploy command from Satsuma (three dots next to the plugin listing > Dashboard in the QuickNode UI)
+5. Run "graph init", example responses:
+
+```
+✔ Protocol · ethereum
+✔ Product for which to initialize · subgraph-studio
+✔ Subgraph slug ·  (<- leave blank)
+✔ Directory to create the subgraph in · ./graph
+✔ Ethereum network · mumbai
+✔ Contract address · 0x0bdcF222aB9300b58fB13352401cb5894426dF17
+✖ Failed to fetch ABI from Etherscan: ABI not found, try loading it from a local file
+✖ Failed to fetch Start Block: Failed to fetch contract creation transaction hash
+✔ ABI file (path) · ./artifacts/contracts/EventSpammer.sol/EventSpammer.json
+✔ Start Block · 0
+✔ Contract Name · EventSpammer
+✔ Index contract events as entities (Y/n) · true
+```
+
+5. Run your subgraph deploy command from step 3 in the graph directory
+
 # Commands
 
 ### Some of the below commands edit .envrc file. Please make sure you have [direnv](https://direnv.net/) installed and configured, and create a .envrc file at (<repo root>contracts/.envrc (i.e. the cwd of this README/.envrc) with the following content:

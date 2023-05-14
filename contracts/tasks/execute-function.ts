@@ -27,7 +27,8 @@ task("execute-function", "runs a function")
     "300000", //Max gas that can be used in callback
     undefined
   )
-  .setAction(async (taskArgs) => {
+  .setAction(async (taskArgs, hre) => {
+    const ethers = hre.ethers;
     if (!taskArgs.privateKey) {
       throw new Error("--privateKey must be specified");
     }
