@@ -39,7 +39,7 @@ export FUNCTIONS_MANAGER_ADDR=""
 test-network is set to the correct value below
 
 ```bash
-npx hardhat create-subscription --functions-manager $FUNCTIONS_MANAGER_ADDR --test-network mumbai  --network $HARDHAT_NETWORK
+npx hardhat create-subscription --functions-manager $FUNCTIONS_MANAGER_ADDR --test-network polygonMumbai  --network $HARDHAT_NETWORK
 ```
 
 ### Fund an existing subscription with 1 LINK and authorize FunctionsManager as consumer
@@ -47,7 +47,13 @@ npx hardhat create-subscription --functions-manager $FUNCTIONS_MANAGER_ADDR --te
 test-network is set to the correct value below
 
 ```bash
-npx hardhat create-subscription --functions-manager $FUNCTIONS_MANAGER_ADDR --test-network mumbai --subscription-id 941  --network $HARDHAT_NETWORK
+npx hardhat create-subscription --functions-manager $FUNCTIONS_MANAGER_ADDR --test-network polygonMumbai --subscription-id 941  --network $HARDHAT_NETWORK
+```
+
+### Register a function
+
+```bash
+npx hardhat register-function --functionsmanager $FUNCTIONS_MANAGER_ADDR --gaslimit 2000000
 ```
 
 ### Do a run of a function:

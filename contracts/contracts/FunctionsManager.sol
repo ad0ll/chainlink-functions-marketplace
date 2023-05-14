@@ -25,7 +25,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     uint256 public baseFee = 10 ** 18 * 0.2; // 0.2 LINK (18 decimals)
     uint256 public minimumSubscriptionDeposit = 10 ** 18 * 3; // 3 LINK (18 decimals)
     uint32 public feeManagerCut;
-    uint256 requestIdNonce;
 
     // TODO Support authorMetadata
 
@@ -128,7 +127,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     // FunctionCalled event (Probably not used by the webapp)
     // FunctionError event
     // FunctionSuccess event
-    function registerFunction(FunctionsRegisterRequest calldata request) public returns (bytes32) {
+    function registerFunction(FunctionsRegisterRequest calldata request) public payable returns (bytes32) {
         // Require fee is greater than 0
         require(request.fees >= 0, "Fee must be greater than or equal to 0");
         // Require function name cannot be empty
@@ -168,8 +167,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         // ??? Ensure interface is correct, probably not important ???
         // 5. Add function to FunctionsManager
         // Generate unique functions ID to be able to retrieve requests
-        bytes32 functionId = keccak256(abi.encode(metadata, requestIdNonce++));
-
+        bytes32 functionId = keccak256(abi.encode(metadata));
         require(functionMetadatas[functionId].owner == address(0), "Function already exists");
 
         functionMetadatas[functionId] = metadata;
@@ -181,6 +179,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     }
 
     function createSubscription() internal returns (uint64) {
+        require(msg.value >= minimumSubscriptionDeposit, 'Minimum deposit amount not sent');
         console.log("creating subscription with %s as sender and %s as tx.origin", msg.sender, tx.origin);
         // Automatically sets msg sender (FunctionsManager) as subscription owner
         uint64 subId = BILLING_REGISTRY.createSubscription();
@@ -207,14 +206,14 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
      * @return Functions request ID
      */
     //TODO Needs to take args as a parameter
-    function executeRequest(bytes32 functionId, string[] memory args, uint32 gasLimit, bool dummy) public onlyOwner returns (bytes32) {
+    function executeRequest(bytes32 functionId, uint32 gasLimit, bool dummy) public onlyOwner returns (bytes32) {
         console.log("executeRequest called with functionId:");
         console.logBytes32(functionId);
         FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
         require(bytes(chainlinkFunction.name).length != 0, "function is not registered");
 
-        Functions.Request memory functionsRequest = chainlinkFunction.request;
-        if (args.length > 0) functionsRequest.addArgs(args);
+        // Functions.Request memory functionsRequest = chainlinkFunction.request;
+        // if (args.length > 0) functionsRequest.addArgs(args);
 
         console.log("collecting and locking fees");
         collectAndLockFees(chainlinkFunction);
