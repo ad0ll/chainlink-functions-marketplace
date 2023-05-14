@@ -10,6 +10,7 @@ contract EventSpammer is Ownable {
     struct FunctionMetadata {
         uint256 fee;
         address owner;
+        bytes32 category;
         uint64 subId;
         string name;
         string desc;
@@ -49,9 +50,14 @@ contract EventSpammer is Ownable {
         bytes response,
         bytes err
     );
-    constructor() Ownable() {
+
+    constructor(address[] memory _authorizedCallers) Ownable() {
+        for (uint256 i = 0; i < _authorizedCallers.length; i++) {
+            authorizedCallers[_authorizedCallers[i]] = true;
+        }
         authorizedCallers[msg.sender] = true;
     }
+
     modifier onlyAuthorized() {
         require(authorizedCallers[msg.sender], "Not authorized");
         _;
@@ -64,6 +70,7 @@ contract EventSpammer is Ownable {
         string calldata _desc,
         string calldata _imageUrl,
         string[] memory _expectedArgs,
+        bytes32 _category,
         uint64 _subId,
         uint256 _fee,
         Functions.Location _codeLocation,
@@ -78,6 +85,7 @@ contract EventSpammer is Ownable {
         metadata.desc = _desc;
         metadata.imageUrl = _imageUrl;
         metadata.expectedArgs = _expectedArgs;
+        metadata.category = _category;
         metadata.subscriptionPool = 0;
         metadata.unlockedProfitPool = 0;
         metadata.lockedProfitPool = 0;
