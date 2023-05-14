@@ -166,18 +166,28 @@ type Shape = {
 
 const shapeCount = 4;
 
+
 // TODO customize this to be ne
 const colorPallete: HSL[] = [
-    {h: 182, s: 98.6, l: 27.6}, // teal
-    {h: 28, s: 100.0, l: 49.4}, // bright orange
-    {h: 189, s: 93.7, l: 18.8}, // dark teal
-    {h: 15, s: 99.2, l: 48.6}, // orangered
-    {h: 341, s: 97.4, l: 54.3}, // magenta
-    {h: 341, s: 81.7, l: 42.9}, // raspberry
-    {h: 48, s: 100.0, l: 47.6}, // goldenrod
-    {h: 204, s: 89.5, l: 51.6}, // lightning blue
-    {h: 219, s: 75.9, l: 51.2}, // sail blue
-    {h: 39, s: 98.4, l: 47.6}, // gold
+    {h: 271, s: 97, l: 71}, //purple?
+    {h: 309, s: 74, l: 55}, //fushia? pink?
+    {h: 90, s: 100, l: 50}, //crt video input green
+    {h: 233, s: 99, l: 50}, //knock off pokemon blue
+    {h: 50, s: 100, l: 50}, //yellow
+    {h: 24, s: 100, l: 50}, //orange
+    {h: 327, s: 100, l: 54}, //neon pink
+    {h: 359, s: 89, l: 53}, //neon red
+
+    // {h: 182, s: 98.6, l: 27.6}, // teal
+    // {h: 28, s: 100.0, l: 49.4}, // bright orange
+    // {h: 189, s: 93.7, l: 18.8}, // dark teal
+    // {h: 15, s: 99.2, l: 48.6}, // orangered
+    // {h: 341, s: 97.4, l: 54.3}, // magenta
+    // {h: 341, s: 81.7, l: 42.9}, // raspberry
+    // {h: 48, s: 100.0, l: 47.6}, // goldenrod
+    // {h: 204, s: 89.5, l: 51.6}, // lightning blue
+    // {h: 219, s: 75.9, l: 51.2}, // sail blue
+    // {h: 39, s: 98.4, l: 47.6}, // gold
 ];
 
 const genShape = (

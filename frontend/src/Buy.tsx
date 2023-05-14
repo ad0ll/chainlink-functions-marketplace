@@ -5,21 +5,26 @@ import {
     Button,
     CircularProgress,
     Grid,
+    List,
+    ListItem,
     MenuItem,
     Paper,
     Select,
     Stack,
-    Table,
-    TableContainer,
+    Tooltip,
     Typography
 } from "@mui/material";
-import {fallbackToJazzicon, jazziconImageString, renderCurrency} from "./utils/util";
+import {fallbackToJazzicon, jazziconImageString} from "./utils/util";
 import {Link, useParams} from "react-router-dom";
-import {BashSyntaxHighlighter, SoliditySyntaxHighlighter} from "./Snippets";
+import {generateSnippetString, SoliditySyntaxHighlighter, splitArgStrings} from "./Snippets";
 import {CopyToClipboard} from "react-copy-to-clipboard";
 import {gql, useQuery} from "@apollo/client";
 import {FunctionRegistered, Query} from "./gql/graphql";
-
+import {BASE_FEE, networkConfig, TypographyWithLinkIcon} from "./common";
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import {decodeBytes32String, formatEther} from "ethers";
+import EditIcon from '@mui/icons-material/Edit';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 const DRILLDOWN_QUERY = gql`
     query DrilldownPage($functionId: ID!){
@@ -38,6 +43,8 @@ const DRILLDOWN_QUERY = gql`
             metadata_subscriptionPool
             metadata_lockedProfitPool
             metadata_unlockedProfitPool
+            metadata_expectedArgs
+            metadata_category
         }
     }
 
@@ -67,7 +74,7 @@ const GridRowTwoLines: React.FC<{ label: string, children: React.ReactNode }> = 
 
 const GridRowTyp: React.FC<{ label: string, value?: string | number }> = ({label, value}) => {
     return <GridRow label={label}>
-        <Typography variant={"h6"}>{value}</Typography>
+        <Typography variant={"body1"}>{value}</Typography>
     </GridRow>
 }
 
@@ -76,84 +83,65 @@ const GridRowTyp: React.FC<{ label: string, value?: string | number }> = ({label
 const InputSnippetGenerator: React.FC<{ func: FunctionRegistered }> = ({func}) => {
 
 
-    const [useCall, setUseCall] = React.useState(true);
     const [hardcodeParameters, setHardcodeParameters] = React.useState(true);
     const [callbackFunction, setCallbackFunction] = React.useState("storeFull");
     const [returnRequestId, setReturnRequestId] = React.useState(true);
+    const [customizeVisible, setCustomizeVisible] = React.useState(false);
+    const snippetString = generateSnippetString(func, {
+        hardcodeParameters,
+        callbackFunction,
+        returnRequestId
+    })
 
-    const snippetString = ``
-    //     generateSnippetString(func, {
-    //     useCall,
-    //     hardcodeParameters,
-    //     callbackFunction,
-    //     returnRequestId
-    // })
-    return (<Stack spacing={2} sx={{border: 2, borderColor: "secondary.main", borderRadius: 1, padding: 2}}>
-        <Grid container xs={12} spacing={2}>
-            <GridRow label={"Use call or import interface"}>
-                <Button variant={useCall ? "contained" : "outlined"} onClick={() => setUseCall(true)}>Call</Button>
-                <Button variant={!useCall ? "contained" : "outlined"}
-                        onClick={() => setUseCall(false)}>Interface</Button>
-            </GridRow>
-            <GridRow label={"Hard-code parameters"}>
-                <Button variant={hardcodeParameters ? "contained" : "outlined"}
-                        onClick={() => setHardcodeParameters(true)}>Yes</Button>
-                <Button variant={!hardcodeParameters ? "contained" : "outlined"}
-                        onClick={() => setHardcodeParameters(false)}>No</Button>
-            </GridRow>
-            <GridRow label={"Specify callback"}>
-                <Select value={callbackFunction} onChange={(e) => setCallbackFunction(e.target.value)}>
-                    <MenuItem value={"storeFull"}>Store response, including full error</MenuItem>
-                    <MenuItem value={"storePartial"}>Store response, with error as bool</MenuItem>
-                    <MenuItem value={"doNothing"}>Do nothing</MenuItem>
-                    <MenuItem value={"custom"}>Custom</MenuItem>
-                </Select>
-            </GridRow>
-            <GridRow label={"Return requestId"}>
-                <Button variant={returnRequestId ? "contained" : "outlined"}
-                        onClick={() => setReturnRequestId(true)}>Yes</Button>
-                <Button variant={!returnRequestId ? "contained" : "outlined"}
-                        onClick={() => setReturnRequestId(false)}>No</Button>
-            </GridRow>
-        </Grid>
-        {/*https://mui.com/system/borders/*/}
-        {!useCall && <Stack spacing={2}>
-            <Typography variant={"h6"}>
-                Use the following commands to use the FunctionManage contracts:
-            </Typography>
-            <Paper sx={{width: "100%"}}>
-                <BashSyntaxHighlighter>
-                    {/*TODO actually implement hardhat string here*/}
-                    {/*TODO we need this to be the actual repo url*/}
-                    {`# TODO get some hardhat here
-forge install github.com/something/functionManager`}
-                </BashSyntaxHighlighter>
-            </Paper>
-            <Typography variant={"h6"}>
-                Then, use the following command to import the interface:
-            </Typography>
-            <Paper sx={{width: "100%"}}>
-                <SoliditySyntaxHighlighter>
-                    import "TODO-FIX-ME/FunctionManagerInterface.sol";
-                </SoliditySyntaxHighlighter>
-            </Paper>
-        </Stack>}
-        <Typography variant={"h6"}>
-            Place the following in your contract
-        </Typography>
+    const stackStyle = customizeVisible
+        ? {border: 2, borderColor: "secondary.main", borderRadius: 1, padding: 2}
+        : {}
 
+    return (<Stack spacing={2}
+                   sx={stackStyle}>
+        {customizeVisible &&
+            <Grid container xs={12} spacing={2}>
+                <GridRow label={"Hard-code parameters"}>
+                    <Button variant={hardcodeParameters ? "contained" : "outlined"}
+                            onClick={() => setHardcodeParameters(true)}>Yes</Button>
+                    <Button variant={!hardcodeParameters ? "contained" : "outlined"}
+                            onClick={() => setHardcodeParameters(false)}>No</Button>
+                </GridRow>
+                <GridRow label={"Specify callback"}>
+                    <Select value={callbackFunction} onChange={(e) => setCallbackFunction(e.target.value)}>
+                        <MenuItem value={"storeFull"}>Store response, including full error</MenuItem>
+                        <MenuItem value={"storePartial"}>Store response, with error as bool</MenuItem>
+                        <MenuItem value={"doNothing"}>Do nothing</MenuItem>
+                        <MenuItem value={"custom"}>Custom</MenuItem>
+                    </Select>
+                </GridRow>
+                <GridRow label={"Return requestId"}>
+                    <Button variant={returnRequestId ? "contained" : "outlined"}
+                            onClick={() => setReturnRequestId(true)}>Yes</Button>
+                    <Button variant={!returnRequestId ? "contained" : "outlined"}
+                            onClick={() => setReturnRequestId(false)}>No</Button>
+                </GridRow>
+            </Grid>}
 
         <Paper sx={{width: "100%"}}>
-            <Box width={"100%"} sx={{
+            <Stack direction={"row"} spacing={1} width={"100%"} sx={{
                 display: "flex",
                 borderColor: "primary.main", border: 1, padding: 1
             }}>
-                <Typography>sendRequest Snippet</Typography>
+                <Typography variant={"h6"}>Snippet</Typography>
+                <Button style={{marginLeft: "auto"}}
+                        variant={customizeVisible ? "contained" : "outlined"}
+                        color={"secondary"}
+                        startIcon={<EditIcon/>}
+                        onClick={() => setCustomizeVisible(!customizeVisible)}
+                        size={"small"}>customize</Button>
                 <CopyToClipboard text={snippetString}>
-                    <Button variant={"contained"} color={"secondary"} size={"small"}>Copy</Button>
+                    <Button style={{justifySelf: "flex-end"}}
+                            startIcon={<ContentCopyIcon/>}
+                            variant={"contained"} color={"secondary"}
+                            size={"small"}>Copy</Button>
                 </CopyToClipboard>
-            </Box>
-
+            </Stack>
             <Box width={"100%"} sx={{
                 display: "flex",
                 borderColor: "primary.main", border: 1, borderTop: 0, padding: 1
@@ -166,7 +154,6 @@ forge install github.com/something/functionManager`}
     </Stack>)
 }
 
-// hainlinkFunction}> = ({func}) => {
 export const Buy: React.FC = () => {
 
     const {functionId} = useParams<{ functionId: string }>();
@@ -189,58 +176,107 @@ export const Buy: React.FC = () => {
                  onError={(e) => fallbackToJazzicon(e, func.id)}/>
             <Typography variant={"h4"} color={"secondary"}
                         sx={{textAlign: "center", paddingLeft: 1, paddingRight: 1}}>{func.metadata_name}</Typography>
-            <Typography variant={"h6"} color={"greyscale40.main"}
-                        sx={{textAlign: "center", paddingLeft: 1, paddingRight: 1}}>By: <Link
-                to={`/author/${func.owner}`}>CoinGecko</Link></Typography>
+            <Stack direction={"row"} spacing={0.5} justifyContent={"center"} alignContent={"center"}
+            >
+                <Typography variant={"h6"} color={"greyscale40.main"}>
+                    By:
+                </Typography>
+                <Typography variant={"h6"}>
+                    <Link to={`/author/${func.owner}`}>CoinGecko
+                    </Link>
+                </Typography>
+                {/*Link to scanner for mumbai */}
+                <Tooltip title={"Open in scanner"}>
+                    <Link to={networkConfig.mumbai.getScannerUrl(func.metadata_owner)}>
+                        <Typography variant={"h6"}>{<OpenInNewIcon/>}</Typography>
+                    </Link>
+                </Tooltip>
+            </Stack>
             <Typography variant={"body1"} sx={{paddingLeft: 1, paddingRight: 1}} color={"text.secondary"}>
                 {func.metadata_desc}
             </Typography>
 
-            <Grid xs={12} container>
-                <Grid item xs={12}>
-                    <Typography variant={"h6"}>Snippet</Typography>
-                </Grid>
-                <Grid item xs={12}>
-                    <Button>Customize snippet</Button>
-                </Grid>
-                <Grid item xs={12}>
-                    <InputSnippetGenerator func={func}/>
-                </Grid>
+            <Grid item xs={12}>
+                <InputSnippetGenerator func={func}/>
             </Grid>
-            <Typography variant={"h6"}>Use this function</Typography>
-            <Paper sx={{width: "100%", padding: 1}} elevation={4}>
-                <Grid container xs={12}>
-                    {/*<GridRowTyp label={"Function Type"} value={func.functionType}/>*/}
-                    <GridRowTyp label={"Fee"} value={renderCurrency(func.metadata_fee)}/>
+
+            <Paper sx={{
+                width: "100%",
+                display: "flex",
+                borderColor: "primary.main", border: 1, padding: 1
+            }}>
+                <Grid container xs={12} spacing={1}>
+                    {/*TODO figure out why primary.main works for grid but not for paper*/}
+                    <Grid item xs={12} sx={{borderBottom: 1, borderColor: "white"}}>
+                        {/*<Grid item xs={12} sx={{borderBottom: 1, borderColor: "primary.main"}}>*/}
+                        <Typography variant={"h6"}>Details</Typography>
+                    </Grid>
                     <GridRow label={"ID"}>
-                        {/*TODO remove network hardcoding below */}
-                        {/*<Link to={networkConfig.mumbai.getScannerUrl(func.address)}>*/}
-                        <Typography variant={"body1"}>{func.id}</Typography>
-                        {/*</Link>*/}
+                        <CopyToClipboard text={func.id}>
+                            <Tooltip title={<Box>
+                                <Typography>{func.id}</Typography>
+                                <Typography>Click to copy to clipboard</Typography>
+                            </Box>}>
+                                <Typography sx={{overflow: "hidden", textOverflow: "ellipsis"}}
+                                            variant={"body1"}>{func.id}</Typography>
+
+                            </Tooltip>
+                        </CopyToClipboard>
                     </GridRow>
-                    <GridRowTwoLines label={"Arguments"}>
-                        {/*TODO Table looks really ugly*/}
-                        <TableContainer>
-                            <Table
-                                sx={{width: "auto"}}>
-                                {/*{func.expectedArgs?.map((arg, i) => {*/}
-                                {/*    return <TableRow>*/}
-                                {/*        <TableCell>*/}
-                                {/*            <Typography variant={"body1"}*/}
-                                {/*                        sx={{fontWeight: "bold"}}>{arg.name}</Typography>*/}
-                                {/*        </TableCell>*/}
-                                {/*        <TableCell>*/}
-                                {/*            <Typography variant={"body1"}>{arg.type}</Typography>*/}
-                                {/*        </TableCell>*/}
-                                {/*    </TableRow>*/}
-                                {/*})}*/}
-                            </Table>
-                        </TableContainer>
-                    </GridRowTwoLines>
+                    <GridRowTyp label={"Category"} value={decodeBytes32String(func.metadata_category)}/>
+                    <GridRow label={"Fee"}>
+                        <Box display={"flex"} flexDirection={"row"}>
+                            <TypographyWithLinkIcon
+                                variant={"body1"}>{formatEther(BigInt(func.metadata_fee) + BASE_FEE)}</TypographyWithLinkIcon>
+                            <Typography>({formatEther(BASE_FEE)} base, {formatEther(func.metadata_fee)} premium)</Typography>
+                        </Box>
+                    </GridRow>
+
+                    <GridRow label={"Arguments"}>
+                        <List sx={{border: "1px solid white"}}>
+                            {splitArgStrings(func.metadata_expectedArgs).map((arg, i) => {
+                                return <ListItem key={i}>
+                                    <Stack direction={"row"} spacing={2} padding={0}>
+                                        <Typography variant={"body1"}
+                                                    sx={{fontWeight: "bold"}}>{arg.name}</Typography>
+                                        <Typography variant={"body1"}>{arg.type}</Typography>
+                                    </Stack>
+                                </ListItem>
+                            })}
+                        </List>
+                        {/*<TableContainer>*/}
+                        {/*    <Table*/}
+                        {/*        sx={{width: "auto"}}>*/}
+                        {/*        <TableHead>*/}
+                        {/*            <TableRow>*/}
+                        {/*                <TableCell>Name</TableCell>*/}
+                        {/*                <TableCell>Type</TableCell>*/}
+                        {/*                <TableCell>Desc</TableCell>*/}
+                        {/*            </TableRow>*/}
+                        {/*        </TableHead>*/}
+                        {/*        <TableRow>*/}
+                        {/*        </TableRow>*/}
+                        {/*        <TableBody>*/}
+                        {/*            {splitArgStrings(func.metadata_expectedArgs).map((arg, i) => {*/}
+                        {/*                return <TableRow key={i}>*/}
+                        {/*                    <TableCell>*/}
+                        {/*                        <Typography variant={"body1"}*/}
+                        {/*                                    sx={{fontWeight: "bold"}}>{arg.name}</Typography>*/}
+                        {/*                    </TableCell>*/}
+                        {/*                    <TableCell>*/}
+                        {/*                        <Typography variant={"body1"}>{arg.type}</Typography>*/}
+                        {/*                    </TableCell>*/}
+                        {/*                    <TableCell>*/}
+                        {/*                        <Typography variant={"body1"}>{arg.comment}</Typography>*/}
+                        {/*                    </TableCell>*/}
+                        {/*                </TableRow>*/}
+                        {/*            })}*/}
+                        {/*        </TableBody>*/}
+                        {/*    </Table>*/}
+                        {/*</TableContainer>*/}
+                    </GridRow>
                 </Grid>
             </Paper>
-            <Typography variant={"h6"}>Arguments</Typography>
-
         </Stack>
     </Box>
 }

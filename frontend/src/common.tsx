@@ -3,7 +3,8 @@ import {garbageAddressGenerator} from "./utils/generators";
 import {Box, SvgIcon, Typography, TypographyProps} from "@mui/material";
 import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
 
-
+// TODO Fetch the base fee from the FunctionManager contract
+export const BASE_FEE = 200000000000000000n; //0.2 LINK
 export const MAINNET_CHAIN_ID = 1
 export const GOERLI_CHAIN_ID = 5
 export const MATIC_CHAIN_ID = 137
@@ -42,27 +43,6 @@ export const networkConfig = {
 }
 
 
-export type FunctionArg = {
-    name: string
-    type: string
-    defaultValue?: string
-}
-
-export type ChainlinkFunction = {
-    name: string
-    address: string
-    owner: string
-    description: string
-    source?: string
-    imageUrl?: string
-    fee: number
-    functionType: "Price Feed" | "Oracle" | "API Fetch" | "Other"
-    expectedArgs: FunctionArg[]
-    estimatedGas?: number
-    estimatedGasToken?: string
-}
-
-
 // TODO This should be a branded, better looking suspense component
 export const DefaultSuspense: React.FC<{ children: React.ReactNode }> = ({children}) => {
     return <Suspense fallback={<div>Loading...</div>}>
@@ -80,8 +60,9 @@ export const TypographyWithLinkIcon: React.FC<{
         <SvgIcon component={LinkTokenIcon} viewBox="0 0 800 800" height={height} width={width}
                  style={{marginRight: 4, ...style}}/>
         <Typography {...props} style={{...props.style, marginRight: 4}}>{children}</Typography>
-        <Typography>LINK</Typography>
+        <Typography {...props} style={{...props.style, marginRight: 4}}>LINK</Typography>
     </Box>
-
 }
+
+
 // export const

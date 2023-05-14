@@ -19,14 +19,18 @@
 
 # Jazzicon colors (WIP)
 
-* <p style="background-color:#00FECA;color:black">errorRed</p>
-* <p style="background-color:#B76CFD;color:black">errorRed</p>
+* <p style="background-color:#000000;color:black">errorRed</p>
+* <p style="background-color:#b76cfd;color:black">errorRed</p>
 * <p style="background-color:#e136c7;color:black">errorRed</p>
 * <p style="background-color:#7FFF00;color:black">errorRed</p>
+
+[//]: # (* <p style="background-color:#31ff87;color:black">errorRed</p>)
+
 * <p style="background-color:#011FFD;color:black">errorRed</p>
 * <p style="background-color:#FFD300;color:black">errorRed</p>
-* NEED ORANGE
-* NEED RED
+* <p style="background-color:#ff6700;color:black">errorRed</p>
+* <p style="background-color:#ff1494;color:black">errorRed</p>
+* <p style="background-color:#F21A1D;color:black">errorRed</p>
 
 # Rejected Jazzicon colors (WIP)
 

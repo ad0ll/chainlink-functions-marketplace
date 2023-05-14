@@ -3,6 +3,7 @@ import {
     Box,
     Button,
     Card,
+    CircularProgress,
     Grid,
     Stack,
     Table,
@@ -11,15 +12,18 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    Tooltip,
     Typography
 } from "@mui/material";
-import {generateFunctions, getRandomInt} from "./utils/generators";
+import {getRandomInt} from "./utils/generators";
 import {Link} from "react-router-dom";
 import {ResponsiveLine} from '@nivo/line'
 import styled from "@emotion/styled";
 import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RechartTooltip, XAxis, YAxis} from "recharts";
 import {TypographyWithLinkIcon} from "./common";
-import {gql} from "@apollo/client";
+import {gql, useQuery} from "@apollo/client";
+import {Query} from "./gql/graphql";
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 const OWNER_DASHBOARD_QUERY = gql`
     query EventSpammerOwnerPage($owner: Bytes!){
@@ -45,29 +49,18 @@ const OWNER_DASHBOARD_QUERY = gql`
 
 export const OwnerDashboard: React.FC = () => {
 
-    // PATH PARAM IS ownerAddress
-    const callData = Array.from(Array(7).keys()).map((day) => ({
-        date: new Date(Date.now() - (6 - day) * 24 * 60 * 60 * 1000).toLocaleDateString(),
-        calls: getRandomInt(0, 100)
-    }))
+    
+    // const OWNER =
+    const [showDetails, setShowDetails] = React.useState(false)
 
-    // const feesCollectedData: { id: string, color: string, data: { x: string, y: number }[] }[] = [{
-    //     id: "calls",
-    //     color: "hsl(89, 70%, 50%)",
-    //     data: []
-    // }]
-    let profits = 0;
-    const feesCollectedData = Array.from(Array(7).keys()).map((day) => {
-        const res = {
-            name: "fees",
-            date: new Date(Date.now() - (6 - day) * 24 * 60 * 60 * 1000).toLocaleDateString(),
-            "fees collected": profits + getRandomInt(0, 100)
-        }
-        profits += res["fees collected"];
-        return res
-    })
-    const functions = generateFunctions(10)
-    console.log(feesCollectedData)
+    const {loading, error, data} = useQuery<Query>(OWNER_DASHBOARD_QUERY)
+    if (loading) {
+        return <Typography><CircularProgress/>Loading...</Typography>
+    }
+    if (error) {
+        console.log(error)
+        return <Typography>Something went wrong</Typography>
+    }
 
     //TODO Should make sure that the signed in account is the owner of the contracts
     return <Stack spacing={2}>
@@ -77,8 +70,8 @@ export const OwnerDashboard: React.FC = () => {
                 <Card style={{display: "flex", flexDirection: "column", alignItems: "center"}} elevation={4}>
                     <Typography variant={"h4"}>Total calls</Typography>
                     <Typography>
-                        <RechartsLineChart data={callData} dataKey={"calls"} xKey={"date"} yKey={"calls"}
-                                           stroke={"#8884d8"} fill={"#8884d8"}/>
+                        {/*<RechartsLineChart data={callData} dataKey={"calls"} xKey={"date"} yKey={"calls"}*/}
+                        {/*                   stroke={"#8884d8"} fill={"#8884d8"}/>*/}
                     </Typography>
                 </Card>
             </Grid>
@@ -86,9 +79,9 @@ export const OwnerDashboard: React.FC = () => {
                 <Card style={{display: "flex", flexDirection: "column", alignItems: "center"}} elevation={4}>
                     <Typography variant={"h4"}>Earnings</Typography>
                     <Typography>
-                        <RechartsLineChart data={feesCollectedData} dataKey={"fees collected"} xKey={"date"}
-                                           yKey={"fees collected"}
-                                           stroke={"#31ff87"} fill={"#31ff87"}/>
+                        {/*<RechartsLineChart data={feesCollectedData} dataKey={"fees collected"} xKey={"date"}*/}
+                        {/*                   yKey={"fees collected"}*/}
+                        {/*                   stroke={"#31ff87"} fill={"#31ff87"}/>*/}
                     </Typography>
                 </Card>
             </Grid>
@@ -105,21 +98,29 @@ export const OwnerDashboard: React.FC = () => {
                             <TableCell>Calls 7d</TableCell>
                             {/*<TableCell>Fees</TableCell>*/}
                             {/*<TableCell>Expense</TableCell>*/}
+                            <TableCell>Reserved<Tooltip
+                                title={"These funds cover the base fee that must be paid by your subscription when making a call to Chainlink Functions. They will be transferred over to your subscription automatically when it runs low. You can't withdraw these funds manually without deleting your listing."}><HelpOutlineIcon/></Tooltip>
+                            </TableCell>
+                            <TableCell>Locked<Tooltip
+                                title={"This number represents the total number of fees contained in in-flight requests. Funds here will be unlocked when "}><HelpOutlineIcon/></Tooltip>
+                            </TableCell>
+
                             <TableCell>Available</TableCell>
                             <TableCell>Withdraw</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {functions.map((func, i) => {
+                        {data?.functionRegistereds.map((func, i) => {
                             const callsDaily = getRandomInt(2, 500);
                             const callsWeekly = callsDaily - 7;
                             return (<TableRow key={i}>
-                                <TableCell><Link to={`/buy/${func.address}`}><Typography>{func.name}</Typography></Link></TableCell>
+                                <TableCell><Link
+                                    to={`/buy/${func.functionId}`}><Typography>{func.metadata_name}</Typography></Link></TableCell>
                                 <TableCell><Typography>{callsDaily}</Typography></TableCell>
                                 <TableCell><Typography>{callsWeekly}</Typography></TableCell>
                                 {/*<TableCell><TypographyWithLinkIcon>{(callsWeekly * func.fee).toFixed(2)}</TypographyWithLinkIcon></TableCell>*/}
                                 {/*<TableCell><TypographyWithLinkIcon width={25}>{(callsWeekly * func.fee * 0.05).toFixed(2)}</TypographyWithLinkIcon></TableCell>*/}
-                                <TableCell><TypographyWithLinkIcon>{(callsWeekly * func.fee * 0.95).toFixed(2)}</TypographyWithLinkIcon></TableCell>
+                                <TableCell><TypographyWithLinkIcon>{(func.metadata_unlockedProfitPool).toFixed(2)}</TypographyWithLinkIcon></TableCell>
                                 <TableCell>
                                     <Button color={"primary"}>Withdraw</Button>
                                 </TableCell>
@@ -130,6 +131,12 @@ export const OwnerDashboard: React.FC = () => {
             </TableContainer>
         </Box>
         <Box sx={{display: "flex", flexDirection: "row-reverse"}}>
+            {showDetails
+                ? <Button style={{maxWidth: 200}} variant={"contained"} onClick={() => setShowDetails(!showDetails)}>Hide
+                    additional details</Button>
+                : <Button style={{maxWidth: 200}} variant={"outlined"} onClick={() => setShowDetails(!showDetails)}>Show
+                    additional details</Button>
+            }
             <Button style={{maxWidth: 200}} variant={"contained"}>Withdraw All</Button>
         </Box>
     </Stack>

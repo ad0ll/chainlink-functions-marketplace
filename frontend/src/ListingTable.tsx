@@ -27,6 +27,7 @@ import {DocumentNode, useQuery} from "@apollo/client";
 import {Query} from "./gql/graphql";
 import {TypographyWithLinkIcon} from "./common";
 import {Search as SearchIcon} from "@mui/icons-material";
+import {ethers} from "ethers"
 
 
 const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
@@ -51,15 +52,13 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
         return <Typography><CircularProgress/>Loading...</Typography>
     }
     if (error) {
-        console.log(error)
         return <Typography>Something went wrong</Typography>
     }
     if (!data) {
         return <Typography>Something went wrong, data is undefined</Typography>
     }
-    console.log(data)
-    return (
 
+    return (
         <TableContainer>
             <Box width={"100%"} display={"flex"} justifyContent={"space-between"} alignItems={"center"}>
                 <TextField onChange={(e) => setNameDescFilter(e.target.value)} placeholder={"Search"} inputProps={{
@@ -78,7 +77,7 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
                     <TableRow>
                         <TableCell width={"50%"}>Function</TableCell>
                         <TableCell width={"10%"}>Author</TableCell>
-                        {/*<TableCell width={"10%"}>Type</TableCell>*/}
+                        <TableCell width={"10%"}>Category</TableCell>
                         {/*<TableCell>Est. Gas</TableCell>*/}
                         <TableCell width={"10%"}>Fee</TableCell>
                         <TableCell width={"5%"}>{/* Copy snippet button */}</TableCell>
@@ -114,9 +113,9 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
                                 </CardActionArea>
                             </Card>
                         </TableCell>
-                        {/*<TableCell>*/}
-                        {/*    <Typography>{f.functionType}</Typography>*/}
-                        {/*</TableCell>*/}
+                        <TableCell>
+                            <Typography>{ethers.decodeBytes32String(f.metadata_category)}</Typography>
+                        </TableCell>
                         {/*<TableCell>*/}
                         {/*    <Typography>*/}
                         {/*        <LocalGasStationIcon style={{position: 'relative', top: '6px'}}/>*/}

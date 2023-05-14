@@ -2,8 +2,11 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
-    "lib": ["dom", "esnext"],
-    "target": "es5",
+    "lib": [
+      "dom",
+      "esnext"
+    ],
+    "target": "es2022",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -17,7 +20,9 @@
     "noImplicitThis": true,
     "jsx": "react"
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "node_modules",
     "build",

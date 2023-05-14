@@ -26,6 +26,7 @@ type FunctionCallCompleted {
     requestId: Bytes!
     response: Bytes!
     transactionHash: Bytes!
+    usedGas: BigInt!
 }
 
 type FunctionCalled {
@@ -36,6 +37,7 @@ type FunctionCalled {
     caller: Bytes!
     fee: BigInt!
     functionId: Bytes!
+    gasDeposit: BigInt!
     id: Bytes!
     owner: Bytes!
     requestId: Bytes!
@@ -47,12 +49,20 @@ type FunctionRegistered {
     blockTimestamp: BigInt!
     functionId: Bytes!
     id: Bytes!
+    metadata_category: Bytes!
     metadata_desc: String!
+    metadata_expectedArgs: [String!]!
     metadata_fee: BigInt!
     metadata_imageUrl: String!
     metadata_lockedProfitPool: BigInt!
     metadata_name: String!
     metadata_owner: Bytes!
+    metadata_request_args: [String!]!
+    metadata_request_codeLocation: Int!
+    metadata_request_language: Int!
+    metadata_request_secrets: Bytes!
+    metadata_request_secretsLocation: Int!
+    metadata_request_source: String!
     metadata_subId: BigInt!
     metadata_subscriptionPool: BigInt!
     metadata_unlockedProfitPool: BigInt!
@@ -260,6 +270,7 @@ enum FunctionCallCompleted_orderBy {
     requestId
     response
     transactionHash
+    usedGas
 }
 
 enum FunctionCalled_orderBy {
@@ -270,6 +281,7 @@ enum FunctionCalled_orderBy {
     caller
     fee
     functionId
+    gasDeposit
     id
     owner
     requestId
@@ -281,12 +293,20 @@ enum FunctionRegistered_orderBy {
     blockTimestamp
     functionId
     id
+    metadata_category
     metadata_desc
+    metadata_expectedArgs
     metadata_fee
     metadata_imageUrl
     metadata_lockedProfitPool
     metadata_name
     metadata_owner
+    metadata_request_args
+    metadata_request_codeLocation
+    metadata_request_language
+    metadata_request_secrets
+    metadata_request_secretsLocation
+    metadata_request_source
     metadata_subId
     metadata_subscriptionPool
     metadata_unlockedProfitPool
@@ -443,6 +463,14 @@ input FunctionCallCompleted_filter {
     transactionHash_not: Bytes
     transactionHash_not_contains: Bytes
     transactionHash_not_in: [Bytes!]
+    usedGas: BigInt
+    usedGas_gt: BigInt
+    usedGas_gte: BigInt
+    usedGas_in: [BigInt!]
+    usedGas_lt: BigInt
+    usedGas_lte: BigInt
+    usedGas_not: BigInt
+    usedGas_not_in: [BigInt!]
 }
 
 input FunctionCalled_filter {
@@ -511,6 +539,14 @@ input FunctionCalled_filter {
     functionId_not: Bytes
     functionId_not_contains: Bytes
     functionId_not_in: [Bytes!]
+    gasDeposit: BigInt
+    gasDeposit_gt: BigInt
+    gasDeposit_gte: BigInt
+    gasDeposit_in: [BigInt!]
+    gasDeposit_lt: BigInt
+    gasDeposit_lte: BigInt
+    gasDeposit_not: BigInt
+    gasDeposit_not_in: [BigInt!]
     id: Bytes
     id_contains: Bytes
     id_gt: Bytes
@@ -594,6 +630,16 @@ input FunctionRegistered_filter {
     id_not: Bytes
     id_not_contains: Bytes
     id_not_in: [Bytes!]
+    metadata_category: Bytes
+    metadata_category_contains: Bytes
+    metadata_category_gt: Bytes
+    metadata_category_gte: Bytes
+    metadata_category_in: [Bytes!]
+    metadata_category_lt: Bytes
+    metadata_category_lte: Bytes
+    metadata_category_not: Bytes
+    metadata_category_not_contains: Bytes
+    metadata_category_not_in: [Bytes!]
     metadata_desc: String
     metadata_desc_contains: String
     metadata_desc_contains_nocase: String
@@ -614,6 +660,12 @@ input FunctionRegistered_filter {
     metadata_desc_not_starts_with_nocase: String
     metadata_desc_starts_with: String
     metadata_desc_starts_with_nocase: String
+    metadata_expectedArgs: [String!]
+    metadata_expectedArgs_contains: [String!]
+    metadata_expectedArgs_contains_nocase: [String!]
+    metadata_expectedArgs_not: [String!]
+    metadata_expectedArgs_not_contains: [String!]
+    metadata_expectedArgs_not_contains_nocase: [String!]
     metadata_fee: BigInt
     metadata_fee_gt: BigInt
     metadata_fee_gte: BigInt
@@ -680,6 +732,66 @@ input FunctionRegistered_filter {
     metadata_owner_not: Bytes
     metadata_owner_not_contains: Bytes
     metadata_owner_not_in: [Bytes!]
+    metadata_request_args: [String!]
+    metadata_request_args_contains: [String!]
+    metadata_request_args_contains_nocase: [String!]
+    metadata_request_args_not: [String!]
+    metadata_request_args_not_contains: [String!]
+    metadata_request_args_not_contains_nocase: [String!]
+    metadata_request_codeLocation: Int
+    metadata_request_codeLocation_gt: Int
+    metadata_request_codeLocation_gte: Int
+    metadata_request_codeLocation_in: [Int!]
+    metadata_request_codeLocation_lt: Int
+    metadata_request_codeLocation_lte: Int
+    metadata_request_codeLocation_not: Int
+    metadata_request_codeLocation_not_in: [Int!]
+    metadata_request_language: Int
+    metadata_request_language_gt: Int
+    metadata_request_language_gte: Int
+    metadata_request_language_in: [Int!]
+    metadata_request_language_lt: Int
+    metadata_request_language_lte: Int
+    metadata_request_language_not: Int
+    metadata_request_language_not_in: [Int!]
+    metadata_request_secrets: Bytes
+    metadata_request_secretsLocation: Int
+    metadata_request_secretsLocation_gt: Int
+    metadata_request_secretsLocation_gte: Int
+    metadata_request_secretsLocation_in: [Int!]
+    metadata_request_secretsLocation_lt: Int
+    metadata_request_secretsLocation_lte: Int
+    metadata_request_secretsLocation_not: Int
+    metadata_request_secretsLocation_not_in: [Int!]
+    metadata_request_secrets_contains: Bytes
+    metadata_request_secrets_gt: Bytes
+    metadata_request_secrets_gte: Bytes
+    metadata_request_secrets_in: [Bytes!]
+    metadata_request_secrets_lt: Bytes
+    metadata_request_secrets_lte: Bytes
+    metadata_request_secrets_not: Bytes
+    metadata_request_secrets_not_contains: Bytes
+    metadata_request_secrets_not_in: [Bytes!]
+    metadata_request_source: String
+    metadata_request_source_contains: String
+    metadata_request_source_contains_nocase: String
+    metadata_request_source_ends_with: String
+    metadata_request_source_ends_with_nocase: String
+    metadata_request_source_gt: String
+    metadata_request_source_gte: String
+    metadata_request_source_in: [String!]
+    metadata_request_source_lt: String
+    metadata_request_source_lte: String
+    metadata_request_source_not: String
+    metadata_request_source_not_contains: String
+    metadata_request_source_not_contains_nocase: String
+    metadata_request_source_not_ends_with: String
+    metadata_request_source_not_ends_with_nocase: String
+    metadata_request_source_not_in: [String!]
+    metadata_request_source_not_starts_with: String
+    metadata_request_source_not_starts_with_nocase: String
+    metadata_request_source_starts_with: String
+    metadata_request_source_starts_with_nocase: String
     metadata_subId: BigInt
     metadata_subId_gt: BigInt
     metadata_subId_gte: BigInt

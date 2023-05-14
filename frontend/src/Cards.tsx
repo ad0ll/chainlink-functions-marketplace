@@ -27,8 +27,8 @@ export const RecentlyAddedCard: React.FC<{ func: FunctionRegistered }> = ({func}
                 <CardMedia
                     component={"img"}
                     sx={{width: 80, margin: "auto"}}
-                    image={func.metadata_imageUrl || jazziconImageString(func.owner)}
-                    onError={(e) => fallbackToJazzicon(e, func.owner)}/>
+                    image={func.metadata_imageUrl || jazziconImageString(func.functionId)}
+                    onError={(e) => fallbackToJazzicon(e, func.functionId)}/>
             </Box>
             <Box width={"100%"}>
                 <Typography

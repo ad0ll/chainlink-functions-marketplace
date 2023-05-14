@@ -4,7 +4,6 @@ import {Autocomplete, Box, Button, MenuItem, Select, Stack, SvgIcon, TextField, 
 import {useForm} from "react-hook-form";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import LogoIcon from "./assets/icons/logo.svg";
 import UsdcIcon from "./assets/icons/usd-coin-logo.svg";
 import LinkIcon from "./assets/icons/link-token-blue.svg";
 import {networkConfig} from "./common";
@@ -75,6 +74,7 @@ export const Sell: React.FC = () => {
                     options={["Derivatives", "Price Feed", "Web2 API", "Web3 API"]}
                     renderInput={(params) => <TextField {...params} label={"Type"} {...register("functionType")}/>}
                 />
+
                 {/*Could emulate uniswap for LINK/USDC control instead of having two controls: https://github.com/Uniswap/interface/blob/d0a10fcf8dce6d8f9b1c06c0f640921b7d5ab33b/src/components/CurrencyInputPanel/SwapCurrencyInputPanel.tsx#L55*/}
                 <Box>
                     <TextField label={"Fee"} id={"fee-text"}
@@ -86,15 +86,17 @@ export const Sell: React.FC = () => {
                     <Select defaultValue={networkConfig.mumbai.linkToken} sx={{width: "30%"}}>
                         <MenuItem value={networkConfig.mumbai.linkToken}>
                             <Box style={{"display": "flex", "alignItems": "center"}}>
-                                <SvgIcon component={LinkIcon} viewBox="0 0 800 800" style={{marginRight: 4, height: 20}}/>
+                                <SvgIcon component={LinkIcon} viewBox="0 0 800 800"
+                                         style={{marginRight: 4, height: 20}}/>
                                 <Typography>LINK</Typography>
                             </Box>
                         </MenuItem>
 
                         <MenuItem value={"have no clue"}>
                             <Box style={{"display": "flex", "alignItems": "center"}}>
-                            <SvgIcon component={UsdcIcon} viewBox="0 0 2000 2000" style={{marginRight: 4, height: 20}}/>
-                            <Typography>USDC</Typography>
+                                <SvgIcon component={UsdcIcon} viewBox="0 0 2000 2000"
+                                         style={{marginRight: 4, height: 20}}/>
+                                <Typography>USDC</Typography>
                             </Box>
                         </MenuItem>
                     </Select>

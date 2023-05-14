@@ -3,8 +3,6 @@ import {RecentlyAddedCard} from "./Cards";
 import React from "react";
 import Logo from "./assets/icons/logo.svg";
 import ListingTable from "./ListingTable";
-
-import {generateFunctions} from "./utils/generators";
 import {gql, useQuery} from "@apollo/client";
 import {Query} from "./gql/graphql";
 
@@ -24,6 +22,7 @@ const LISTING_QUERY = gql`
             metadata_name
             metadata_desc
             metadata_imageUrl
+            metadata_category
         }
     }
 `;
@@ -42,6 +41,7 @@ const RECENTLY_ADDED_QUERY = gql`
             metadata_name
             metadata_desc
             metadata_imageUrl
+            metadata_category
         }
     }
 `
@@ -83,7 +83,6 @@ export const RecentlyAddedTop: React.FC = () => {
 
 
 export const Home: React.FC = () => {
-    const functions = generateFunctions(50)
 
     return (<Grid container spacing={4}>
         <SplashTop/>

@@ -40,6 +40,7 @@ export type FunctionCallCompleted = {
   requestId: Scalars['Bytes'];
   response: Scalars['Bytes'];
   transactionHash: Scalars['Bytes'];
+  usedGas: Scalars['BigInt'];
 };
 
 export type FunctionCallCompleted_Filter = {
@@ -153,6 +154,14 @@ export type FunctionCallCompleted_Filter = {
   transactionHash_not?: InputMaybe<Scalars['Bytes']>;
   transactionHash_not_contains?: InputMaybe<Scalars['Bytes']>;
   transactionHash_not_in?: InputMaybe<Array<Scalars['Bytes']>>;
+  usedGas?: InputMaybe<Scalars['BigInt']>;
+  usedGas_gt?: InputMaybe<Scalars['BigInt']>;
+  usedGas_gte?: InputMaybe<Scalars['BigInt']>;
+  usedGas_in?: InputMaybe<Array<Scalars['BigInt']>>;
+  usedGas_lt?: InputMaybe<Scalars['BigInt']>;
+  usedGas_lte?: InputMaybe<Scalars['BigInt']>;
+  usedGas_not?: InputMaybe<Scalars['BigInt']>;
+  usedGas_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
 };
 
 export enum FunctionCallCompleted_OrderBy {
@@ -166,7 +175,8 @@ export enum FunctionCallCompleted_OrderBy {
   Owner = 'owner',
   RequestId = 'requestId',
   Response = 'response',
-  TransactionHash = 'transactionHash'
+  TransactionHash = 'transactionHash',
+  UsedGas = 'usedGas'
 }
 
 export type FunctionCalled = {
@@ -178,6 +188,7 @@ export type FunctionCalled = {
   caller: Scalars['Bytes'];
   fee: Scalars['BigInt'];
   functionId: Scalars['Bytes'];
+  gasDeposit: Scalars['BigInt'];
   id: Scalars['Bytes'];
   owner: Scalars['Bytes'];
   requestId: Scalars['Bytes'];
@@ -250,6 +261,14 @@ export type FunctionCalled_Filter = {
   functionId_not?: InputMaybe<Scalars['Bytes']>;
   functionId_not_contains?: InputMaybe<Scalars['Bytes']>;
   functionId_not_in?: InputMaybe<Array<Scalars['Bytes']>>;
+  gasDeposit?: InputMaybe<Scalars['BigInt']>;
+  gasDeposit_gt?: InputMaybe<Scalars['BigInt']>;
+  gasDeposit_gte?: InputMaybe<Scalars['BigInt']>;
+  gasDeposit_in?: InputMaybe<Array<Scalars['BigInt']>>;
+  gasDeposit_lt?: InputMaybe<Scalars['BigInt']>;
+  gasDeposit_lte?: InputMaybe<Scalars['BigInt']>;
+  gasDeposit_not?: InputMaybe<Scalars['BigInt']>;
+  gasDeposit_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
   id?: InputMaybe<Scalars['Bytes']>;
   id_contains?: InputMaybe<Scalars['Bytes']>;
   id_gt?: InputMaybe<Scalars['Bytes']>;
@@ -301,6 +320,7 @@ export enum FunctionCalled_OrderBy {
   Caller = 'caller',
   Fee = 'fee',
   FunctionId = 'functionId',
+  GasDeposit = 'gasDeposit',
   Id = 'id',
   Owner = 'owner',
   RequestId = 'requestId',
@@ -313,12 +333,20 @@ export type FunctionRegistered = {
   blockTimestamp: Scalars['BigInt'];
   functionId: Scalars['Bytes'];
   id: Scalars['Bytes'];
+  metadata_category: Scalars['Bytes'];
   metadata_desc: Scalars['String'];
+  metadata_expectedArgs: Array<Scalars['String']>;
   metadata_fee: Scalars['BigInt'];
   metadata_imageUrl: Scalars['String'];
   metadata_lockedProfitPool: Scalars['BigInt'];
   metadata_name: Scalars['String'];
   metadata_owner: Scalars['Bytes'];
+  metadata_request_args: Array<Scalars['String']>;
+  metadata_request_codeLocation: Scalars['Int'];
+  metadata_request_language: Scalars['Int'];
+  metadata_request_secrets: Scalars['Bytes'];
+  metadata_request_secretsLocation: Scalars['Int'];
+  metadata_request_source: Scalars['String'];
   metadata_subId: Scalars['BigInt'];
   metadata_subscriptionPool: Scalars['BigInt'];
   metadata_unlockedProfitPool: Scalars['BigInt'];
@@ -366,6 +394,16 @@ export type FunctionRegistered_Filter = {
   id_not?: InputMaybe<Scalars['Bytes']>;
   id_not_contains?: InputMaybe<Scalars['Bytes']>;
   id_not_in?: InputMaybe<Array<Scalars['Bytes']>>;
+  metadata_category?: InputMaybe<Scalars['Bytes']>;
+  metadata_category_contains?: InputMaybe<Scalars['Bytes']>;
+  metadata_category_gt?: InputMaybe<Scalars['Bytes']>;
+  metadata_category_gte?: InputMaybe<Scalars['Bytes']>;
+  metadata_category_in?: InputMaybe<Array<Scalars['Bytes']>>;
+  metadata_category_lt?: InputMaybe<Scalars['Bytes']>;
+  metadata_category_lte?: InputMaybe<Scalars['Bytes']>;
+  metadata_category_not?: InputMaybe<Scalars['Bytes']>;
+  metadata_category_not_contains?: InputMaybe<Scalars['Bytes']>;
+  metadata_category_not_in?: InputMaybe<Array<Scalars['Bytes']>>;
   metadata_desc?: InputMaybe<Scalars['String']>;
   metadata_desc_contains?: InputMaybe<Scalars['String']>;
   metadata_desc_contains_nocase?: InputMaybe<Scalars['String']>;
@@ -386,6 +424,12 @@ export type FunctionRegistered_Filter = {
   metadata_desc_not_starts_with_nocase?: InputMaybe<Scalars['String']>;
   metadata_desc_starts_with?: InputMaybe<Scalars['String']>;
   metadata_desc_starts_with_nocase?: InputMaybe<Scalars['String']>;
+  metadata_expectedArgs?: InputMaybe<Array<Scalars['String']>>;
+  metadata_expectedArgs_contains?: InputMaybe<Array<Scalars['String']>>;
+  metadata_expectedArgs_contains_nocase?: InputMaybe<Array<Scalars['String']>>;
+  metadata_expectedArgs_not?: InputMaybe<Array<Scalars['String']>>;
+  metadata_expectedArgs_not_contains?: InputMaybe<Array<Scalars['String']>>;
+  metadata_expectedArgs_not_contains_nocase?: InputMaybe<Array<Scalars['String']>>;
   metadata_fee?: InputMaybe<Scalars['BigInt']>;
   metadata_fee_gt?: InputMaybe<Scalars['BigInt']>;
   metadata_fee_gte?: InputMaybe<Scalars['BigInt']>;
@@ -452,6 +496,66 @@ export type FunctionRegistered_Filter = {
   metadata_owner_not?: InputMaybe<Scalars['Bytes']>;
   metadata_owner_not_contains?: InputMaybe<Scalars['Bytes']>;
   metadata_owner_not_in?: InputMaybe<Array<Scalars['Bytes']>>;
+  metadata_request_args?: InputMaybe<Array<Scalars['String']>>;
+  metadata_request_args_contains?: InputMaybe<Array<Scalars['String']>>;
+  metadata_request_args_contains_nocase?: InputMaybe<Array<Scalars['String']>>;
+  metadata_request_args_not?: InputMaybe<Array<Scalars['String']>>;
+  metadata_request_args_not_contains?: InputMaybe<Array<Scalars['String']>>;
+  metadata_request_args_not_contains_nocase?: InputMaybe<Array<Scalars['String']>>;
+  metadata_request_codeLocation?: InputMaybe<Scalars['Int']>;
+  metadata_request_codeLocation_gt?: InputMaybe<Scalars['Int']>;
+  metadata_request_codeLocation_gte?: InputMaybe<Scalars['Int']>;
+  metadata_request_codeLocation_in?: InputMaybe<Array<Scalars['Int']>>;
+  metadata_request_codeLocation_lt?: InputMaybe<Scalars['Int']>;
+  metadata_request_codeLocation_lte?: InputMaybe<Scalars['Int']>;
+  metadata_request_codeLocation_not?: InputMaybe<Scalars['Int']>;
+  metadata_request_codeLocation_not_in?: InputMaybe<Array<Scalars['Int']>>;
+  metadata_request_language?: InputMaybe<Scalars['Int']>;
+  metadata_request_language_gt?: InputMaybe<Scalars['Int']>;
+  metadata_request_language_gte?: InputMaybe<Scalars['Int']>;
+  metadata_request_language_in?: InputMaybe<Array<Scalars['Int']>>;
+  metadata_request_language_lt?: InputMaybe<Scalars['Int']>;
+  metadata_request_language_lte?: InputMaybe<Scalars['Int']>;
+  metadata_request_language_not?: InputMaybe<Scalars['Int']>;
+  metadata_request_language_not_in?: InputMaybe<Array<Scalars['Int']>>;
+  metadata_request_secrets?: InputMaybe<Scalars['Bytes']>;
+  metadata_request_secretsLocation?: InputMaybe<Scalars['Int']>;
+  metadata_request_secretsLocation_gt?: InputMaybe<Scalars['Int']>;
+  metadata_request_secretsLocation_gte?: InputMaybe<Scalars['Int']>;
+  metadata_request_secretsLocation_in?: InputMaybe<Array<Scalars['Int']>>;
+  metadata_request_secretsLocation_lt?: InputMaybe<Scalars['Int']>;
+  metadata_request_secretsLocation_lte?: InputMaybe<Scalars['Int']>;
+  metadata_request_secretsLocation_not?: InputMaybe<Scalars['Int']>;
+  metadata_request_secretsLocation_not_in?: InputMaybe<Array<Scalars['Int']>>;
+  metadata_request_secrets_contains?: InputMaybe<Scalars['Bytes']>;
+  metadata_request_secrets_gt?: InputMaybe<Scalars['Bytes']>;
+  metadata_request_secrets_gte?: InputMaybe<Scalars['Bytes']>;
+  metadata_request_secrets_in?: InputMaybe<Array<Scalars['Bytes']>>;
+  metadata_request_secrets_lt?: InputMaybe<Scalars['Bytes']>;
+  metadata_request_secrets_lte?: InputMaybe<Scalars['Bytes']>;
+  metadata_request_secrets_not?: InputMaybe<Scalars['Bytes']>;
+  metadata_request_secrets_not_contains?: InputMaybe<Scalars['Bytes']>;
+  metadata_request_secrets_not_in?: InputMaybe<Array<Scalars['Bytes']>>;
+  metadata_request_source?: InputMaybe<Scalars['String']>;
+  metadata_request_source_contains?: InputMaybe<Scalars['String']>;
+  metadata_request_source_contains_nocase?: InputMaybe<Scalars['String']>;
+  metadata_request_source_ends_with?: InputMaybe<Scalars['String']>;
+  metadata_request_source_ends_with_nocase?: InputMaybe<Scalars['String']>;
+  metadata_request_source_gt?: InputMaybe<Scalars['String']>;
+  metadata_request_source_gte?: InputMaybe<Scalars['String']>;
+  metadata_request_source_in?: InputMaybe<Array<Scalars['String']>>;
+  metadata_request_source_lt?: InputMaybe<Scalars['String']>;
+  metadata_request_source_lte?: InputMaybe<Scalars['String']>;
+  metadata_request_source_not?: InputMaybe<Scalars['String']>;
+  metadata_request_source_not_contains?: InputMaybe<Scalars['String']>;
+  metadata_request_source_not_contains_nocase?: InputMaybe<Scalars['String']>;
+  metadata_request_source_not_ends_with?: InputMaybe<Scalars['String']>;
+  metadata_request_source_not_ends_with_nocase?: InputMaybe<Scalars['String']>;
+  metadata_request_source_not_in?: InputMaybe<Array<Scalars['String']>>;
+  metadata_request_source_not_starts_with?: InputMaybe<Scalars['String']>;
+  metadata_request_source_not_starts_with_nocase?: InputMaybe<Scalars['String']>;
+  metadata_request_source_starts_with?: InputMaybe<Scalars['String']>;
+  metadata_request_source_starts_with_nocase?: InputMaybe<Scalars['String']>;
   metadata_subId?: InputMaybe<Scalars['BigInt']>;
   metadata_subId_gt?: InputMaybe<Scalars['BigInt']>;
   metadata_subId_gte?: InputMaybe<Scalars['BigInt']>;
@@ -504,12 +608,20 @@ export enum FunctionRegistered_OrderBy {
   BlockTimestamp = 'blockTimestamp',
   FunctionId = 'functionId',
   Id = 'id',
+  MetadataCategory = 'metadata_category',
   MetadataDesc = 'metadata_desc',
+  MetadataExpectedArgs = 'metadata_expectedArgs',
   MetadataFee = 'metadata_fee',
   MetadataImageUrl = 'metadata_imageUrl',
   MetadataLockedProfitPool = 'metadata_lockedProfitPool',
   MetadataName = 'metadata_name',
   MetadataOwner = 'metadata_owner',
+  MetadataRequestArgs = 'metadata_request_args',
+  MetadataRequestCodeLocation = 'metadata_request_codeLocation',
+  MetadataRequestLanguage = 'metadata_request_language',
+  MetadataRequestSecrets = 'metadata_request_secrets',
+  MetadataRequestSecretsLocation = 'metadata_request_secretsLocation',
+  MetadataRequestSource = 'metadata_request_source',
   MetadataSubId = 'metadata_subId',
   MetadataSubscriptionPool = 'metadata_subscriptionPool',
   MetadataUnlockedProfitPool = 'metadata_unlockedProfitPool',
@@ -821,19 +933,35 @@ export enum _SubgraphErrorPolicy_ {
   Deny = 'deny'
 }
 
+export type DrilldownPageQueryVariables = Exact<{
+  functionId: Scalars['ID'];
+}>;
+
+
+export type DrilldownPageQuery = { __typename?: 'Query', functionRegistered?: { __typename?: 'FunctionRegistered', id: any, functionId: any, owner: any, metadata_fee: any, metadata_owner: any, metadata_subId: any, metadata_name: string, metadata_desc: string, metadata_imageUrl: string, metadata_subscriptionPool: any, metadata_lockedProfitPool: any, metadata_unlockedProfitPool: any } | null };
+
 export type EventSpammerFunctionRegisteredQueryVariables = Exact<{
   first: Scalars['Int'];
   skip: Scalars['Int'];
 }>;
 
 
-export type EventSpammerFunctionRegisteredQuery = { __typename?: 'Query', functionRegistereds: Array<{ __typename?: 'FunctionRegistered', id: any, functionId: any, owner: any, metadata_fee: any, metadata_subId: any, metadata_name: string, metadata_desc: string, metadata_imageUrl: string }> };
+export type EventSpammerFunctionRegisteredQuery = { __typename?: 'Query', functionRegistereds: Array<{ __typename?: 'FunctionRegistered', id: any, functionId: any, owner: any, metadata_fee: any, metadata_name: string, metadata_desc: string, metadata_imageUrl: string }> };
 
 export type EventSpammerRecentFunctionRegisteredQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type EventSpammerRecentFunctionRegisteredQuery = { __typename?: 'Query', functionRegistereds: Array<{ __typename?: 'FunctionRegistered', id: any, functionId: any, owner: any, metadata_fee: any, metadata_subId: any, metadata_name: string, metadata_desc: string, metadata_imageUrl: string }> };
+export type EventSpammerRecentFunctionRegisteredQuery = { __typename?: 'Query', functionRegistereds: Array<{ __typename?: 'FunctionRegistered', id: any, functionId: any, owner: any, metadata_name: string, metadata_desc: string, metadata_imageUrl: string }> };
+
+export type EventSpammerOwnerPageQueryVariables = Exact<{
+  owner: Scalars['Bytes'];
+}>;
 
 
-export const EventSpammerFunctionRegisteredDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EventSpammerFunctionRegistered"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skip"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"functionRegistereds"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"blockNumber"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}},{"kind":"Argument","name":{"kind":"Name","value":"skip"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skip"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"functionId"}},{"kind":"Field","name":{"kind":"Name","value":"owner"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_fee"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_subId"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_name"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_desc"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_imageUrl"}}]}}]}}]} as unknown as DocumentNode<EventSpammerFunctionRegisteredQuery, EventSpammerFunctionRegisteredQueryVariables>;
-export const EventSpammerRecentFunctionRegisteredDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EventSpammerRecentFunctionRegistered"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"functionRegistereds"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"blockNumber"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"3"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"functionId"}},{"kind":"Field","name":{"kind":"Name","value":"owner"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_fee"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_subId"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_name"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_desc"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_imageUrl"}}]}}]}}]} as unknown as DocumentNode<EventSpammerRecentFunctionRegisteredQuery, EventSpammerRecentFunctionRegisteredQueryVariables>;
+export type EventSpammerOwnerPageQuery = { __typename?: 'Query', functionRegistereds: Array<{ __typename?: 'FunctionRegistered', id: any, functionId: any, owner: any, metadata_fee: any, metadata_subId: any, metadata_name: string, metadata_imageUrl: string, metadata_subscriptionPool: any, metadata_lockedProfitPool: any, metadata_unlockedProfitPool: any }> };
+
+
+export const DrilldownPageDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"DrilldownPage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"functionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"functionRegistered"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"functionId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"functionId"}},{"kind":"Field","name":{"kind":"Name","value":"owner"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_fee"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_owner"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_subId"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_name"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_desc"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_subscriptionPool"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_lockedProfitPool"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_unlockedProfitPool"}}]}}]}}]} as unknown as DocumentNode<DrilldownPageQuery, DrilldownPageQueryVariables>;
+export const EventSpammerFunctionRegisteredDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EventSpammerFunctionRegistered"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skip"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"functionRegistereds"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"blockNumber"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}},{"kind":"Argument","name":{"kind":"Name","value":"skip"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skip"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"functionId"}},{"kind":"Field","name":{"kind":"Name","value":"owner"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_fee"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_name"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_desc"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_imageUrl"}}]}}]}}]} as unknown as DocumentNode<EventSpammerFunctionRegisteredQuery, EventSpammerFunctionRegisteredQueryVariables>;
+export const EventSpammerRecentFunctionRegisteredDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EventSpammerRecentFunctionRegistered"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"functionRegistereds"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"blockNumber"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"3"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"functionId"}},{"kind":"Field","name":{"kind":"Name","value":"owner"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_name"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_desc"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_imageUrl"}}]}}]}}]} as unknown as DocumentNode<EventSpammerRecentFunctionRegisteredQuery, EventSpammerRecentFunctionRegisteredQueryVariables>;
+export const EventSpammerOwnerPageDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"EventSpammerOwnerPage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"owner"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Bytes"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"functionRegistereds"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"metadata_unlockedProfitPool"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}},{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"owner"},"value":{"kind":"Variable","name":{"kind":"Name","value":"owner"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"functionId"}},{"kind":"Field","name":{"kind":"Name","value":"owner"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_fee"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_subId"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_name"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_subscriptionPool"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_lockedProfitPool"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_unlockedProfitPool"}}]}}]}}]} as unknown as DocumentNode<EventSpammerOwnerPageQuery, EventSpammerOwnerPageQueryVariables>;
