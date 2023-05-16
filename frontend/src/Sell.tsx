@@ -6,7 +6,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import UsdcIcon from "./assets/icons/usd-coin-logo.svg";
 import LinkIcon from "./assets/icons/link-token-blue.svg";
-import {networkConfig} from "./common";
+import {MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
+import {useWeb3React} from "@web3-react/core";
 
 type FormValues = {
     name: string,
@@ -39,20 +40,33 @@ initial deposit should be number, use ethers.ParseUnits for validation
  */
 
 export const Sell: React.FC = () => {
+
+
+    const {account, chainId} = useWeb3React();
+    const [showAdvanced, setShowAdvanced] = React.useState<boolean>(false);
+
+
+    if (!chainId) {
+        return <Typography>Could not get chain id from the connected wallet</Typography>
+    } else if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
+        return <Typography>Wrong chain id. Please connect to Mumbai or Sepolia</Typography>
+    }
+
     const {register, handleSubmit, watch, formState} = useForm<FormValues>({
         defaultValues: {
             subscriptionId: "NEW",
             suggestedGasLimit: 500000,
-            oracle: networkConfig.mumbai.functionsOracleProxy,
-            initialDeposit: "1"
+            oracle: networkConfig[chainId].functionsOracleProxy,
+            initialDeposit: "3" //Whole LINK units, conversion happens later
         }
     });
+
     const errors = formState.errors;
-    const [showAdvanced, setShowAdvanced] = React.useState<boolean>(false);
 
     const onSubmit = handleSubmit(async (data) => {
         console.log(data)
     });
+
     // return (<Paper width={{xs: "100%", sm: "80%", md: "60%", lg: "40%"}} sx={{marginTop: 2}} margin={"auto"}>
     return (<Box width={{xs: "100%", sm: "80%", md: "60%", lg: "40%"}} sx={{marginTop: 2}} margin={"auto"}>
         <Typography variant={"h4"} color={"secondary"} sx={{padding: 2, textAlign: "center"}}>Create a new
@@ -83,8 +97,8 @@ export const Sell: React.FC = () => {
                                sx={{width: "70%"}}
                     />
                     {/*TODO fix hardcoding of networks/values below*/}
-                    <Select defaultValue={networkConfig.mumbai.linkToken} sx={{width: "30%"}}>
-                        <MenuItem value={networkConfig.mumbai.linkToken}>
+                    <Select defaultValue={networkConfig[chainId].linkToken} sx={{width: "30%"}}>
+                        <MenuItem value={networkConfig[chainId].linkToken}>
                             <Box style={{"display": "flex", "alignItems": "center"}}>
                                 <SvgIcon component={LinkIcon} viewBox="0 0 800 800"
                                          style={{marginRight: 4, height: 20}}/>

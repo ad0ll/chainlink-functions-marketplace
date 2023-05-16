@@ -20,17 +20,18 @@ import {generateSnippetString, SoliditySyntaxHighlighter, splitArgStrings} from 
 import {CopyToClipboard} from "react-copy-to-clipboard";
 import {gql, useQuery} from "@apollo/client";
 import {FunctionRegistered, Query} from "./gql/graphql";
-import {BASE_FEE, networkConfig, TypographyWithLinkIcon} from "./common";
+import {BASE_FEE, MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID, TypographyWithLinkIcon} from "./common";
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {decodeBytes32String, formatEther} from "ethers";
 import EditIcon from '@mui/icons-material/Edit';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import {toast} from "react-toastify";
+import {useWeb3React} from "@web3-react/core";
 
 const DRILLDOWN_QUERY = gql`
     query DrilldownPage($functionId: ID!){
         functionRegistered(
-            
+
             id: $functionId
         ){
             id
@@ -82,14 +83,17 @@ const GridRowTyp: React.FC<{ label: string, value?: string | number }> = ({label
 
 
 // export const Buy: React.FC<{func: C
-const InputSnippetGenerator: React.FC<{ func: FunctionRegistered }> = ({func}) => {
+const InputSnippetGenerator: React.FC<{ func: FunctionRegistered, functionManagerAddress: string }> = ({
+                                                                                                           func,
+                                                                                                           functionManagerAddress
+                                                                                                       }) => {
 
 
     const [hardcodeParameters, setHardcodeParameters] = React.useState(true);
     const [callbackFunction, setCallbackFunction] = React.useState("storeFull");
     const [returnRequestId, setReturnRequestId] = React.useState(true);
     const [customizeVisible, setCustomizeVisible] = React.useState(false);
-    const snippetString = generateSnippetString(func, {
+    const snippetString = generateSnippetString(func, functionManagerAddress, {
         hardcodeParameters,
         callbackFunction,
         returnRequestId
@@ -158,6 +162,7 @@ const InputSnippetGenerator: React.FC<{ func: FunctionRegistered }> = ({func}) =
 
 export const Buy: React.FC = () => {
 
+    const {account, chainId} = useWeb3React()
     const {functionId} = useParams<{ functionId: string }>();
     const {loading, error, data} = useQuery<Query>(DRILLDOWN_QUERY, {
         variables: {
@@ -170,6 +175,13 @@ export const Buy: React.FC = () => {
     if (error) return <Typography>Error :( {error.message}</Typography>
     if (!data?.functionRegistered) return <Typography>Function not found</Typography>
     const func = data.functionRegistered;
+
+    if (!chainId) {
+        return <Typography>Could not get chain id from the connected wallet</Typography>
+    } else if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
+        return <Typography>Wrong chain id. Please connect to Mumbai or Sepolia</Typography>
+    }
+
 
     const notify = () => toast.success("Copied ID to clipboard");
 
@@ -191,7 +203,7 @@ export const Buy: React.FC = () => {
                 </Typography>
                 {/*Link to scanner for mumbai */}
                 <Tooltip title={"Open in scanner"}>
-                    <Link to={networkConfig.mumbai.getScannerUrl(func.metadata_owner)}>
+                    <Link to={networkConfig[chainId].getScannerUrl(func.metadata_owner)}>
                         <Typography variant={"h6"}>{<OpenInNewIcon/>}</Typography>
                     </Link>
                 </Tooltip>
@@ -201,7 +213,8 @@ export const Buy: React.FC = () => {
             </Typography>
 
             <Grid item xs={12}>
-                <InputSnippetGenerator func={func}/>
+                <InputSnippetGenerator func={func}
+                                       functionManagerAddress={networkConfig[chainId].functionManagerContract}/>
             </Grid>
 
             <Paper sx={{

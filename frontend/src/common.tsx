@@ -19,7 +19,7 @@ export const networkConfig = {
     polygon: {
         linkToken: "0xb0897686c545045afc77cf20ec7a532e3120e0f1",
     },
-    mumbai: {
+    [MUMBAI_CHAIN_ID]: {
         // TODO replace with the actual function manager address
         functionManagerContract: garbageAddressGenerator(),
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
@@ -30,7 +30,7 @@ export const networkConfig = {
             "a30264e813edc9927f73e036b7885ee25445b836979cb00ef112bc644bd16de2db866fa74648438b34f52bb196ffa386992e94e0a3dc6913cee52e2e98f1619c",
         getScannerUrl: (address: string) => `https://mumbai.polygonscan.com/address/${address}`,
     },
-    sepolia: {
+    [SEPOLIA_CHAIN_ID]: {
         functionManagerContract: garbageAddressGenerator(),
         linkToken: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
         linkEthPriceFeed: "0x42585eD362B3f1BCa95c640FdFf35Ef899212734",
@@ -38,10 +38,9 @@ export const networkConfig = {
         functionsBillingRegistryProxy: "0x3c79f56407DCB9dc9b852D139a317246f43750Cc",
         functionsPublicKey:
             "a30264e813edc9927f73e036b7885ee25445b836979cb00ef112bc644bd16de2db866fa74648438b34f52bb196ffa386992e94e0a3dc6913cee52e2e98f1619c",
-        getScannerUrl: (address: string) => `https://sepolia.vercel.app/${address}`,
+        getScannerUrl: (address: string) => `https://sepolia.etherscan.io/address/${address}`,
     },
 }
-
 
 // TODO This should be a branded, better looking suspense component
 export const DefaultSuspense: React.FC<{ children: React.ReactNode }> = ({children}) => {
@@ -49,7 +48,6 @@ export const DefaultSuspense: React.FC<{ children: React.ReactNode }> = ({childr
         {children}
     </Suspense>
 }
-
 
 export const TypographyWithLinkIcon: React.FC<{
     height?: number,
@@ -74,6 +72,3 @@ export const nDaysAgoUTCInSeconds = (n: number) => {
     console.log("minus n=", n, "days", now - (n * 24 * 60 * 60))
     return now - (n * 24 * 60 * 60)
 }
-
-
-// export const

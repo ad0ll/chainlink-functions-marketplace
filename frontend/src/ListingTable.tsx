@@ -22,12 +22,13 @@ import {toast} from "react-toastify";
 import {Link} from "react-router-dom";
 import {addressToJazziconSeed, renderCurrency, truncateIfAddress} from "./utils/util";
 import Jazzicon from "./Jazzicon";
-import {SoliditySyntaxHighlighter} from "./Snippets";
+import {generateDefaultSnippetString, SoliditySyntaxHighlighter} from "./Snippets";
 import {DocumentNode, useQuery} from "@apollo/client";
 import {Query} from "./gql/graphql";
-import {TypographyWithLinkIcon} from "./common";
+import {MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID, TypographyWithLinkIcon} from "./common";
 import {Search as SearchIcon} from "@mui/icons-material";
 import {ethers} from "ethers"
+import {useWeb3React} from "@web3-react/core";
 
 
 const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
@@ -36,7 +37,7 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
     const [nameDescFilter, setNameDescFilter] = useState("");
     const [shouldSearchDesc, setShouldSearchDesc] = useState(false);
     const [sortTerm, setSortTerm] = useState<"name" | "description" | "author A-Z" | "author Z-A" | "fee, lowest first" | "fee, highest first">("name");
-
+    const {account, chainId} = useWeb3React()
     const skip = page * pageSize;
     const {loading, error, data} = useQuery<Query, { first: number, skip: number }>(query, {
         variables: {
@@ -56,6 +57,10 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
     }
     if (!data) {
         return <Typography>Something went wrong, data is undefined</Typography>
+    }
+
+    if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
+        return <Typography>Please switch to either Mumbai or Sepolia in Metamask</Typography>
     }
 
     return (
@@ -117,8 +122,7 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
                             <Tooltip placement={"bottom-start"} title={<Box sx={{minWidth: 450}}>
                                 <Typography variant={"h6"}>Click to copy contract snippet</Typography>
                                 <SoliditySyntaxHighlighter>
-                                    {/*TODO Add this back in once we know what metadata looks like*/}
-                                    {/*{generateDefaultSnippetString(f)}*/}
+                                    {generateDefaultSnippetString(f, networkConfig[chainId].functionManagerContract)}
                                 </SoliditySyntaxHighlighter>
                             </Box>}>
                                 <ContentCopyIcon onClick={notify}/>

@@ -16,8 +16,6 @@ import {
     Typography
 } from "@mui/material";
 import {Link} from "react-router-dom";
-import {ResponsiveLine} from '@nivo/line'
-import styled from "@emotion/styled";
 import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RechartTooltip, XAxis, YAxis} from "recharts";
 import {nDaysAgoUTCInSeconds, TypographyWithLinkIcon} from "./common";
 import {gql, useQuery} from "@apollo/client";
@@ -25,6 +23,7 @@ import {FunctionRegistered, Query} from "./gql/graphql";
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import {BigNumberish, ethers, formatEther} from "ethers";
 import ArticleIcon from '@mui/icons-material/Article';
+import {useWeb3React} from "@web3-react/core";
 
 const OWNER_DASHBOARD_QUERY = gql`
     query EventSpammerOwnerPage($owner: Bytes!){
@@ -100,6 +99,7 @@ const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
                                                                                   owner,
                                                                                   blockTimestamp
                                                                               }) => {
+
     const {loading, error, data} = useQuery<Query>(OWNER_DASHBOARD_STATS_TOP_QUERY, {
         variables: {
             owner: owner,
@@ -170,14 +170,15 @@ const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
 
 export const OwnerDashboard: React.FC = () => {
 
-    // TODO Once metamask is in remove this hardcoding
-    const OWNER = "0x9B73FC82Ea166ceAd839ff6EF476ac2e696dBA63"
-
+    const {account} = useWeb3React()
     const [showDetails, setShowDetails] = React.useState(false)
 
+    if (!account) {
+        return <Typography>Connect your wallet to view your dashboard</Typography>
+    }
     const {loading, error, data} = useQuery<Query>(OWNER_DASHBOARD_QUERY, {
         variables: {
-            owner: OWNER
+            owner: account
         }
     })
     if (loading) {
@@ -192,7 +193,7 @@ export const OwnerDashboard: React.FC = () => {
     const blockTimestamp = nDaysAgoUTCInSeconds(7)
     return <Stack spacing={2}>
         <Typography variant={"h3"} style={{textAlign: "center"}}>Owner Dashboard</Typography>
-        <StatCards owner={OWNER} blockTimestamp={blockTimestamp}/>
+        <StatCards owner={account} blockTimestamp={blockTimestamp}/>
 
         <TableContainer sx={{border: "1px solid white", padding: 2}}>
             <Box sx={{border: "1px solid primary.main", display: "flex"}}>
@@ -216,7 +217,7 @@ export const OwnerDashboard: React.FC = () => {
                                 <Typography>Reserved<HelpOutlineIcon/></Typography>
                             </Tooltip>
                         </TableCell>}
-                        {showDetails && <TableCell sx={{display: showDetails ? "" : "hidden"}}>
+                        {showDetails && <TableCell>
                             <Tooltip
                                 title={"This number represents the total number of fees contained in in-flight requests. Funds here will be unlocked when "}>
                                 <Typography>Locked <HelpOutlineIcon/></Typography>
@@ -254,33 +255,6 @@ export const OwnerDashboard: React.FC = () => {
 }
 
 
-// make sure parent container have a defined height when using
-// responsive component, otherwise height will be 0 and
-// no chart will be rendered.
-// website examples showcase many properties,
-// you'll often use just a few of them.
-export const Parent = styled.div`
-  position: relative;
-  width: 100%;
-  height: 100%;
-`;
-
-export const Child = styled.div`
-  position: absolute;
-  width: 100%;
-  height: 100%;
-`;
-
-export const NivoGridWrapper: React.FC<
-    React.PropsWithChildren<{}>
-> = ({children}) => {
-    return (
-        <Parent>
-            <Child>{children}</Child>
-        </Parent>
-    );
-};
-
 const RechartsLineChart: React.FC<{
     data: any,
     dataKey: string,
@@ -307,71 +281,3 @@ const RechartsLineChart: React.FC<{
         </LineChart>
     </ResponsiveContainer>
 }
-
-const NivoLineChart: React.FC<{ data: any }> = ({data /* see data tab */}) => (
-    <NivoGridWrapper>
-        <ResponsiveLine
-            data={data}
-            margin={{top: 50, right: 110, bottom: 50, left: 60}}
-            xScale={{type: 'point'}}
-            yScale={{
-                type: 'linear',
-                min: 'auto',
-                max: 'auto',
-                stacked: true,
-                reverse: false
-            }}
-            yFormat=" >-.2f"
-            axisTop={null}
-            axisRight={null}
-            axisBottom={{
-                tickSize: 5,
-                tickPadding: 5,
-                tickRotation: 0,
-                legend: 'transportation',
-                legendOffset: 36,
-                legendPosition: 'middle'
-            }}
-            axisLeft={{
-                tickSize: 5,
-                tickPadding: 5,
-                tickRotation: 0,
-                legend: 'count',
-                legendOffset: -40,
-                legendPosition: 'middle'
-            }}
-            pointSize={10}
-            pointColor={{theme: 'background'}}
-            pointBorderWidth={2}
-            pointBorderColor={{from: 'serieColor'}}
-            pointLabelYOffset={-12}
-            useMesh={true}
-            legends={[
-                {
-                    anchor: 'bottom-right',
-                    direction: 'column',
-                    justify: false,
-                    translateX: 100,
-                    translateY: 0,
-                    itemsSpacing: 0,
-                    itemDirection: 'left-to-right',
-                    itemWidth: 80,
-                    itemHeight: 20,
-                    itemOpacity: 0.75,
-                    symbolSize: 12,
-                    symbolShape: 'circle',
-                    symbolBorderColor: 'rgba(0, 0, 0, .5)',
-                    effects: [
-                        {
-                            on: 'hover',
-                            style: {
-                                itemBackground: 'rgba(0, 0, 0, .03)',
-                                itemOpacity: 1
-                            }
-                        }
-                    ]
-                }
-            ]}
-        />
-    </NivoGridWrapper>
-)
