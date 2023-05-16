@@ -25,10 +25,12 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {decodeBytes32String, formatEther} from "ethers";
 import EditIcon from '@mui/icons-material/Edit';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import {toast} from "react-toastify";
 
 const DRILLDOWN_QUERY = gql`
     query DrilldownPage($functionId: ID!){
         functionRegistered(
+            
             id: $functionId
         ){
             id
@@ -169,11 +171,13 @@ export const Buy: React.FC = () => {
     if (!data?.functionRegistered) return <Typography>Function not found</Typography>
     const func = data.functionRegistered;
 
+    const notify = () => toast.success("Copied ID to clipboard");
+
     return <Box width={{xs: "100%", sm: "100%", md: "80%", lg: "65%"}} margin={"auto"}>
         <Stack spacing={2}>
             <img style={{maxWidth: 150, margin: "auto"}}
-                 src={func.metadata_imageUrl || jazziconImageString(func.id)}
-                 onError={(e) => fallbackToJazzicon(e, func.id)}/>
+                 src={func.metadata_imageUrl || jazziconImageString(func.functionId)}
+                 onError={(e) => fallbackToJazzicon(e, func.functionId)}/>
             <Typography variant={"h4"} color={"secondary"}
                         sx={{textAlign: "center", paddingLeft: 1, paddingRight: 1}}>{func.metadata_name}</Typography>
             <Stack direction={"row"} spacing={0.5} justifyContent={"center"} alignContent={"center"}
@@ -211,14 +215,26 @@ export const Buy: React.FC = () => {
                         {/*<Grid item xs={12} sx={{borderBottom: 1, borderColor: "primary.main"}}>*/}
                         <Typography variant={"h6"}>Details</Typography>
                     </Grid>
-                    <GridRow label={"ID"}>
-                        <CopyToClipboard text={func.id}>
+                    {/*<GridRow label={"ID"}>*/}
+                    {/*    <CopyToClipboard text={func.id}>*/}
+                    {/*        <Tooltip title={<Box>*/}
+                    {/*            <Typography>{func.id}</Typography>*/}
+                    {/*            <Typography>Click to copy to clipboard</Typography>*/}
+                    {/*        </Box>}>*/}
+                    {/*            <Typography sx={{overflow: "hidden", textOverflow: "ellipsis"}}*/}
+                    {/*                        variant={"body1"}>{func.id}</Typography>*/}
+
+                    {/*        </Tooltip>*/}
+                    {/*    </CopyToClipboard>*/}
+                    {/*</GridRow>*/}
+                    <GridRow label={"Function ID"}>
+                        <CopyToClipboard text={func.functionId} onCopy={notify}>
                             <Tooltip title={<Box>
-                                <Typography>{func.id}</Typography>
+                                <Typography>{func.functionId}</Typography>
                                 <Typography>Click to copy to clipboard</Typography>
                             </Box>}>
                                 <Typography sx={{overflow: "hidden", textOverflow: "ellipsis"}}
-                                            variant={"body1"}>{func.id}</Typography>
+                                            variant={"body1"}>{func.functionId}</Typography>
 
                             </Tooltip>
                         </CopyToClipboard>

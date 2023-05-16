@@ -65,4 +65,15 @@ export const TypographyWithLinkIcon: React.FC<{
 }
 
 
+//Return the current time in seconds since the epoch minus n days, in UTC
+export const nDaysAgoUTCInSeconds = (n: number) => {
+    const now = Math.floor(Date.now() / 1000)
+    console.log(Date.now())
+    console.log(Date.now() / 1000)
+    console.log("now", now)
+    console.log("minus n=", n, "days", now - (n * 24 * 60 * 60))
+    return now - (n * 24 * 60 * 60)
+}
+
+
 // export const

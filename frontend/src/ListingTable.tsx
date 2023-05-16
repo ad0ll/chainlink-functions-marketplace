@@ -66,21 +66,14 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
                 }}></TextField>
             </Box>
             <Table>
-                {/*<colgroup>*/}
-                {/*    <col  />*/}
-                {/*    <col style={{width:'10%'}}/>*/}
-                {/*    <col style={{width:'10%'}}/>*/}
-                {/*    <col style={{width:'10%'}}/>*/}
-                {/*    <col style={{width:'5%'}}/>*/}
-                {/*</colgroup>*/}
                 <TableHead>
                     <TableRow>
                         <TableCell width={"50%"}>Function</TableCell>
                         <TableCell width={"10%"}>Author</TableCell>
                         <TableCell width={"10%"}>Category</TableCell>
-                        {/*<TableCell>Est. Gas</TableCell>*/}
                         <TableCell width={"10%"}>Fee</TableCell>
                         <TableCell width={"5%"}>{/* Copy snippet button */}</TableCell>
+                        {/*    TODO Add "Added" or whatever column name for when the function was created. See block timestamp "*/}
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -97,17 +90,16 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
                             <Card elevation={2}>
                                 <CardActionArea
                                     component={Link}
-                                    to={`/author/${f.metadata_owner}`}
+                                    to={`/author/${f.owner}`}
                                     style={{
                                         display: "flex",
                                         alignItems: "center",
                                         textDecoration: "none",
                                         padding: 8
                                     }}>
-                                    <Jazzicon seed={addressToJazziconSeed(f.metadata_owner)}
+                                    <Jazzicon seed={addressToJazziconSeed(f.owner)}
                                               style={{height: 20, marginRight: 8}}/>
                                     <Typography>
-                                        {/*{truncateIfAddress(f.metadata_owner)}*/}
                                         {truncateIfAddress(f.owner)}
                                     </Typography>
                                 </CardActionArea>
@@ -116,12 +108,6 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
                         <TableCell>
                             <Typography>{ethers.decodeBytes32String(f.metadata_category)}</Typography>
                         </TableCell>
-                        {/*<TableCell>*/}
-                        {/*    <Typography>*/}
-                        {/*        <LocalGasStationIcon style={{position: 'relative', top: '6px'}}/>*/}
-                        {/*        {f.estimatedGas} {f.estimatedGasToken}*/}
-                        {/*    </Typography>*/}
-                        {/*</TableCell>*/}
                         <TableCell>
                             <TypographyWithLinkIcon>
                                 {renderCurrency(f.metadata_fee)}

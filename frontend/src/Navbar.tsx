@@ -56,8 +56,7 @@ export const NavBar: React.FC = ({}) => {
                 </Typography>
             </Link>
 
-            {/*TODO below should be the currently signed in user*/}
-            <Link to={"/dashboard/:owner"}>
+            <Link to={"/dashboard"}>
                 <Typography variant={"h6"} style={{marginLeft: 16}}>
                     Dashboard
                 </Typography>

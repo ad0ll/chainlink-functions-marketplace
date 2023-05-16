@@ -80,7 +80,7 @@ function App() {
                         <Route path="/buy/:functionId" element={<DefaultSuspense><Buy/></DefaultSuspense>}/>
                         <Route path="/sell" element={<DefaultSuspense><Sell/></DefaultSuspense>}/>
                         <Route path="/author/:ownerAddress" element={<DefaultSuspense><Author/></DefaultSuspense>}/>
-                        <Route path="/dashboard/:ownerAddress"
+                        <Route path="/dashboard"
                                element={<DefaultSuspense><OwnerDashboard/></DefaultSuspense>}/>
                     </Routes>
                 </BrowserRouter>
