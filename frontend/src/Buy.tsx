@@ -214,7 +214,7 @@ export const Buy: React.FC = () => {
 
             <Grid item xs={12}>
                 <InputSnippetGenerator func={func}
-                                       functionManagerAddress={networkConfig[chainId].functionManagerContract}/>
+                                       functionManagerAddress={networkConfig[chainId].functionsManager}/>
             </Grid>
 
             <Paper sx={{

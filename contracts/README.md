@@ -1,6 +1,7 @@
 # Sample Hardhat Project
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a
+script that deploys that contract.
 
 Try running some of the following tasks:
 
@@ -58,12 +59,13 @@ export FUNCTIONS_MANAGER_ADDR=""
 
 ### Deploy the FunctionManager contract
 
+- Automated + updates all references in the code: `./deploy.sh`
 - Raw (not recommended): `npx hardhat run scripts/deploy.ts --network polygonMumbai`
-- Automated + convenience, requires .envrc: `./deploy.sh`
 
 ### Create a subscription
 
-test-network is set to the correct value below
+test-network should point to the key in network-config.js, so below, polygonMumbai is correct (even though the network
+name in hardhat is mumbai)
 
 ```bash
 npx hardhat create-subscription --functions-manager $FUNCTIONS_MANAGER_ADDR --test-network polygonMumbai  --network $HARDHAT_NETWORK
@@ -71,7 +73,8 @@ npx hardhat create-subscription --functions-manager $FUNCTIONS_MANAGER_ADDR --te
 
 ### Fund an existing subscription with 1 LINK and authorize FunctionsManager as consumer
 
-test-network is set to the correct value below
+test-network should point to the key in network-config.js, so below, polygonMumbai is correct (even though the network
+name in hardhat is mumbai)
 
 ```bash
 npx hardhat create-subscription --functions-manager $FUNCTIONS_MANAGER_ADDR --test-network polygonMumbai --subscription-id 941  --network $HARDHAT_NETWORK

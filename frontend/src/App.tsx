@@ -11,6 +11,7 @@ import Buy from "./Buy";
 import {Sell} from "./Sell";
 import Author from "./Author";
 import {OwnerDashboard} from "./OwnerDashboard";
+import {DevMode} from "./misc";
 
 
 declare module '@mui/material/styles' {
@@ -79,32 +80,38 @@ function App() {
     })
 
 
-    return (<ThemeProvider theme={theme}>
-        <Web3ReactProvider connectors={connectors}>
-            <ToastContainer
-                position={"bottom-right"}
-                theme={"dark"}
-                autoClose={3000}
-                pauseOnFocusLoss={false}/>
-            <CssBaseline enableColorScheme/>
-            <Container>
-                <BrowserRouter>
-                    <NavBar/>
-                    <RequireConnection>
-                        <Routes>
+    return (
 
-                            <Route path="/" element={<DefaultSuspense><Home/></DefaultSuspense>}/>
-                            <Route path="/buy/:functionId" element={<DefaultSuspense><Buy/></DefaultSuspense>}/>
-                            <Route path="/sell" element={<DefaultSuspense><Sell/></DefaultSuspense>}/>
-                            <Route path="/author/:address" element={<DefaultSuspense><Author/></DefaultSuspense>}/>
-                            <Route path="/dashboard"
-                                   element={<DefaultSuspense><OwnerDashboard/></DefaultSuspense>}/>
-                        </Routes>
-                    </RequireConnection>
-                </BrowserRouter>
-            </Container>
-        </Web3ReactProvider>
-    </ThemeProvider>);
+
+        <ThemeProvider theme={theme}>
+            <Web3ReactProvider connectors={connectors}>
+                <ToastContainer
+                    position={"bottom-right"}
+                    theme={"dark"}
+                    autoClose={3000}
+                    pauseOnFocusLoss={false}/>
+                <CssBaseline enableColorScheme/>
+                <DevMode/>
+                <Container>
+                    <BrowserRouter>
+                        <NavBar/>
+                        <RequireConnection>
+                            <Routes>
+
+                                <Route path="/" element={<DefaultSuspense><Home/></DefaultSuspense>}/>
+                                <Route path="/buy/:functionId"
+                                       element={<DefaultSuspense><Buy/></DefaultSuspense>}/>
+                                <Route path="/sell" element={<DefaultSuspense><Sell/></DefaultSuspense>}/>
+                                <Route path="/author/:address"
+                                       element={<DefaultSuspense><Author/></DefaultSuspense>}/>
+                                <Route path="/dashboard"
+                                       element={<DefaultSuspense><OwnerDashboard/></DefaultSuspense>}/>
+                            </Routes>
+                        </RequireConnection>
+                    </BrowserRouter>
+                </Container>
+            </Web3ReactProvider>
+        </ThemeProvider>)
 }
 
 export default App;

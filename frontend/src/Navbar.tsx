@@ -1,12 +1,14 @@
-import {AppBar, Button, Toolbar, Tooltip, Typography} from "@mui/material";
+import {AppBar, Button, Fab, Toolbar, Tooltip, Typography} from "@mui/material";
 import Logo from "./assets/icons/logo.svg";
 import React, {useEffect} from "react";
 import {useWeb3React} from "@web3-react/core";
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import {Link} from "react-router-dom";
 import {MUMBAI_CHAIN_ID, SEPOLIA_CHAIN_ID} from "./common";
+import {useCookies} from "react-cookie";
 
 export const NavBar: React.FC = ({}) => {
+    const [cookies] = useCookies(['devMode']);
 
     const {isActive, chainId, account, connector,} = useWeb3React()
     const [connectIcon, setConnectIcon] = React.useState(<AccountBalanceWalletIcon/>)
@@ -78,6 +80,8 @@ export const NavBar: React.FC = ({}) => {
                     Dashboard
                 </Typography>
             </Link>
+
+            {cookies.devMode === "true" && <Fab sx={{marginLeft: "auto"}}>Dev mode enabled</Fab>}
             <Tooltip title={tooltipText} placement={"bottom"} disableHoverListener={tooltipText === ""}>
                 {isActive ?
                     <Button variant={"contained"} color={"secondary"}

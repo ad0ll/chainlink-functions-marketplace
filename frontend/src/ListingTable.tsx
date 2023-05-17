@@ -122,7 +122,7 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
                             <Tooltip placement={"bottom-start"} title={<Box sx={{minWidth: 450}}>
                                 <Typography variant={"h6"}>Click to copy contract snippet</Typography>
                                 <SoliditySyntaxHighlighter>
-                                    {generateDefaultSnippetString(f, networkConfig[chainId].functionManagerContract)}
+                                    {generateDefaultSnippetString(f, networkConfig[chainId].functionsManager)}
                                 </SoliditySyntaxHighlighter>
                             </Box>}>
                                 <ContentCopyIcon onClick={notify}/>
