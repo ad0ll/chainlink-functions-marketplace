@@ -165,7 +165,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         // Initialize Functions request into expected format
         Functions.Request memory functionsRequest;
         functionsRequest.initializeRequest(request.codeLocation, request.language, request.source);
-        if (request.secrets.length > 0) {
+        if (request.secretsLocation == Functions.Location.Remote && request.secrets.length > 0) {
             functionsRequest.addRemoteSecrets(request.secrets);
         }
 
@@ -213,25 +213,19 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
      * @return Functions request ID
      */
     //TODO Needs to take args as a parameter
-    function executeRequest(bytes32 functionId, uint32 gasLimit, bool dummy) public onlyOwner returns (bytes32) {
+    function executeRequest(bytes32 functionId, string[] calldata args, uint32 gasLimit) public onlyOwner returns (bytes32) {
         console.log("executeRequest called with functionId:");
         console.logBytes32(functionId);
         FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
         require(bytes(chainlinkFunction.name).length != 0, "function is not registered");
 
-        // Functions.Request memory functionsRequest = chainlinkFunction.request;
-        // if (args.length > 0) functionsRequest.addArgs(args);
+        Functions.Request memory functionsRequest = chainlinkFunction.request;
+        if (args.length > 0) functionsRequest.addArgs(args);
 
         console.log("collecting and locking fees");
         collectAndLockFees(chainlinkFunction);
-        bytes32 assignedReqID;
-        // We can remove this later, lets us get around the fact that we have to register the functionManager as a subscriber
-        if (dummy) {
-            assignedReqID = keccak256(abi.encodePacked("dummy", functionId, block.timestamp));
-        } else {
-            assignedReqID =
-                sendRequest(chainlinkFunction.request, chainlinkFunction.subId, gasLimit);
-        }
+        bytes32 assignedReqID = sendRequest(chainlinkFunction.request, chainlinkFunction.subId, gasLimit);
+        
         console.log("requestId is:");
         console.logBytes32(assignedReqID);
         require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");

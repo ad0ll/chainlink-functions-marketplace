@@ -80,7 +80,7 @@ npx hardhat create-subscription --functions-manager $FUNCTIONS_MANAGER_ADDR --te
 ### Register a function
 
 ```bash
-npx hardhat register-function --functionsmanager $FUNCTIONS_MANAGER_ADDR --gaslimit 2000000
+npx hardhat register-function --network polygonMumbai --functionsmanager $FUNCTIONS_MANAGER_ADDR
 ```
 
 ### Do a run of a function:

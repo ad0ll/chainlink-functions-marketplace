@@ -1,60 +1,63 @@
-import { task } from "hardhat/config";
-// import { ethers } from "hardhat";
+import { task, types } from "hardhat/config";
 
 task("execute-function", "runs a function")
   .addOptionalParam(
-    "privateKey",
-    "The private key of the account to send tx from",
-    process.env.PRIVATE_KEY,
-    undefined
-  )
-  .addOptionalParam(
-    "functionsManager",
+    "functionsmanager",
     "The address of the function manager",
     process.env.FUNCTION_MANAGER_ADDR,
-    undefined
+    types.string
   )
   .addParam(
-    "functionId",
+    "functionid",
     "The id of the function to execute",
     undefined,
-    undefined,
-    false
+    types.string
   )
+  .addParam("args", "The args for the function", undefined, types.string)
   .addOptionalParam(
     "callbackGasLimit",
     "The gas limit to use for the transaction",
     "300000", //Max gas that can be used in callback
-    undefined
+    types.string
   )
-  .setAction(async (taskArgs, hre) => {
-    const ethers = hre.ethers;
-    if (!taskArgs.privateKey) {
-      throw new Error("--privateKey must be specified");
+  .addOptionalParam(
+    "gaslimit",
+    "Maximum amount of gas that can be used to call fulfillRequest in the client contract",
+    2000000,
+    types.int
+  )
+  .setAction(async (taskArgs, { ethers }) => {
+    if (!taskArgs.functionsmanager) {
+      throw new Error("--functionmanager must be specified");
     }
-    if (!taskArgs.functionsManager) {
-      throw new Error("--functionManager must be specified");
+    if (!taskArgs.functionid) {
+      throw new Error("--functionid must be specified");
     }
-    if (!taskArgs.functionId) {
-      throw new Error("--functionId must be specified");
+    if (taskArgs.gaslimit <= 0 || taskArgs.gaslimit > 20000000) {
+      throw new Error(
+        "--gaslimit must be greater than 0 and less than or equal to 20,000,000"
+      );
     }
 
     const [signer] = await ethers.getSigners();
     const functionsManagerRaw = await ethers.getContractAt(
       "FunctionsManager",
-      taskArgs.functionsManager
+      taskArgs.functionsmanager
     );
-    const functionsManager = await functionsManagerRaw.connect(signer);
+    const functionsManager = functionsManagerRaw.connect(signer);
 
-    console.log("Executing function: ", taskArgs.functionId);
+    console.log("Executing function: ", taskArgs.functionid);
+    const args = taskArgs.args ? taskArgs.args.split(",") : [];
     const rawExecute = await functionsManager.executeRequest(
-      ethers.utils.formatBytes32String(taskArgs.functionId),
-      // taskArgs.functionId,
+      taskArgs.functionid,
+      args,
       taskArgs.callbackGasLimit,
-      false //dummy call or not
+      {
+        gasLimit: taskArgs.gaslimit,
+      }
     );
 
-    const receipt = await rawExecute.wait();
+    const receipt = await rawExecute.wait(1);
     console.log("Raw receipt: ", receipt);
     console.log("Transaction mined in block " + receipt.blockNumber);
     console.log(
