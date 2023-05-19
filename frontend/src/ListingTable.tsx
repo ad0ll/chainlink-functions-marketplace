@@ -4,6 +4,7 @@ import {
     Box,
     Card,
     CardActionArea,
+    CardMedia,
     CircularProgress,
     Table,
     TableBody,
@@ -20,28 +21,36 @@ import {
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {toast} from "react-toastify";
 import {Link} from "react-router-dom";
-import {addressToJazziconSeed, renderCurrency, truncateIfAddress} from "./utils/util";
+import {
+    addressToJazziconSeed,
+    fallbackToJazzicon,
+    jazziconImageString,
+    renderCurrency,
+    truncateIfAddress
+} from "./utils/util";
 import Jazzicon from "./Jazzicon";
-import {SoliditySyntaxHighlighter} from "./Snippets";
+import {generateDefaultSnippetString, SoliditySyntaxHighlighter} from "./Snippets";
 import {DocumentNode, useQuery} from "@apollo/client";
 import {Query} from "./gql/graphql";
-import {TypographyWithLinkIcon} from "./common";
+import {blockTimestampToDate, MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID, TypographyWithLinkIcon} from "./common";
 import {Search as SearchIcon} from "@mui/icons-material";
 import {ethers} from "ethers"
+import {useWeb3React} from "@web3-react/core";
 
 
-const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
+const ListingTable: React.FC<{ query: DocumentNode, args: Object }> = ({query, args}) => {
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [nameDescFilter, setNameDescFilter] = useState("");
     const [shouldSearchDesc, setShouldSearchDesc] = useState(false);
     const [sortTerm, setSortTerm] = useState<"name" | "description" | "author A-Z" | "author Z-A" | "fee, lowest first" | "fee, highest first">("name");
-
+    const {account, chainId} = useWeb3React()
     const skip = page * pageSize;
     const {loading, error, data} = useQuery<Query, { first: number, skip: number }>(query, {
         variables: {
             skip,
-            first: pageSize
+            first: pageSize,
+            ...args
         }
     })
 
@@ -58,6 +67,10 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
         return <Typography>Something went wrong, data is undefined</Typography>
     }
 
+    if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
+        return <Typography>Please switch to either Mumbai or Sepolia in Metamask</Typography>
+    }
+
     return (
         <TableContainer>
             <Box width={"100%"} display={"flex"} justifyContent={"space-between"} alignItems={"center"}>
@@ -66,28 +79,27 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
                 }}></TextField>
             </Box>
             <Table>
-                {/*<colgroup>*/}
-                {/*    <col  />*/}
-                {/*    <col style={{width:'10%'}}/>*/}
-                {/*    <col style={{width:'10%'}}/>*/}
-                {/*    <col style={{width:'10%'}}/>*/}
-                {/*    <col style={{width:'5%'}}/>*/}
-                {/*</colgroup>*/}
                 <TableHead>
                     <TableRow>
-                        <TableCell width={"50%"}>Function</TableCell>
+                        <TableCell width={"55%"}>Function</TableCell>
                         <TableCell width={"10%"}>Author</TableCell>
                         <TableCell width={"10%"}>Category</TableCell>
-                        {/*<TableCell>Est. Gas</TableCell>*/}
                         <TableCell width={"10%"}>Fee</TableCell>
+                        <TableCell width={"10%"}>Added</TableCell>
                         <TableCell width={"5%"}>{/* Copy snippet button */}</TableCell>
+                        {/*    TODO Add "Added" or whatever column name for when the function was created. See block timestamp "*/}
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {data.functionRegistereds.map((f, i) => <TableRow key={i}>
                         <TableCell>
                             {/*TODO Fix overflow*/}
-                            <Link to={`/buy/${f.id}`}>
+                            <Link to={`/buy/${f.id}`} style={{display: "flex", alignItems: "center"}}>
+                                <CardMedia
+                                    component={"img"}
+                                    sx={{width: 32, marginRight: 1}}
+                                    image={f.metadata_imageUrl || jazziconImageString(f.functionId)}
+                                    onError={(e) => fallbackToJazzicon(e, f.functionId)}/>
                                 <Typography>
                                     {f.metadata_name}
                                 </Typography>
@@ -97,17 +109,16 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
                             <Card elevation={2}>
                                 <CardActionArea
                                     component={Link}
-                                    to={`/author/${f.metadata_owner}`}
+                                    to={`/author/${f.owner}`}
                                     style={{
                                         display: "flex",
                                         alignItems: "center",
                                         textDecoration: "none",
                                         padding: 8
                                     }}>
-                                    <Jazzicon seed={addressToJazziconSeed(f.metadata_owner)}
+                                    <Jazzicon seed={addressToJazziconSeed(f.owner)}
                                               style={{height: 20, marginRight: 8}}/>
                                     <Typography>
-                                        {/*{truncateIfAddress(f.metadata_owner)}*/}
                                         {truncateIfAddress(f.owner)}
                                     </Typography>
                                 </CardActionArea>
@@ -116,23 +127,19 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
                         <TableCell>
                             <Typography>{ethers.decodeBytes32String(f.metadata_category)}</Typography>
                         </TableCell>
-                        {/*<TableCell>*/}
-                        {/*    <Typography>*/}
-                        {/*        <LocalGasStationIcon style={{position: 'relative', top: '6px'}}/>*/}
-                        {/*        {f.estimatedGas} {f.estimatedGasToken}*/}
-                        {/*    </Typography>*/}
-                        {/*</TableCell>*/}
                         <TableCell>
-                            <TypographyWithLinkIcon>
+                            <TypographyWithLinkIcon includeSuffix={false}>
                                 {renderCurrency(f.metadata_fee)}
                             </TypographyWithLinkIcon>
+                        </TableCell>
+                        <TableCell>
+                            <Typography>{blockTimestampToDate(f.blockTimestamp)}</Typography>
                         </TableCell>
                         <TableCell>
                             <Tooltip placement={"bottom-start"} title={<Box sx={{minWidth: 450}}>
                                 <Typography variant={"h6"}>Click to copy contract snippet</Typography>
                                 <SoliditySyntaxHighlighter>
-                                    {/*TODO Add this back in once we know what metadata looks like*/}
-                                    {/*{generateDefaultSnippetString(f)}*/}
+                                    {generateDefaultSnippetString(f, networkConfig[chainId].functionsManager)}
                                 </SoliditySyntaxHighlighter>
                             </Box>}>
                                 <ContentCopyIcon onClick={notify}/>

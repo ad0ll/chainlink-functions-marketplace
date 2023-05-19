@@ -1,14 +1,16 @@
-import {AppBar, Button, Toolbar, Tooltip, Typography} from "@mui/material";
+import {AppBar, Button, Fab, Toolbar, Tooltip, Typography} from "@mui/material";
 import Logo from "./assets/icons/logo.svg";
-import React from "react";
+import React, {useEffect} from "react";
 import {useWeb3React} from "@web3-react/core";
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import {Link} from "react-router-dom";
-import {ErrorOutline} from "@mui/icons-material";
+import {MUMBAI_CHAIN_ID, SEPOLIA_CHAIN_ID} from "./common";
+import {useCookies} from "react-cookie";
 
 export const NavBar: React.FC = ({}) => {
+    const [cookies] = useCookies(['devMode']);
 
-    const {isActive, isActivating, chainId, hooks, account, provider, connector, ENSName, ENSNames} = useWeb3React()
+    const {isActive, chainId, account, connector,} = useWeb3React()
     const [connectIcon, setConnectIcon] = React.useState(<AccountBalanceWalletIcon/>)
     const [initialLoad, setInitialLoad] = React.useState(true)
     const [tooltipText, setTooltipText] = React.useState("")
@@ -16,31 +18,48 @@ export const NavBar: React.FC = ({}) => {
     const connectWallet = async () => {
         try {
             setTooltipText("")
+            if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
+                setTooltipText("Please switch to either Mumbai or Sepolia in Metamask")
+            }
             await connector.activate()
         } catch (err: any) {
-            // startTransition(() => {
-            console.log("setting error", err.message)
             setTooltipText(err.message)
-            //TODO set to error color
-            // setConnectIcon(<ErrorOutline color={"primary"}/>)
-            setConnectIcon(<ErrorOutline/>)
-            // })
         }
     }
 
     const disconnectWallet = async () => {
         try {
+            console.log("disconnecting wallet")
             if (isActive) {
-                await connector?.deactivate?.()
+
+                if (connector?.deactivate) {
+                    console.log("deactivating connector")
+                    void connector.deactivate()
+                } else {
+                    console.log("resetting state")
+                    void connector.resetState()
+                }
             }
-        } catch (err) {
-            console.error(err)
+        } catch (err: any) {
+            setTooltipText(err.message)
+            // console.error(err)
         }
     }
-    if (initialLoad) {
-        connectWallet()
-        setInitialLoad(false)
-    }
+
+    //
+    useEffect(() => {
+        if (!isActive) {
+            //         // void metaMask.connectEagerly().catch((e) => {
+            if (connector.connectEagerly) {
+                connector?.connectEagerly()
+                //             //     .catch((e: any) => {
+                //             //     console.debug('Failed to connect eagerly to metamask', e)
+                //             //     setConnectIcon(<ErrorOutline/>)
+                //             //     setTooltipText(e)
+                // })
+            }
+        }
+    }, [])
 
     return (<AppBar position={"static"}>
         <Toolbar>
@@ -56,12 +75,13 @@ export const NavBar: React.FC = ({}) => {
                 </Typography>
             </Link>
 
-            {/*TODO below should be the currently signed in user*/}
-            <Link to={"/dashboard/:owner"}>
+            <Link to={"/dashboard"}>
                 <Typography variant={"h6"} style={{marginLeft: 16}}>
                     Dashboard
                 </Typography>
             </Link>
+
+            {cookies.devMode === "true" && <Fab sx={{marginLeft: "auto"}}>Dev mode enabled</Fab>}
             <Tooltip title={tooltipText} placement={"bottom"} disableHoverListener={tooltipText === ""}>
                 {isActive ?
                     <Button variant={"contained"} color={"secondary"}

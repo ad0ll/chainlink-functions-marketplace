@@ -1,16 +1,17 @@
-import {Container, createTheme, CssBaseline, ThemeProvider} from '@mui/material';
-import React from 'react';
-import {initializeConnector, Web3ReactHooks, Web3ReactProvider} from "@web3-react/core";
+import {Container, createTheme, CssBaseline, ThemeProvider, Typography} from '@mui/material';
+import React, {ReactNode} from 'react';
+import {initializeConnector, useWeb3React, Web3ReactHooks, Web3ReactProvider} from "@web3-react/core";
 import {MetaMask} from "@web3-react/metamask";
 import {ToastContainer} from "react-toastify";
 import {BrowserRouter, Route, Routes} from "react-router-dom";
 import {NavBar} from "./Navbar";
-import {DefaultSuspense} from "./common";
+import {DefaultSuspense, MUMBAI_CHAIN_ID, SEPOLIA_CHAIN_ID} from "./common";
 import {Home} from "./Home";
 import Buy from "./Buy";
 import {Sell} from "./Sell";
 import Author from "./Author";
 import {OwnerDashboard} from "./OwnerDashboard";
+import {DevMode} from "./misc";
 
 
 declare module '@mui/material/styles' {
@@ -31,6 +32,21 @@ export const [metaMask, metaMaskHooks] = initializeConnector<MetaMask>((actions)
 const connectors: [MetaMask, Web3ReactHooks][] = [
     [metaMask, metaMaskHooks],
 ]
+
+const RequireConnection: React.FC<{ children: ReactNode }> = ({children}) => {
+    const {isActive, chainId, account, connector} = useWeb3React()
+    if (!isActive) {
+        return <Typography>Please connect to MetaMask by clicking the connect button</Typography>
+    } else if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
+        return <Typography>Please change your network to Mumbai or Sepolia</Typography>
+    }
+
+    // TODO check if account is authorized spender
+    // const Oracle = await ethers.getContractFactory("contracts/dev/functions/FunctionsOracle.sol:FunctionsOracle")
+    // const oracle = await Oracle.attach(networkConfig[network.name]["functionsOracleProxy"])
+    // const isWalletAllowed = await oracle.isAuthorizedSender((await ethers.getSigner()).address)
+    return <>{children}</>
+}
 
 function App() {
     const theme = createTheme({
@@ -64,29 +80,36 @@ function App() {
     })
 
 
-    return (<ThemeProvider theme={theme}>
-        <Web3ReactProvider connectors={connectors}>
-            <ToastContainer
-                position={"bottom-right"}
-                theme={"dark"}
-                autoClose={3000}
-                pauseOnFocusLoss={false}/>
-            <CssBaseline enableColorScheme/>
-            <Container>
-                <BrowserRouter>
-                    <NavBar/>
-                    <Routes>
-                        <Route path="/" element={<DefaultSuspense><Home/></DefaultSuspense>}/>
-                        <Route path="/buy/:functionId" element={<DefaultSuspense><Buy/></DefaultSuspense>}/>
-                        <Route path="/sell" element={<DefaultSuspense><Sell/></DefaultSuspense>}/>
-                        <Route path="/author/:ownerAddress" element={<DefaultSuspense><Author/></DefaultSuspense>}/>
-                        <Route path="/dashboard/:ownerAddress"
-                               element={<DefaultSuspense><OwnerDashboard/></DefaultSuspense>}/>
-                    </Routes>
-                </BrowserRouter>
-            </Container>
-        </Web3ReactProvider>
-    </ThemeProvider>);
+    return (
+        <ThemeProvider theme={theme}>
+            <Web3ReactProvider connectors={connectors}>
+                <ToastContainer
+                    position={"bottom-right"}
+                    theme={"dark"}
+                    autoClose={3000}
+                    pauseOnFocusLoss={false}/>
+                <CssBaseline enableColorScheme/>
+                <DevMode/>
+                <Container>
+                    <BrowserRouter>
+                        <NavBar/>
+                        <RequireConnection>
+                            <Routes>
+
+                                <Route path="/" element={<DefaultSuspense><Home/></DefaultSuspense>}/>
+                                <Route path="/buy/:functionId"
+                                       element={<DefaultSuspense><Buy/></DefaultSuspense>}/>
+                                <Route path="/sell" element={<DefaultSuspense><Sell/></DefaultSuspense>}/>
+                                <Route path="/author/:address"
+                                       element={<DefaultSuspense><Author/></DefaultSuspense>}/>
+                                <Route path="/dashboard"
+                                       element={<DefaultSuspense><OwnerDashboard/></DefaultSuspense>}/>
+                            </Routes>
+                        </RequireConnection>
+                    </BrowserRouter>
+                </Container>
+            </Web3ReactProvider>
+        </ThemeProvider>)
 }
 
 export default App;

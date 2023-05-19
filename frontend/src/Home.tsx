@@ -23,6 +23,7 @@ const LISTING_QUERY = gql`
             metadata_desc
             metadata_imageUrl
             metadata_category
+            blockTimestamp
         }
     }
 `;
@@ -91,7 +92,7 @@ export const Home: React.FC = () => {
             <Grid item xs={12}>
                 <Typography variant={"h4"}>Browse</Typography>
             </Grid>
-            <ListingTable query={LISTING_QUERY}/>
+            <ListingTable query={LISTING_QUERY} args={{}}/>
         </Grid>
     </Grid>)
 }

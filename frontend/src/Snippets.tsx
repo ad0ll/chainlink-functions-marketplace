@@ -2,7 +2,6 @@
 import React, {FC} from "react"
 import {Prism as SyntaxHighlighter, SyntaxHighlighterProps} from "react-syntax-highlighter";
 import {vscDarkPlus} from "react-syntax-highlighter/dist/esm/styles/prism";
-import {networkConfig} from "./common";
 import {FunctionRegistered} from "./gql/graphql";
 
 export type FunctionArg = {
@@ -48,7 +47,7 @@ type GenerateSnippetOptions = {
 }
 
 const generateParameterString = (args: FunctionArg[], renderType: "placeholders" | "paramWithType" | "paramNameOnly"): string => {
-    if (args.length === 0) {
+    if (!args || args.length === 0) {
         return ""
     }
     return args.map((arg) => {
@@ -65,8 +64,11 @@ const generateParameterString = (args: FunctionArg[], renderType: "placeholders"
     }).join(", ")
 }
 
-export const splitArgStrings = (argStrings: string[]): FunctionArg[] => {
-    return argStrings.map(splitArgString)
+export const splitArgStrings = (argStrings?: string[]): FunctionArg[] => {
+    if (!argStrings) {
+        return []
+    }
+    return argStrings?.map(splitArgString)
 }
 export const splitArgString = (argString: string): FunctionArg => {
     const split = argString.split(":")
@@ -89,11 +91,10 @@ export const splitArgString = (argString: string): FunctionArg => {
     }
 }
 
-const generateCallString = (func: FunctionRegistered, opts: GenerateSnippetOptions) => {
+const generateCallString = (func: FunctionRegistered, functionManagerContractAddress: string, opts: GenerateSnippetOptions) => {
     // TODO hardcoded sendRequest makes me really nervous. Can we replace this by scraping the ABI once the FunctionManager contract is done?
 
     //TODO fix hardcoded network
-    const functionManagerContractAddress = networkConfig.mumbai.functionManagerContract
     const sendRequestArgs: string = opts.hardcodeParameters ? generateParameterString(splitArgStrings(func.metadata_expectedArgs), "placeholders") : generateParameterString(splitArgStrings(func.metadata_expectedArgs), "paramNameOnly")
 
     /*
@@ -109,16 +110,16 @@ const generateCallString = (func: FunctionRegistered, opts: GenerateSnippetOptio
         `.replace("\t", "").replace("    ", "")
 }
 
-export const generateSnippetString = (func: FunctionRegistered, opts: GenerateSnippetOptions) => {
-    const parameterString = opts.hardcodeParameters && func.metadata_expectedArgs.length > 0 ? "" : generateParameterString(splitArgStrings(func.metadata_expectedArgs), "paramWithType")
+export const generateSnippetString = (func: FunctionRegistered, functionManagerAddress: string, opts: GenerateSnippetOptions) => {
+    const parameterString = opts.hardcodeParameters && func.metadata_expectedArgs?.length > 0 ? "" : generateParameterString(splitArgStrings(func.metadata_expectedArgs), "paramWithType")
 
     return `function (${parameterString}) public view returns (bytes32) {
-       ${generateCallString(func, opts)}
+       ${generateCallString(func, functionManagerAddress, opts)}
     }`
 }
 
-export const generateDefaultSnippetString = (func: FunctionRegistered) => {
-    return generateSnippetString(func, {
+export const generateDefaultSnippetString = (func: FunctionRegistered, functionManagerAddress: string) => {
+    return generateSnippetString(func, functionManagerAddress, {
         hardcodeParameters: true,
         callbackFunction: "storeFull",
         returnRequestId: true
