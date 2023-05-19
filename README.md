@@ -33,8 +33,8 @@ details.
 
 #### /webapp
 
-Contains the webapp for the marketplace. Deployments are made to vercel manually using the CLI (although we should
-automate this later)
+Contains the webapp for the marketplace. See the [README](./frontend/README.md) for more
+details.
 
 ### Branch etiquette
 

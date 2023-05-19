@@ -1,4 +1,0 @@
-Late stage feature
-* Rather than support arbitrary ERC20 addresses, support at least the top 50-100
-* USDC is a good baseline
-
