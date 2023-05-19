@@ -224,7 +224,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
         console.log("collecting and locking fees");
         collectAndLockFees(chainlinkFunction);
-        bytes32 assignedReqID = sendRequest(chainlinkFunction.request, chainlinkFunction.subId, gasLimit);
+        console.log("sending functions request");
+        bytes32 assignedReqID = sendRequest(functionsRequest, chainlinkFunction.subId, gasLimit);
         
         console.log("requestId is:");
         console.logBytes32(assignedReqID);

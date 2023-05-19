@@ -5,6 +5,7 @@ import "hardhat-watcher";
 import "./tasks/create-subscription";
 import "./tasks/execute-function";
 import "./tasks/register-function";
+import "./tasks/get-response";
 
 dotenv.config();
 

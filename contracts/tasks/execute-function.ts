@@ -58,7 +58,6 @@ task("execute-function", "runs a function")
     );
 
     const receipt = await rawExecute.wait(1);
-    console.log("Raw receipt: ", receipt);
     console.log("Transaction mined in block " + receipt.blockNumber);
     console.log(
       "Received the following events: ",
@@ -66,4 +65,10 @@ task("execute-function", "runs a function")
         ?.map((e) => e.event + ": " + JSON.stringify(e.args))
         .join("\n")
     );
+    if (receipt.events && receipt.events[3] && receipt.events[3].args) {
+      const requestId = receipt.events[3].args["requestId"].toString();
+      console.log(`Executed function. Request Id: ${requestId}`);
+      const response = await functionsManager.getFunctionResponse(requestId);
+      console.log(JSON.stringify(response));
+    }
   });

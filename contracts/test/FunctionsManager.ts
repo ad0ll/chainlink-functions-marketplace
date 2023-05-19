@@ -1,6 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import fs from "fs";
 
 describe("FunctionsManager", function () {
   // We define a fixture to reuse the same setup in every test.
@@ -28,6 +29,22 @@ describe("FunctionsManager", function () {
     return { functionsManager, owner, otherAccount };
   }
 
+  // Function Metadata
+  const request = {
+    fees: ethers.utils.parseEther("0.002"),
+    functionName: "Test Function 3",
+    desc: "Test description",
+    imageUrl: "https://image.url/",
+    expectedArgs: ["principalAmount", "APYTimes100"],
+    codeLocation: 0,
+    secretsLocation: 0,
+    language: 0,
+    subId: Number(950),
+    source: fs.readFileSync("./calculation-example.js").toString(),
+    secrets: [],
+    category: ethers.utils.formatBytes32String("calculations"),
+  };
+
   describe("Deployment", function () {
     it("Should deploy successfully", async function () {
       const { functionsManager } = await loadFixture(deployFunctionsManager);
@@ -43,58 +60,41 @@ describe("FunctionsManager", function () {
           deployFunctionsManager
         );
 
-        const fees = "1000000000000000000";
-        const subId = 1;
-        const functionName = "test";
-        const desc = "test desc";
-        const imageUrl = "https://image.url";
-        const source = "https://source.url";
-        const secrets = ethers.utils.defaultAbiCoder.encode(
-          ["bytes"],
-          [["https://secrets.url"]]
-        );
-        const expectedArgs: string[] = ["arg1", "arg2", "arg3"];
-        const category = ethers.utils.formatBytes32String("test");
-
-        await expect(
-          functionsManager.registerFunction({
-            fees,
-            functionName,
-            desc,
-            imageUrl,
-            codeLocation: 1,
-            secretsLocation: 1,
-            language: 0,
-            source,
-            secrets,
-            expectedArgs,
-            category,
-            subId,
-          })
-        )
+        await expect(functionsManager.registerFunction(request))
           .to.emit(functionsManager, "FunctionRegistered")
-          .withArgs({
-            fees,
-            owner: owner.address,
-            subId,
-            functionName,
-            desc,
-            imageUrl,
-            request: {
-              codeLocation: 1,
-              secretsLocation: 1,
-              language: 1,
-              source,
-              secrets,
-              expectedArgs,
-            },
-          });
+          .withArgs(
+            "0xa9382ed06ebf2dbd7ca4ffacb8cf66cf3486282a47ca999ec5c4d3255d6cad2f",
+            owner.address,
+            ethers.utils.formatBytes32String("calculations"),
+            request
+          );
       });
     });
   });
 
   describe("Execute Request", function () {
-    it("Should send request and generate request Id", async function () {});
+    it("Should send request and generate request Id", async function () {
+      const { functionsManager, owner } = await loadFixture(
+        deployFunctionsManager
+      );
+
+      let tx = await functionsManager.registerFunction(request);
+      let receipt = await tx.wait();
+
+      if (receipt.events && receipt.events[0] && receipt.events[0].args) {
+        const functionId = receipt.events[0].args["functionId"].toString();
+        tx = await functionsManager.executeRequest(
+          functionId,
+          ["10000", "450"],
+          30000
+        );
+        receipt = await tx.wait();
+        if (receipt.events && receipt.events[0] && receipt.events[0].args) {
+          const requestId = receipt.events[0].args["requestId"].toString();
+          expect(requestId);
+        }
+      }
+    });
   });
 
   describe("Fulfill Request", function () {
