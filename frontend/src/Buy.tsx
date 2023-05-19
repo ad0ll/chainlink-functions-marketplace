@@ -161,8 +161,7 @@ const InputSnippetGenerator: React.FC<{ func: FunctionRegistered, functionManage
 }
 
 export const Buy: React.FC = () => {
-
-    const {account, chainId} = useWeb3React()
+    const {chainId} = useWeb3React()
     const {functionId} = useParams<{ functionId: string }>();
     const {loading, error, data} = useQuery<Query>(DRILLDOWN_QUERY, {
         variables: {
@@ -203,7 +202,7 @@ export const Buy: React.FC = () => {
                 </Typography>
                 {/*Link to scanner for mumbai */}
                 <Tooltip title={"Open in scanner"}>
-                    <Link to={networkConfig[chainId].getScannerUrl(func.metadata_owner)}>
+                    <Link to={networkConfig[chainId].getScannerUrl(func.owner)}>
                         <Typography variant={"h6"}>{<OpenInNewIcon/>}</Typography>
                     </Link>
                 </Tooltip>

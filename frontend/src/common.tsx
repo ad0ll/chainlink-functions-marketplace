@@ -51,14 +51,29 @@ export const DefaultSuspense: React.FC<{ children: React.ReactNode }> = ({childr
 export const TypographyWithLinkIcon: React.FC<{
     height?: number,
     width?: number,
+    includeSuffix?: boolean
     children: ReactNode
-} & TypographyProps> = ({height = "inherit", width = "inherit", children, style}, props) => {
+} & TypographyProps> = ({height = "inherit", width = "inherit", includeSuffix = true, children, style}, props) => {
     return <Box style={{"display": "flex", "alignItems": "center"}}>
         <SvgIcon component={LinkTokenIcon} viewBox="0 0 800 800" height={height} width={width}
                  style={{marginRight: 4, ...style}}/>
         <Typography {...props} style={{...props.style, marginRight: 4}}>{children}</Typography>
-        <Typography {...props} style={{...props.style, marginRight: 4}}>LINK</Typography>
+        {includeSuffix && <Typography {...props} style={{...props.style, marginRight: 4}}>LINK</Typography>}
     </Box>
+}
+export const blockTimestampToDate = (timestamp: number) => {
+    const date = new Date(timestamp * 1000); // Convert seconds to milliseconds
+    // const options = {
+    //     weekday: 'long',
+    //     year: 'numeric',
+    //     month: 'long',
+    //     day: 'numeric',
+    //     hour: 'numeric',
+    //     minute: 'numeric',
+    //     second: 'numeric',
+    //     timeZoneName: 'short'
+    // };
+    return date.toLocaleString();
 }
 
 

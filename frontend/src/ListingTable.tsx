@@ -4,6 +4,7 @@ import {
     Box,
     Card,
     CardActionArea,
+    CardMedia,
     CircularProgress,
     Table,
     TableBody,
@@ -20,18 +21,24 @@ import {
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {toast} from "react-toastify";
 import {Link} from "react-router-dom";
-import {addressToJazziconSeed, renderCurrency, truncateIfAddress} from "./utils/util";
+import {
+    addressToJazziconSeed,
+    fallbackToJazzicon,
+    jazziconImageString,
+    renderCurrency,
+    truncateIfAddress
+} from "./utils/util";
 import Jazzicon from "./Jazzicon";
 import {generateDefaultSnippetString, SoliditySyntaxHighlighter} from "./Snippets";
 import {DocumentNode, useQuery} from "@apollo/client";
 import {Query} from "./gql/graphql";
-import {MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID, TypographyWithLinkIcon} from "./common";
+import {blockTimestampToDate, MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID, TypographyWithLinkIcon} from "./common";
 import {Search as SearchIcon} from "@mui/icons-material";
 import {ethers} from "ethers"
 import {useWeb3React} from "@web3-react/core";
 
 
-const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
+const ListingTable: React.FC<{ query: DocumentNode, args: Object }> = ({query, args}) => {
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [nameDescFilter, setNameDescFilter] = useState("");
@@ -42,7 +49,8 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
     const {loading, error, data} = useQuery<Query, { first: number, skip: number }>(query, {
         variables: {
             skip,
-            first: pageSize
+            first: pageSize,
+            ...args
         }
     })
 
@@ -73,10 +81,11 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell width={"50%"}>Function</TableCell>
+                        <TableCell width={"55%"}>Function</TableCell>
                         <TableCell width={"10%"}>Author</TableCell>
                         <TableCell width={"10%"}>Category</TableCell>
                         <TableCell width={"10%"}>Fee</TableCell>
+                        <TableCell width={"10%"}>Added</TableCell>
                         <TableCell width={"5%"}>{/* Copy snippet button */}</TableCell>
                         {/*    TODO Add "Added" or whatever column name for when the function was created. See block timestamp "*/}
                     </TableRow>
@@ -85,7 +94,12 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
                     {data.functionRegistereds.map((f, i) => <TableRow key={i}>
                         <TableCell>
                             {/*TODO Fix overflow*/}
-                            <Link to={`/buy/${f.id}`}>
+                            <Link to={`/buy/${f.id}`} style={{display: "flex", alignItems: "center"}}>
+                                <CardMedia
+                                    component={"img"}
+                                    sx={{width: 32, marginRight: 1}}
+                                    image={f.metadata_imageUrl || jazziconImageString(f.functionId)}
+                                    onError={(e) => fallbackToJazzicon(e, f.functionId)}/>
                                 <Typography>
                                     {f.metadata_name}
                                 </Typography>
@@ -114,9 +128,12 @@ const ListingTable: React.FC<{ query: DocumentNode }> = ({query}) => {
                             <Typography>{ethers.decodeBytes32String(f.metadata_category)}</Typography>
                         </TableCell>
                         <TableCell>
-                            <TypographyWithLinkIcon>
+                            <TypographyWithLinkIcon includeSuffix={false}>
                                 {renderCurrency(f.metadata_fee)}
                             </TypographyWithLinkIcon>
+                        </TableCell>
+                        <TableCell>
+                            <Typography>{blockTimestampToDate(f.blockTimestamp)}</Typography>
                         </TableCell>
                         <TableCell>
                             <Tooltip placement={"bottom-start"} title={<Box sx={{minWidth: 450}}>

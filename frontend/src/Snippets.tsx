@@ -64,7 +64,10 @@ const generateParameterString = (args: FunctionArg[], renderType: "placeholders"
     }).join(", ")
 }
 
-export const splitArgStrings = (argStrings: string[]): FunctionArg[] => {
+export const splitArgStrings = (argStrings?: string[]): FunctionArg[] => {
+    if (!argStrings) {
+        return []
+    }
     return argStrings?.map(splitArgString)
 }
 export const splitArgString = (argString: string): FunctionArg => {

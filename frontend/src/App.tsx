@@ -81,8 +81,6 @@ function App() {
 
 
     return (
-
-
         <ThemeProvider theme={theme}>
             <Web3ReactProvider connectors={connectors}>
                 <ToastContainer
