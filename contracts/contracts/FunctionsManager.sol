@@ -18,7 +18,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     mapping(bytes32 => bool) private existingNameOwnerPair;
     mapping(address => AuthorMetadata) public authorMetadata;
     mapping(uint64 => string) public categoryNames;
-    mapping(uint64 => uint256) public subscriptionBalances; 
+    mapping(uint64 => uint256) public subscriptionBalances;
 
     LinkTokenInterface private LINK;
     FunctionsBillingRegistry private BILLING_REGISTRY;
@@ -157,9 +157,23 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             console.log("creating new subscription");
             metadata.subId = createSubscription();
         } else {
-            console.log("using existing subscription %d", request.subId);
-            //TODO Make sure that the person calling registerFunction is an authorized consumer of the subscription.
-            //TODO Make sure that the function manager is an authorized consumer of the subscription
+            console.log("using existing subscription %d, checking if authorized", request.subId);
+            (uint96 balance, address owner, address[] memory consumers) =
+                BILLING_REGISTRY.getSubscription(request.subId);
+            bool functionsManagerIsAuthorized = owner == address(this);
+            bool callerIsAuthorized = owner == address(this);
+            //iterate over consumers to see if any of them are address(this)
+            for (uint256 i = 0; i < consumers.length; i++) {
+                if (consumers[i] == address(this)) {
+                    functionsManagerIsAuthorized = true;
+                } else if (consumers[i] == msg.sender) {
+                    callerIsAuthorized = true;
+                }
+                if(functionsManagerIsAuthorized && callerIsAuthorized){
+                    break;
+                }
+            }
+            require(functionsManagerIsAuthorized && callerIsAuthorized, "FunctionsManager and/or caller are not authorized consumers of the subscription");
             metadata.subId = request.subId;
         }
 
@@ -187,7 +201,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     }
 
     function createSubscription() internal returns (uint64) {
-        require(msg.value >= minimumSubscriptionDeposit, 'Minimum deposit amount not sent');
+        require(msg.value >= minimumSubscriptionDeposit, "Minimum deposit amount not sent");
         console.log("creating subscription with %s as sender and %s as tx.origin", msg.sender, tx.origin);
         // Automatically sets msg sender (FunctionsManager) as subscription owner
         uint64 subId = BILLING_REGISTRY.createSubscription();
@@ -213,7 +227,11 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
      * @param gasLimit Maximum amount of gas used to call the client contract's `handleOracleFulfillment` function
      * @return Functions request ID
      */
-    function executeRequest(bytes32 functionId, string[] calldata args, uint32 gasLimit) public onlyOwner returns (bytes32) {
+    function executeRequest(bytes32 functionId, string[] calldata args, uint32 gasLimit)
+        public
+        onlyOwner
+        returns (bytes32)
+    {
         console.log("executeRequest called with functionId:");
         console.logBytes32(functionId);
         FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
@@ -226,7 +244,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         collectAndLockFees(chainlinkFunction);
         console.log("sending functions request");
         bytes32 assignedReqID = sendRequest(functionsRequest, chainlinkFunction.subId, gasLimit);
-        
+
         console.log("requestId is:");
         console.logBytes32(assignedReqID);
         require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");
@@ -298,7 +316,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         subscriptionBalances[chainlinkFunction.subId] = subscriptionBalances[chainlinkFunction.subId] + baseFee;
 
         console.log(
-            "added baseFee %d LINK to subscription pool, total in pool: %d", baseFee, chainlinkFunction.subscriptionPool
+            "added baseFee %d LINK to subscription pool, total in pool: %d", baseFee, subscriptionBalances[chainlinkFunction.subId]
         );
 
         uint256 functionManagerCut = (chainlinkFunction.fee * feeManagerCut) / 100;
@@ -329,7 +347,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     // TODO Should not exist in the prod product. This is only here to prevent us from losing
     // MATIC while testing
     function moveSubscriptionToUnlock(uint64 _subscriptionId) external onlyOwner {
-        require(LINK.allowance(msg.sender, address(this)), "caller is not approved to spend LINK");
+        // require(LINK.allowance(msg.sender, address(this)) > 0, "caller is not approved to spend LINK");
         LINK.transferFrom(address(this), msg.sender, subscriptionBalances[_subscriptionId]);
         subscriptionBalances[_subscriptionId] = 0;
     }
@@ -340,27 +358,32 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         LINK.approve(_spender, _value);
     }
 
-    function refillSubscription(int64 _subscriptionId) external {
+    // Refills the subscription with all funds we have reserved
+    function refillSubscription(uint64 _subscriptionId) external {
         //TODO need to find some way to reserve the expense for this transfer out of owner fees
-        require(LINK.allowance(msg.sender, address(this)), "caller is not approved to spend LINK"); //Only the keeper should be authorized for this
-        LINK.transferFrom
+        // require(LINK.allowance(msg.sender, address(this)), "caller is not approved to spend LINK"); //Only the keeper should be authorized for this
+        // TODO, are there any checks we should have here? Like, should we check that the caller is authorized?
+        console.log(
+            "Refilling subscription %d with all available balance %d",
+            _subscriptionId,
+            subscriptionBalances[_subscriptionId]
+        );
+        LINK.transferAndCall(
+            address(BILLING_REGISTRY), subscriptionBalances[_subscriptionId], abi.encode(_subscriptionId)
+        );
+        subscriptionBalances[_subscriptionId] = 0;
+        require(subscriptionBalances[_subscriptionId] == 0, "Failed to drain subscription");
     }
 
     // TODO, this should let the subscription owner and only the subscription owner withdraw the subscription balance
     // at their own peril.
     function forceWithdrawSubscriptionPool(int64 _subscriptionId) public {
-
+        
     }
 
-    // TODO This function should no
-    // Remove me later, lets us manually fulfill requests
-    function dummyFullfill(bytes32 requestId, bytes memory response, bytes memory err) public onlyOwner {
-        fulfillRequest(requestId, response, err);
-    }
     /*
-        EVERYTHING BELOW IS MINUTAE
+        EVERYTHING BELOW IS MINUTAE, just getting it out of the way of the rest of the code
     */
-
     function setBaseFee(uint256 _baseFee) external onlyOwner {
         baseFee = _baseFee;
         emit BaseFeeUpdated(_baseFee);
