@@ -1,5 +1,5 @@
-import { task, types } from "hardhat/config"
-import fs from "fs"
+import { task, types } from "hardhat/config";
+import fs from "fs";
 
 task("register-function", "registers a function")
   .addOptionalParam(
@@ -22,21 +22,21 @@ task("register-function", "registers a function")
   )
   .setAction(async (taskArgs, { ethers }) => {
     if (!taskArgs.functionsmanager) {
-      throw new Error("--functionmanager must be specified")
+      throw new Error("--functionmanager must be specified");
     }
     if (taskArgs.gaslimit <= 0 || taskArgs.gaslimit > 20000000) {
       throw new Error(
         "--gaslimit must be greater than 0 and less than or equal to 20,000,000"
-      )
+      );
     }
     if (taskArgs.subscriptiondeposit <= 0) {
-      throw new Error("--subscriptiondeposit must be greater than 0")
+      throw new Error("--subscriptiondeposit must be greater than 0");
     }
 
     // Function Metadata
     const request = {
       fees: ethers.utils.parseEther("0.002"),
-      functionName: "Test Function 3",
+      functionName: "Test Function",
       desc: "Test description",
       imageUrl: "https://image.url/",
       expectedArgs: ["principalAmount", "APYTimes100"],
@@ -47,32 +47,32 @@ task("register-function", "registers a function")
       source: fs.readFileSync("./calculation-example.js").toString(),
       secrets: [],
       category: ethers.utils.formatBytes32String("calculations"),
-    }
+    };
 
     if (!request.subId || Number(request.subId) <= 0) {
-      throw new Error("Request must have a valid subscription ID")
+      throw new Error("Request must have a valid subscription ID");
     }
-    console.log(`Request subscription ID: ${request.subId}`)
+    console.log(`Request subscription ID: ${request.subId}`);
     // Attach to the required contracts
-    const [signer] = await ethers.getSigners()
+    const [signer] = await ethers.getSigners();
     const functionsManagerRaw = await ethers.getContractAt(
       "FunctionsManager",
       taskArgs.functionsmanager
-    )
-    const functionsManager = functionsManagerRaw.connect(signer)
-    console.log(`Connecting to functions manager as ${signer.address}`)
+    );
+    const functionsManager = functionsManagerRaw.connect(signer);
+    console.log(`Connecting to functions manager as ${signer.address}`);
 
     const transaction = await functionsManager.registerFunction(request, {
       value: request.subId ? 0 : taskArgs.subscriptiondeposit,
       gasLimit: taskArgs.gaslimit,
-    })
+    });
 
-    const receipt = await transaction.wait(1)
+    const receipt = await transaction.wait(1);
 
     if (receipt.events && receipt.events[0] && receipt.events[0].args) {
-      const functionId = receipt.events[0].args["functionId"].toString()
-      console.log(`Registed functions with id: ${functionId}`)
-      const functionInfo = await functionsManager.getFunction(functionId)
-      console.log(JSON.stringify(functionInfo))
+      const functionId = receipt.events[0].args["functionId"].toString();
+      console.log(`Registed functions with id: ${functionId}`);
+      const functionInfo = await functionsManager.getFunction(functionId);
+      console.log(JSON.stringify(functionInfo));
     }
-  })
+  });

@@ -1,9 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import fs, { link } from "fs";
-import { FakeContract, smock } from "@defi-wonderland/smock";
-import { any } from "hardhat/internal/core/params/argumentTypes";
+import fs from "fs";
 import { parseEther } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -13,7 +11,7 @@ describe("FunctionsManager", function () {
   // and reset Hardhat Network to that snapshot in every test.
   async function deployFunctionsManager() {
     // Contracts are deployed using the first signer/account by default
-    const [linkTokenOwner, functionsManagerOwner, otherAccount, external3] =
+    const [linkTokenOwner, functionsManagerOwner, otherAccount] =
       await ethers.getSigners();
     // console.log("signers", await ethers.getSigners());
     const LinkToken = await ethers.getContractFactory(
@@ -98,7 +96,7 @@ describe("FunctionsManager", function () {
     const receipt = await tx.wait();
     console.log("Finished calling executeRequest");
     const executeRequestEvent = receipt.events?.find(
-      (e) => e.event === "FunctionCalled"
+      (e: any) => e.event === "FunctionCalled"
     );
     expect(executeRequestEvent);
 
@@ -145,7 +143,7 @@ describe("FunctionsManager", function () {
 
     // console.log(fulfillReceipt);
     const billingLog = fulfillReceipt.events?.find(
-      (e) => e.event === "FulfillAndBillLog"
+      (e: any) => e.event === "FulfillAndBillLog"
     );
     expect(billingLog);
 
@@ -270,7 +268,7 @@ describe("FunctionsManager", function () {
 
       const st = await functionsManager.getFunctionResponse(dropRequestId);
       console.log("functionResponse", st);
-      
+
       // console.log("fulfillEvent", fulfillEventWithRefill.args);
     });
   });

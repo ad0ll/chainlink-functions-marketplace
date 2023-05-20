@@ -1,4 +1,5 @@
 import { task, types } from "hardhat/config";
+import { networks } from "../hardhat.config";
 
 task("execute-function", "runs a function")
   .addOptionalParam(
@@ -26,7 +27,7 @@ task("execute-function", "runs a function")
     2000000,
     types.int
   )
-  .setAction(async (taskArgs, { ethers }) => {
+  .setAction(async (taskArgs, { ethers, network }) => {
     if (!taskArgs.functionsmanager) {
       throw new Error("--functionmanager must be specified");
     }
@@ -45,6 +46,13 @@ task("execute-function", "runs a function")
       taskArgs.functionsmanager
     );
     const functionsManager = functionsManagerRaw.connect(signer);
+
+    const linkTokenRaw = await ethers.getContractAt(
+      "LinkToken",
+      networks[network.name].linkToken
+    );
+    const linkToken = linkTokenRaw.connect(signer);
+    linkToken.approve(functionsManager.address, ethers.utils.parseEther("10"));
 
     console.log("Executing function: ", taskArgs.functionid);
     const args = taskArgs.args ? taskArgs.args.split(",") : [];
