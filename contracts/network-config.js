@@ -22,7 +22,7 @@ const networkConfig = {
   polygon: {
     linkToken: "0xb0897686c545045afc77cf20ec7a532e3120e0f1",
   },
-  mumbai: {
+  polygonMumbai: {
     linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
     linkEthPriceFeed: "0x12162c3E810393dEC01362aBf156D7ecf6159528",
     functionsOracleProxy: "0xeA6721aC65BCeD841B8ec3fc5fEdeA6141a0aDE4",

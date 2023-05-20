@@ -48,16 +48,20 @@ task("execute-function", "runs a function")
 
     console.log("Executing function: ", taskArgs.functionid);
     const args = taskArgs.args ? taskArgs.args.split(",") : [];
-    const rawExecute = await functionsManager.executeRequest(
-      taskArgs.functionid,
-      args,
-      taskArgs.callbackGasLimit,
-      {
-        gasLimit: taskArgs.gaslimit,
-      }
-    );
-
-    const receipt = await rawExecute.wait(1);
+    // const rawExecute = await functionsManager.executeRequest(
+    //   taskArgs.functionid,
+    //   args,
+    //   taskArgs.callbackGasLimit,
+    //   {
+    //     gasLimit: taskArgs.gaslimit,
+    //   }
+    // );
+    console.log("Approving token transfer");
+    const rawExecuteApprove = await functionsManager.approveTokenTransfer({
+      gasLimit: taskArgs.gaslimit,
+    });
+    console.log("Waiting for confirmations...");
+    const receipt = await rawExecuteApprove.wait(3);
     console.log("Transaction mined in block " + receipt.blockNumber);
     console.log(
       "Received the following events: ",
@@ -65,10 +69,24 @@ task("execute-function", "runs a function")
         ?.map((e) => e.event + ": " + JSON.stringify(e.args))
         .join("\n")
     );
-    if (receipt.events && receipt.events[3] && receipt.events[3].args) {
-      const requestId = receipt.events[3].args["requestId"].toString();
-      console.log(`Executed function. Request Id: ${requestId}`);
-      const response = await functionsManager.getFunctionResponse(requestId);
-      console.log(JSON.stringify(response));
-    }
+    console.log(receipt);
+    console.log("Getting balance");
+    const rawExecute = await functionsManager.dumpBalanceOf({
+      gasLimit: taskArgs.gaslimit,
+    });
+
+    // const receipt = await rawExecute.wait(1);
+    // console.log("Transaction mined in block " + receipt.blockNumber);
+    // console.log(
+    //   "Received the following events: ",
+    //   receipt.events
+    //     ?.map((e) => e.event + ": " + JSON.stringify(e.args))
+    //     .join("\n")
+    // );
+    // if (receipt.events && receipt.events[3] && receipt.events[3].args) {
+    //   const requestId = receipt.events[3].args["requestId"].toString();
+    //   console.log(`Executed function. Request Id: ${requestId}`);
+    //   const response = await functionsManager.getFunctionResponse(requestId);
+    //   console.log(JSON.stringify(response));
+    // }
   });

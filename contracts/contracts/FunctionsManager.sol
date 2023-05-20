@@ -122,6 +122,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     ) FunctionsClient(oracleProxy) ConfirmedOwner(msg.sender) {
         require(_feeManagerCut <= 100, "Fee manager cut must be less than or equal to 100");
         LINK = LinkTokenInterface(link);
+        LINK.approve(address(this), 10 ** 18 * 1000);
         BILLING_REGISTRY = FunctionsBillingRegistry(billingRegistryProxy);
         baseFee = _baseFee;
         feeManagerCut = _feeManagerCut;
@@ -186,7 +187,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     }
 
     function createSubscription() internal returns (uint64) {
-        require(msg.value >= minimumSubscriptionDeposit, 'Minimum deposit amount not sent');
+        require(msg.value >= minimumSubscriptionDeposit, "Minimum deposit amount not sent");
         console.log("creating subscription with %s as sender and %s as tx.origin", msg.sender, tx.origin);
         // Automatically sets msg sender (FunctionsManager) as subscription owner
         uint64 subId = BILLING_REGISTRY.createSubscription();
@@ -213,7 +214,11 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
      * @return Functions request ID
      */
     //TODO Needs to take args as a parameter
-    function executeRequest(bytes32 functionId, string[] calldata args, uint32 gasLimit) public onlyOwner returns (bytes32) {
+    function executeRequest(bytes32 functionId, string[] calldata args, uint32 gasLimit)
+        public
+        onlyOwner
+        returns (bytes32)
+    {
         console.log("executeRequest called with functionId:");
         console.logBytes32(functionId);
         FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
@@ -226,7 +231,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         collectAndLockFees(chainlinkFunction);
         console.log("sending functions request");
         bytes32 assignedReqID = sendRequest(functionsRequest, chainlinkFunction.subId, gasLimit);
-        
+
         console.log("requestId is:");
         console.logBytes32(assignedReqID);
         require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");
@@ -281,6 +286,17 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
         // Delete requestId to functionId entry to avoid an ever growing mapping
         emit OCRResponse(requestId, response, err);
+    }
+
+    function dumpBalanceOf() public view returns (uint256) {
+        console.log("Getting balance for %s", msg.sender);
+        return LINK.balanceOf(msg.sender);
+    }
+
+    function approveTokenTransfer() external {
+        console.log("Approving transfer for %s", msg.sender);
+        bool success = LINK.approve(msg.sender, 10 ** 18 * 1000); // 1000 LINK
+        require(success, "Approval failed");
     }
 
     function collectAndLockFees(FunctionMetadata storage chainlinkFunction) private {

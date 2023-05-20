@@ -65,6 +65,7 @@ export const networks: Record<string, any> = {
 
 const config: HardhatUserConfig = {
   solidity: {
+    
     compilers: [
       {
         version: "0.4.11",

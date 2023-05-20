@@ -55,6 +55,7 @@ export PRIVATE_KEY="<single private key used in some scripts>"
 export EVENT_SPAMMER_ADDR=""
 # Required by some scripts/tasks
 export FUNCTIONS_MANAGER_ADDR=""
+export FUNCTIONS_SUBSCRIPTION_ID=0 # The subscription id used in register-function
 ```
 
 ### Deploy the FunctionManager contract
@@ -68,7 +69,7 @@ test-network should point to the key in network-config.js, so below, polygonMumb
 name in hardhat is mumbai)
 
 ```bash
-npx hardhat create-subscription --functions-manager $FUNCTIONS_MANAGER_ADDR --test-network polygonMumbai  --network $HARDHAT_NETWORK
+npx hardhat create-subscription --functionsmanager $FUNCTIONS_MANAGER_ADDR --test-network polygonMumbai  --network $HARDHAT_NETWORK
 ```
 
 ### Fund an existing subscription with 1 LINK and authorize FunctionsManager as consumer
@@ -77,7 +78,7 @@ test-network should point to the key in network-config.js, so below, polygonMumb
 name in hardhat is mumbai)
 
 ```bash
-npx hardhat create-subscription --functions-manager $FUNCTIONS_MANAGER_ADDR --test-network polygonMumbai --subscription-id 941  --network $HARDHAT_NETWORK
+npx hardhat create-subscription --functionsmanager $FUNCTIONS_MANAGER_ADDR --test-network polygonMumbai --subscription-id 941  --network $HARDHAT_NETWORK
 ```
 
 ### Register a function
@@ -89,5 +90,5 @@ npx hardhat register-function --network polygonMumbai --functionsmanager $FUNCTI
 ### Do a run of a function:
 
 ```bash
-npx hardhat execute-function --functions-manager $FUNCTION_MANAGER_ADDR --network $HARDHAT_NETWORK --function-id <hex-string-of-function-id>
+npx hardhat execute-function --functionsmanager $FUNCTION_MANAGER_ADDR --network $HARDHAT_NETWORK --function-id <hex-string-of-function-id>
 ```
