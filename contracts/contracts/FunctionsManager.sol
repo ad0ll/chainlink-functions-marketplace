@@ -18,6 +18,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     mapping(bytes32 => bool) private existingNameOwnerPair;
     mapping(address => AuthorMetadata) public authorMetadata;
     mapping(uint64 => string) public categoryNames;
+    mapping(uint64 => uint256) public subscriptionBalances; 
 
     LinkTokenInterface private LINK;
     FunctionsBillingRegistry private BILLING_REGISTRY;
@@ -62,8 +63,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         string[] expectedArgs;
         Functions.Request request;
         bytes32 category;
-        // Subscription fields
-        uint256 subscriptionPool; // Reserved base fees collected, can't be withdrawn
         uint256 unlockedProfitPool; // Profits from completed functions, can be withdrawn on demand
         uint256 lockedProfitPool; // Profits from initialized calls that haven't had their callback completed yet
     }
@@ -159,6 +158,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             metadata.subId = createSubscription();
         } else {
             console.log("using existing subscription %d", request.subId);
+            //TODO Make sure that the person calling registerFunction is an authorized consumer of the subscription.
+            //TODO Make sure that the function manager is an authorized consumer of the subscription
             metadata.subId = request.subId;
         }
 
@@ -212,7 +213,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
      * @param gasLimit Maximum amount of gas used to call the client contract's `handleOracleFulfillment` function
      * @return Functions request ID
      */
-    //TODO Needs to take args as a parameter
     function executeRequest(bytes32 functionId, string[] calldata args, uint32 gasLimit) public onlyOwner returns (bytes32) {
         console.log("executeRequest called with functionId:");
         console.logBytes32(functionId);
@@ -295,7 +295,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             LINK.transferFrom(msg.sender, address(this), chainlinkFunction.fee), "Failed to collect fees from caller"
         );
 
-        chainlinkFunction.subscriptionPool = chainlinkFunction.subscriptionPool + baseFee;
+        subscriptionBalances[chainlinkFunction.subId] = subscriptionBalances[chainlinkFunction.subId] + baseFee;
+
         console.log(
             "added baseFee %d LINK to subscription pool, total in pool: %d", baseFee, chainlinkFunction.subscriptionPool
         );
@@ -325,12 +326,30 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         unlockFees(chainlinkFunction);
     }
 
-    // TODO Should not exist
-    function moveSubscriptionToUnlock(bytes32 functionId) external {
-        FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
-        require(chainlinkFunction.owner != address(0), "Function does not exist");
-        chainlinkFunction.unlockedProfitPool += chainlinkFunction.subscriptionPool;
-        chainlinkFunction.subscriptionPool = 0;
+    // TODO Should not exist in the prod product. This is only here to prevent us from losing
+    // MATIC while testing
+    function moveSubscriptionToUnlock(uint64 _subscriptionId) external onlyOwner {
+        require(LINK.allowance(msg.sender, address(this)), "caller is not approved to spend LINK");
+        LINK.transferFrom(address(this), msg.sender, subscriptionBalances[_subscriptionId]);
+        subscriptionBalances[_subscriptionId] = 0;
+    }
+
+    function approveTokenSpender(address _spender, uint256 _value) external onlyOwner {
+        // TODO should approve USDC later
+        console.log("approving %s as a spender of LINK with a value of up to %d", _spender, _value);
+        LINK.approve(_spender, _value);
+    }
+
+    function refillSubscription(int64 _subscriptionId) external {
+        //TODO need to find some way to reserve the expense for this transfer out of owner fees
+        require(LINK.allowance(msg.sender, address(this)), "caller is not approved to spend LINK"); //Only the keeper should be authorized for this
+        LINK.transferFrom
+    }
+
+    // TODO, this should let the subscription owner and only the subscription owner withdraw the subscription balance
+    // at their own peril.
+    function forceWithdrawSubscriptionPool(int64 _subscriptionId) public {
+
     }
 
     // TODO This function should no
