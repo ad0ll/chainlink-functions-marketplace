@@ -91,3 +91,15 @@ npx hardhat register-function --network polygonMumbai --functionsmanager $FUNCTI
 ```bash
 npx hardhat execute-function --functions-manager $FUNCTION_MANAGER_ADDR --network $HARDHAT_NETWORK --function-id <hex-string-of-function-id>
 ```
+
+## How to get maximum testnet MATIC from faucets
+
+We use a lot of MATIC and LINK. Here's the routine to get as much as possible each day:
+
+1. Set up two accounts in metamask
+2. Make sure one of the accounts has 0 MATIC. If needed, transfer all testnet MATIC to the other account
+3. Go to https://faucet.polygon.technology/, and get 1 MATIC for the account that has 0 MATIC
+4. Transfer the 1 MATIC to the other account (so you don't have to worry about it the next day)
+5. Go to Alchemy's faucet https://mumbaifaucet.com/, **DON'T SIGN IN**, get 0.5 MATIC
+6. Sign it with your Alchemy account. Get 1 MATIC.
+7. Go to https://faucets.chain.link/mumbai, and get 0.5 MATIC and 20 LINK

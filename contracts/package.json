@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@chainlink/contracts": "^0.6.1",
+    "@defi-wonderland/smock": "^2.3.4",
     "@openzeppelin/contracts": "^4.8.3",
     "@openzeppelin/contracts-upgradeable": "^4.8.3",
     "axios": "^1.4.0",

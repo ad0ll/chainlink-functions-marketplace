@@ -13,7 +13,11 @@ export const DEFAULT_VERIFICATION_BLOCK_CONFIRMATIONS = 2;
 const SHARED_DON_PUBLIC_KEY =
   "a30264e813edc9927f73e036b7885ee25445b836979cb00ef112bc644bd16de2db866fa74648438b34f52bb196ffa386992e94e0a3dc6913cee52e2e98f1619c";
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const PRIVATE_KEYS = process.env.PRIVATE_KEYS?.split(",");
+if (!PRIVATE_KEYS || PRIVATE_KEYS.length === 0) {
+  throw new Error("No private keys set, set the PRIVATE_KEYS env variable");
+}
+console.log("PRIVATE_KEYS", PRIVATE_KEYS);
 
 const SOLC_SETTINGS = {
   optimizer: {
@@ -26,7 +30,7 @@ const SOLC_SETTINGS = {
 export const networks: Record<string, any> = {
   ethereumSepolia: {
     url: process.env.ETHEREUM_SEPOLIA_RPC_URL || "UNSET",
-    accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+    accounts: PRIVATE_KEYS,
     verifyApiKey: process.env.ETHERSCAN_API_KEY || "UNSET",
     chainId: 11155111,
     confirmations: DEFAULT_VERIFICATION_BLOCK_CONFIRMATIONS,
@@ -38,7 +42,7 @@ export const networks: Record<string, any> = {
   },
   polygonMumbai: {
     url: process.env.POLYGON_MUMBAI_RPC_URL || "UNSET",
-    accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+    accounts: PRIVATE_KEYS,
     verifyApiKey: process.env.POLYGONSCAN_API_KEY || "UNSET",
     chainId: 80001,
     gasPrice: undefined,
@@ -51,7 +55,7 @@ export const networks: Record<string, any> = {
   },
   avalancheFuji: {
     url: process.env.AVALANCHE_FUJI_RPC_URL || "UNSET",
-    accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+    accounts: PRIVATE_KEYS,
     verifyApiKey: process.env.SNOWTRACE_API_KEY || "UNSET",
     chainId: 43113,
     confirmations: 2 * DEFAULT_VERIFICATION_BLOCK_CONFIRMATIONS,
@@ -88,14 +92,14 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
-      accounts: process.env.PRIVATE_KEY
-        ? [
-            {
-              privateKey: process.env.PRIVATE_KEY,
-              balance: "10000000000000000000000",
-            },
-          ]
-        : [],
+      // accounts: process.env.PRIVATE_KEY
+      //   ? [
+      //       {
+      //         privateKey: process.env.PRIVATE_KEY,
+      //         balance: "10000000000000000000000",
+      //       },
+      //     ]
+      //   : [],
     },
     ...networks,
   },
