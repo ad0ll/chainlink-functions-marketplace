@@ -22,6 +22,10 @@ contract MockBillingRegistry {
 
     uint96 public constant BASE_FEE = 10 ** 18 * 0.2; // 0.2 LINK
 
+    event FulfillAndBillLog(
+        bytes32 indexed requestId, uint64 indexed subscriptionId, bytes res, bytes err, bool success
+    );
+
     struct Subscription {
         // There are only 1e9*1e18 = 1e27 juels in existence, so the balance can fit in uint96 (2^96 ~ 7e28)
         uint96 balance; // Common LINK balance that is controlled by the Registry to be used for all consumer requests.
@@ -218,22 +222,26 @@ contract MockBillingRegistry {
             // call(gas,addr,value,argsOffset,argsLength,retOffset,retLength)
             success := call(gasAmount, target, 0, add(data, 0x20), mload(data), 0, 0)
         }
+
         return success;
     }
 
     function fulfillAndBill(bytes32 requestId, bytes calldata response, bytes calldata err) external returns (bool) {
+        console.log("In fulfillAndBill");
         bytes memory callback =
             abi.encodeWithSelector(FunctionsClientInterface.handleOracleFulfillment.selector, requestId, response, err);
 
         // TODO set gas amount
         FunctionsManager.FunctionResponse memory req = functionsManager.getFunctionResponse(requestId);
         FunctionsManager.FunctionMetadata memory meta = functionsManager.getFunction(req.functionId);
-        bool success = callWithExactGas(meta.subId, address(functionsManager), callback);
+        // bool success = callWithExactGas(meta.subId, address(functionsManager), callback);
+        bool success = callWithExactGas(3_000_000, address(functionsManager), callback);
         if (s_subscriptions[meta.subId].balance < BASE_FEE) {
             revert InsufficientBalance();
         }
         s_subscriptions[meta.subId].balance -= BASE_FEE;
-
+        emit FulfillAndBillLog(requestId, meta.subId, response, err, success);
+        console.log("Finished calling fulfillAndBill");
         return success;
     }
 

@@ -124,7 +124,15 @@ describe("FunctionsManager", function () {
       functionsManagerOwner
     );
     //TODO not sure if you have to actually be the function manager owner
-    const fulfill = await functionsManagerOwnerCaller.handleOracleFulfillment(
+    // const fulfill = await functionsManagerOwnerCaller.handleOracleFulfillment(
+    //   requestId,
+    //   Buffer.from("response"),
+    //   Buffer.from("")
+    // );
+    const billingRegistryOwnerCaller = await billingRegistry.connect(
+      functionsManagerOwner
+    );
+    const fulfill = await billingRegistryOwnerCaller.fulfillAndBill(
       requestId,
       Buffer.from("response"),
       Buffer.from("")
@@ -135,7 +143,13 @@ describe("FunctionsManager", function () {
     );
     expect(fulfillEvent);
 
-    return { fulfillReceipt, fulfillEvent };
+    // console.log(fulfillReceipt);
+    const billingLog = fulfillReceipt.events?.find(
+      (e) => e.event === "FulfillAndBillLog"
+    );
+    expect(billingLog);
+
+    return { fulfillReceipt, fulfillEvent, billingLog };
   };
 
   describe("Deployment", function () {
@@ -223,7 +237,6 @@ describe("FunctionsManager", function () {
         functionsManagerOwner,
         requestId
       );
-
       expect(fulfillEvent);
 
       console.log("fulfillEvent", fulfillEvent);
@@ -238,7 +251,7 @@ describe("FunctionsManager", function () {
         functionsManager,
         functionId
       );
-      billingRegistry.forceBalance(func.subId, 0);
+      billingRegistry.forceBalance(func.subId, parseEther("0.8")); //Below the 1 LINK minimum
 
       console.log("Getting subscription balance 4");
       const s4 = await functionsManager.getSubscriptionBalance(func.subId);
@@ -254,6 +267,11 @@ describe("FunctionsManager", function () {
       expect(s2).equal(parseEther("0"));
       // const aS = await billingRegistry.getSubscription(func?.subId);
       // expect(aS?.balance).equal(parseEther("0.4"));
+
+      const st = await functionsManager.getFunctionResponse(dropRequestId);
+      console.log("functionResponse", st);
+      
+      // console.log("fulfillEvent", fulfillEventWithRefill.args);
     });
   });
 

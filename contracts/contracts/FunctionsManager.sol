@@ -22,6 +22,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     // mapping(bytes32 => FeePool) public feePools;
     LinkTokenInterface private LINK;
     FunctionsBillingRegistry private BILLING_REGISTRY;
+    FunctionsOracleInterface private ORACLE_PROXY;
 
     // TODO make sure this isn't hardcoded later
     uint96 public minimumSubscriptionBalance = 10 ** 18 * 1; // 1 LINK (18 decimals)
@@ -119,6 +120,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     event MinimumSubscriptionDepositUpdated(uint256 newMinimumDeposit);
 
     // Good default values for baseFee is 10 ** 18 * 0.2 (0.2 LINK), and for feeManagerCut (5)
+
     constructor(
         address link,
         address billingRegistryProxy,
@@ -130,6 +132,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         require(_feeManagerCut <= 100, "Fee manager cut must be less than or equal to 100");
         LINK = LinkTokenInterface(link);
         BILLING_REGISTRY = FunctionsBillingRegistry(billingRegistryProxy);
+        ORACLE_PROXY = FunctionsOracleInterface(oracleProxy);
         baseFee = _baseFee;
         feeManagerCut = _feeManagerCut;
         minimumSubscriptionDeposit = _minimumSubscriptionDeposit;
@@ -241,10 +244,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
      * @param gasLimit Maximum amount of gas used to call the client contract's `handleOracleFulfillment` function
      * @return Functions request ID
      */
-    function executeRequest(bytes32 functionId, string[] calldata args, uint32 gasLimit)
-        public
-        returns (bytes32)
-    {
+    function executeRequest(bytes32 functionId, string[] calldata args, uint32 gasLimit) public returns (bytes32) {
         console.log("executeRequest called with functionId:");
         console.logBytes32(functionId);
         FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
@@ -290,20 +290,28 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
         // Require response is registered
 
+        console.log("fulfilling request");
         FunctionResponse storage functionResponse = functionResponses[requestId];
         require(functionResponse.caller != address(0), "Invalid request ID");
+        console.log("Checking is %s is authorized to call this function...", msg.sender);
+        require(
+            functionMetadatas[functionResponse.functionId].owner == msg.sender
+                || address(BILLING_REGISTRY) == msg.sender || address(ORACLE_PROXY) == msg.sender,
+            "Only the function owner can call this function"
+        );
+        console.log("%s is authorized...", msg.sender);
         functionResponse.response = response;
         functionResponse.err = err;
+        console.log("Unlocking fees");
 
-        FunctionMetadata storage chainlinkFunction = functionMetadatas[functionResponse.functionId];
-        require(chainlinkFunction.owner != address(0), "Function does not exist");
         unlockFees(functionResponse.functionId);
-
+        uint64 subId = functionMetadatas[functionResponse.functionId].subId;
+        address funcOwner = functionMetadatas[functionResponse.functionId].owner;
         console.log("Finished unlocking fees, checking if need fill subscription");
         //Refill the subscription if necessary, do this in fulfillRequest so the function caller pays for it
-        (uint96 balance,,) = BILLING_REGISTRY.getSubscription(chainlinkFunction.subId);
+        (uint96 balance,,) = BILLING_REGISTRY.getSubscription(subId);
         if (balance < minimumSubscriptionBalance) {
-            refillSubscription(chainlinkFunction.subId);
+            refillSubscription(subId);
         }
 
         // Emit FunctionCallCompleted event
@@ -311,7 +319,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             functionId: requestId,
             caller: functionResponse.caller,
             requestId: requestId,
-            owner: chainlinkFunction.owner,
+            owner: funcOwner,
             callbackFunction: functionResponse.callbackFunction,
             response: response,
             err: err,
@@ -354,8 +362,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         );
     }
 
-    function unlockFees(bytes32 functionId) private onlyOwner {
+    function unlockFees(bytes32 functionId) private {
         console.log("Unlocking fees");
+        require(functionMetadatas[functionId].owner != address(0), "Function does not exist");
         // Function manager has already taken its cut, so calculate the amount owed to the function owner
         // by taking the FunctionManager cut from the fee and adding it to the owner profit pool
         uint96 unlockAmount = (functionMetadatas[functionId].fee * (100 - feeManagerCut)) / 100;
