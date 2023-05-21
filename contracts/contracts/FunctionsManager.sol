@@ -333,6 +333,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         uint96 premiumFee = functionMetadatas[functionId].fee;
         uint96 totalFee = baseFee + premiumFee;
         uint64 subId = functionMetadatas[functionId].subId;
+        uint96 functionManagerCut = (premiumFee * feeManagerCut) / 100;
 
         console.log("sender %s LINK balance %d", msg.sender, LINK.balanceOf(msg.sender));
         require(
@@ -345,15 +346,16 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             LINK.transferFrom(msg.sender, address(this), functionMetadatas[functionId].fee),
             "Failed to collect fees from caller"
         );
+        console.log("reserved subscription fee %d", subscriptionBalances[subId]);
         subscriptionBalances[subId] = subscriptionBalances[subId] + baseFee;
 
         console.log(
             "added baseFee %d LINK to subscription pool, total in pool: %d", baseFee, subscriptionBalances[subId]
         );
 
-        uint96 functionManagerCut = (premiumFee * feeManagerCut) / 100;
         functionManagerProfitPool = functionManagerProfitPool + functionManagerCut;
-        functionMetadatas[functionId].lockedProfitPool = functionMetadatas[functionId].lockedProfitPool + premiumFee;
+        functionMetadatas[functionId].lockedProfitPool =
+            functionMetadatas[functionId].lockedProfitPool + premiumFee - functionManagerCut;
         console.log(
             "took %d from fee of %d LINK and added to feeManagerProfitPool, total in pool: %d ",
             functionManagerCut,
@@ -366,7 +368,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         console.log("Unlocking fees");
         // Function manager has already taken its cut, so calculate the amount owed to the function owner
         // by taking the FunctionManager cut from the fee and adding it to the owner profit pool
-        uint96 unlockAmount = functionMetadatas[functionId].fee;
+        uint96 unlockAmount = (functionMetadatas[functionId].fee * (100 - feeManagerCut)) / 100;
         console.log(
             "Before locked %d unlocked %d",
             functionMetadatas[functionId].lockedProfitPool,

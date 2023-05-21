@@ -110,9 +110,8 @@ describe("FunctionsManager", function () {
     console.log("Getting function post execute to see if sub hit ");
     const f = await functionsManager.getFunction(functionId);
     expect(f?.subId);
-    expect(f?.lockedProfitPool).equal(request.fees);
-    const s = await functionsManager.getSubscriptionBalance(f?.subId);
-    expect(s).equal(parseEther("0.2"));
+    expect(f?.lockedProfitPool).equal(request.fees.mul(95).div(100));
+
     return { ev: executeRequestEvent, requestId, functionId, func: f };
   };
 
@@ -213,6 +212,10 @@ describe("FunctionsManager", function () {
         functionId
       );
 
+      console.log("Getting subscription balance 3");
+      const s3 = await functionsManager.getSubscriptionBalance(func.subId);
+      expect(s3).equal(parseEther("0.2"));
+
       // TODO Move below into a proper test, move above into a fixture
       console.log("Fulfulling subscription");
       const { fulfillEvent } = await fulfillDemoRequest(
@@ -227,24 +230,30 @@ describe("FunctionsManager", function () {
       console.log("fulfillEvent", fulfillEvent);
       const fPostFulfill = await functionsManager.getFunction(functionId);
       expect(fPostFulfill?.lockedProfitPool).equal(parseEther("0"));
-      expect(fPostFulfill?.unlockedProfitPool).equal(request.fees);
+      expect(fPostFulfill?.unlockedProfitPool).equal(
+        request.fees.mul(95).div(100)
+      );
 
       // //TODO move this into a proper test (checking the refill behavior)
-      // const { requestId: dropRequestId, func } = await executeDemoRequest(
-      //   functionsManager,
-      //   functionId
-      // );
+      const { requestId: dropRequestId } = await executeDemoRequest(
+        functionsManager,
+        functionId
+      );
+      billingRegistry.forceBalance(func.subId, 0);
 
-      // billingRegistry.forceBalance(func.subId, 0);
+      console.log("Getting subscription balance 4");
+      const s4 = await functionsManager.getSubscriptionBalance(func.subId);
+      expect(s4).equal(parseEther("0.4"));
 
-      // const { fulfillEvent: fulfillEventWithRefill } = await fulfillDemoRequest(
-      //   functionsManager,
-      //   functionsManagerOwner,
-      //   dropRequestId
-      // );
-      // const s2 = await functionsManager.getSubscriptionBalance(func?.subId);
-      // expect(s2).equal(parseEther("0"));
-      // const aS = await billingRegistry.getSubscription(fuc?.subId);
+      const { fulfillEvent: fulfillEventWithRefill } = await fulfillDemoRequest(
+        functionsManager,
+        billingRegistry,
+        functionsManagerOwner,
+        dropRequestId
+      );
+      const s2 = await functionsManager.getSubscriptionBalance(func?.subId);
+      expect(s2).equal(parseEther("0"));
+      // const aS = await billingRegistry.getSubscription(func?.subId);
       // expect(aS?.balance).equal(parseEther("0.4"));
     });
   });
