@@ -93,8 +93,7 @@ describe("FunctionsManager", function () {
     const tx = await functionsManager.executeRequest(
       functionId,
       ["10000", "450"],
-      30000,
-      false
+      30000
     );
     const receipt = await tx.wait();
     console.log("Finished calling executeRequest");

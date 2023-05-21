@@ -23,7 +23,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     LinkTokenInterface private LINK;
     FunctionsBillingRegistry private BILLING_REGISTRY;
 
-    uint256 public functionIdNonce = 1;
     // TODO make sure this isn't hardcoded later
     uint96 public minimumSubscriptionBalance = 10 ** 18 * 1; // 1 LINK (18 decimals)
     uint96 public functionManagerProfitPool; // The fee manager's cut of fees, whole number representing percentage
@@ -242,7 +241,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
      * @param gasLimit Maximum amount of gas used to call the client contract's `handleOracleFulfillment` function
      * @return Functions request ID
      */
-    function executeRequest(bytes32 functionId, string[] calldata args, uint32 gasLimit, bool mock)
+    function executeRequest(bytes32 functionId, string[] calldata args, uint32 gasLimit)
         public
         returns (bytes32)
     {
@@ -260,17 +259,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         console.log("sending functions request");
         bytes32 assignedReqID;
 
-        // TODO Mock code should NOT be in the release
-        // if (mock) {
-        //     require(msg.sender == owner(), "only owner can mock");
-        //     console.log("Mocking request...");
-        //     assignedReqID = keccak256(abi.encodePacked(functionId, mockNonce++, block.timestamp));
-        //     require(mockFunctionResponses[assignedReqID].functionId == bytes32(0), "Mock request ID already exists");
-        //     mockFunctionResponses[assignedReqID].functionId = functionId;
-        //     mockFunctionResponses[assignedReqID].caller = msg.sender;
-        // } else {
         assignedReqID = sendRequest(functionsRequest, chainlinkFunction.subId, gasLimit);
-        // }
+
         require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");
         functionResponses[assignedReqID].functionId = functionId;
         functionResponses[assignedReqID].caller = msg.sender;
