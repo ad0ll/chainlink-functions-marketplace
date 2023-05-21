@@ -17,12 +17,32 @@ npx hardhat run scripts/deploy.ts
 
 This is done wth the graph cli, QuickNode, and Satsuma
 
-1. Delete the `graph` directory
-2. Get your free credits for QuickNode (see Discord for links)
-3. Create a new endpoint w/ the Satsuma subgraph plugin
-4. Get your subgraph deploy command from Satsuma (three dots next to the plugin listing > Dashboard in the QuickNode UI)
-5. Run "graph init", example responses:
+If events in the FunctionsManager change and you have to re-run the codegen, the steps are more involved
+1. Deploy the update FunctionsManager contract with deploy.sh
+2. Delete the entire FunctionsManager section from subgraph.yaml, but DO NOT delete the other entities
+3. Run the following to add the FunctionsManager back to the subgraph
+```
+graph add $FUNCTIONS_MANAGER_ADDR --contract-name FunctionsManager --abi ../artifacts/contracts/FunctionsManager.sol/FunctionsManager.json
+```
+4. Deploy using the satsuma command (see Discord)
 
+If you have to rebuild the subgraphs for the FunctionsOracle or the FunctionsBillingRegistry, the steps are complex:
+Add commands:
+```bash
+graph add 0x3c79f56407DCB9dc9b852D139a317246f43750Cc --contract-name FunctionsBillingRegistry --abi ../artifacts/contracts/functions/FunctionsBillingRegistry.sol/FunctionsBillingRegistry.json
+graph add 0x649a2C205BE7A3d5e99206CEEFF30c794f0E31EC --contract-name FunctionsOracle --abi ../artifacts/contracts/functions/FunctionsOracle.sol/FunctionsOracle.json
+```
+The codegen will break FunctionsOracle because of [this issue](https://github.com/graphprotocol/graph-tooling/issues/1017). You can fix it by replacing all instances of the following in graph/src/*: 
+```typescript
+entity.senders = event.params.senders;
+```
+with the following (bytes import from graphprotocol dependency):
+```typescript
+entity.senders = changetype<Bytes[]>(event.params.senders);
+```
+Then comment out handleConfig from graph/src/functions-oracle.ts (I don't know why this is failing, but our mocks aren't simulating a DON, so we don't need to listen for config events)
+
+Then common out handleConfig from subgraph.yyaml
 ```
 ✔ Protocol · ethereum
 ✔ Product for which to initialize · subgraph-studio
