@@ -153,6 +153,10 @@ task("seed-functions-manager", "runs a function")
         const demo = demos[i];
         const owner = demoUsers[DEMO_OWNERS[i]];
         const localFm = functionsManagerRaw.connect(functionsManagerOwner);
+        console.log(
+          "functionsManagerOwnerAddress",
+          functionsManagerOwner.address
+        );
         const functionId = await localFm.calculateFunctionId(
           demo.register.functionName,
           owner.address
@@ -204,7 +208,7 @@ task("seed-functions-manager", "runs a function")
         const tx = await functionManagerWithCaller.executeRequest(
           functionId,
           args,
-          300_000,
+          900_000,
           {
             gasLimit: 1_000_000,
           }

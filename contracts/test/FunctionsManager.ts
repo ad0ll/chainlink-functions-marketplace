@@ -107,7 +107,8 @@ describe("FunctionsManager", function () {
     console.log("Getting function post execute to see if sub hit ");
     const f = await functionsManager.getFunction(functionId);
     expect(f?.subId);
-    expect(f?.lockedProfitPool).equal(request.fees.mul(95).div(100));
+    const lockedBal = await functionsManager.getFunctionLockedBal(functionId);
+    expect(lockedBal).equal(request.fees.mul(95).div(100));
 
     return { ev: executeRequestEvent, requestId, functionId, func: f };
   };
@@ -206,17 +207,19 @@ describe("FunctionsManager", function () {
       const functionId =
         functionRegisteredEvent?.args?.["functionId"].toString();
       expect(functionId);
+      console.log("verifying function is registered");
       const fPreExecute = await functionsManager.getFunction(functionId);
       expect(fPreExecute.name).equal(request.functionName);
       expect(fPreExecute.fee).equal(request.fees);
 
-      const func = await functionsManager.getFunction(functionId);
-      expect(func?.subId);
       const asFmBillingRegistry = await billingRegistry.connect(
         functionsManagerOwner
       );
       console.log("Forcing balance");
-      await asFmBillingRegistry.forceBalance(func.subId, parseEther("10"));
+      await asFmBillingRegistry.forceBalance(
+        fPreExecute.subId,
+        parseEther("10")
+      );
 
       const { requestId } = await executeDemoRequest(
         functionsManager,
@@ -224,7 +227,9 @@ describe("FunctionsManager", function () {
       );
 
       console.log("Getting subscription balance 3");
-      const s3 = await functionsManager.getSubscriptionBalance(func.subId);
+      const s3 = await functionsManager.getSubscriptionBalance(
+        fPreExecute.subId
+      );
       expect(s3).equal(parseEther("0.2"));
 
       // TODO Move below into a proper test, move above into a fixture
@@ -239,20 +244,24 @@ describe("FunctionsManager", function () {
 
       console.log("fulfillEvent", fulfillEvent);
       const fPostFulfill = await functionsManager.getFunction(functionId);
-      expect(fPostFulfill?.lockedProfitPool).equal(parseEther("0"));
-      expect(fPostFulfill?.unlockedProfitPool).equal(
-        request.fees.mul(95).div(100)
+      const lockBal1 = await functionsManager.getFunctionLockedBal(functionId);
+      const unlockBal1 = await functionsManager.getFunctionUnlockedBal(
+        functionId
       );
+      expect(lockBal1).equal(parseEther("0"));
+      expect(unlockBal1).equal(request.fees.mul(95).div(100));
 
       // //TODO move this into a proper test (checking the refill behavior)
       const { requestId: dropRequestId } = await executeDemoRequest(
         functionsManager,
         functionId
       );
-      billingRegistry.forceBalance(func.subId, parseEther("0.8")); //Below the 1 LINK minimum
+      billingRegistry.forceBalance(fPreExecute.subId, parseEther("0.8")); //Below the 1 LINK minimum
 
       console.log("Getting subscription balance 4");
-      const s4 = await functionsManager.getSubscriptionBalance(func.subId);
+      const s4 = await functionsManager.getSubscriptionBalance(
+        fPreExecute.subId
+      );
       expect(s4).equal(parseEther("0.4"));
 
       const { fulfillEvent: fulfillEventWithRefill } = await fulfillDemoRequest(
@@ -261,7 +270,9 @@ describe("FunctionsManager", function () {
         functionsManagerOwner,
         dropRequestId
       );
-      const s2 = await functionsManager.getSubscriptionBalance(func?.subId);
+      const s2 = await functionsManager.getSubscriptionBalance(
+        fPreExecute?.subId
+      );
       expect(s2).equal(parseEther("0"));
       // const aS = await billingRegistry.getSubscription(func?.subId);
       // expect(aS?.balance).equal(parseEther("0.4"));
