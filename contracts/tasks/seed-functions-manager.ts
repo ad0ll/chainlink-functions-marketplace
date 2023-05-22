@@ -13,7 +13,7 @@ task("seed-functions-manager", "runs a function")
   .addOptionalParam(
     "registerfunctions",
     "Whether to register functions",
-    false,
+    true,
     types.boolean
   )
   .addOptionalParam(
@@ -167,6 +167,9 @@ task("seed-functions-manager", "runs a function")
           console.log("Function already exists, skipping registration");
           continue;
         }
+        console.log("Got function", functionExists);
+        
+        console.log("Got function.owner", functionExists.owner);
         const registerCall = await localFm.registerFunction(demo.register, {
           gasLimit: 2_000_000,
         });
@@ -209,6 +212,7 @@ task("seed-functions-manager", "runs a function")
         const functionManagerWithOwner = await functionsManagerRaw.connect(
           functionsManagerOwner
         );
+        console.log("Approving token spender for caller", caller.address);
         const approveTx = await functionManagerWithOwner.approveTokenSpender(
           caller.address,
           ethers.utils.parseEther("100")

@@ -127,6 +127,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     event FeeManagerCutUpdated(uint256 newFeeManagerCut);
     event MinimumSubscriptionDepositUpdated(uint256 newMinimumDeposit);
 
+    event FeePaymentStart(bytes32 indexed functionId, address indexed caller, uint64 indexed subId, uint256 amount);
+    event FeePaymentComplete(bytes32 indexed functionId, address indexed caller, uint64 indexed subId, uint256 amount);
+    event FMSendRequestStart(bytes32 indexed functionId, address indexed caller);
+    event FMSendRequestComplete(bytes32 indexed functionId, bytes32 indexed requestId, address indexed caller);
     // Good default values for baseFee is 10 ** 18 * 0.2 (0.2 LINK), and for feeManagerCut (5)
 
     constructor(
@@ -268,17 +272,21 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
         console.log("collecting and locking fees");
         // collectAndLockFees(functionId);
+
         // --- Collect and lock fees ---
         uint96 premiumFee = chainlinkFunction.fee;
         uint96 totalFee = baseFee + premiumFee;
         uint64 subId = chainlinkFunction.subId;
         uint96 functionManagerCut = (premiumFee * feeManagerCut) / 100;
 
+        emit FeePaymentStart(functionId, msg.sender, subId, totalFee);
         console.log("sender %s LINK balance %d", msg.sender, LINK.balanceOf(msg.sender));
         require(LINK.balanceOf(msg.sender) >= totalFee, "You do not have enough LINK to call this function");
         console.log("Transferring %d LINK", totalFee);
         // Doing the below transfer requires running ERC20's approve function first. See tests for example.
         require(LINK.transferFrom(msg.sender, address(this), totalFee), "Failed to collect fees from caller");
+        emit FeePaymentComplete(functionId, msg.sender, subId, totalFee);
+
         console.log("reserved subscription fee %d", subscriptionBalances[subId]);
         subscriptionBalances[subId] = subscriptionBalances[subId] + baseFee;
         functionManagerProfitPool = functionManagerProfitPool + functionManagerCut;
@@ -286,8 +294,11 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         // --- Collect and lock fees ---
 
         console.log("sending functions request");
+        // bytes32 assignedReqID =
+        //     keccak256(abi.encodePacked(msg.sender, chainlinkFunction.subId, gasLimit, block.timestamp));
+        emit FMSendRequestStart(functionId, msg.sender);
         bytes32 assignedReqID = sendRequest(functionsRequest, chainlinkFunction.subId, gasLimit);
-
+        emit FMSendRequestComplete(functionId, assignedReqID, msg.sender);
         require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");
         functionResponses[assignedReqID].functionId = functionId;
         functionResponses[assignedReqID].caller = msg.sender;
