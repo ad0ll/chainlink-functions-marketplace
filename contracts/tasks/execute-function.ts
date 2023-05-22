@@ -8,7 +8,7 @@ task("execute-function", "runs a function")
     process.env.FUNCTION_MANAGER_ADDR,
     types.string
   )
-  .addParam(
+  .addOptionalParam(
     "functionid",
     "The id of the function to execute",
     undefined,
@@ -28,8 +28,9 @@ task("execute-function", "runs a function")
     types.int
   )
   .setAction(async (taskArgs, { ethers, network }) => {
+    console.log(taskArgs);
     if (!taskArgs.functionsmanager) {
-      throw new Error("--functionmanager must be specified");
+      throw new Error("--functionsmanager must be specified");
     }
     if (!taskArgs.functionid) {
       throw new Error("--functionid must be specified");
@@ -62,6 +63,7 @@ task("execute-function", "runs a function")
       taskArgs.callbackGasLimit,
       {
         gasLimit: taskArgs.gaslimit,
+        gasPrice: ethers.utils.parseUnits("120", "gwei"),
       }
     );
 

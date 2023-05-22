@@ -13,7 +13,7 @@ task("seed-functions-manager", "runs a function")
   .addOptionalParam(
     "registerfunctions",
     "Whether to register functions",
-    false,
+    true,
     types.boolean
   )
   .addOptionalParam(
@@ -61,7 +61,6 @@ task("seed-functions-manager", "runs a function")
 
     type DemoConfig = {
       file: string;
-      functionId: string;
       register: FunctionsManager.FunctionsRegisterRequestStruct;
       execute: {
         validArgs: string[][];
@@ -71,11 +70,9 @@ task("seed-functions-manager", "runs a function")
     const demos: DemoConfig[] = [
       {
         file: "./demos/coingecko-price.ts",
-        functionId:
-          "0x9293c329e8683a7d598bb8959885b177a198fdf79ae212997c1a2b2782b290dc",
         register: {
           fees: ethers.utils.parseEther("0.02"),
-          functionName: "CoinGecko Price2",
+          functionName: "CoinGecko Price",
           desc: "Fetches a given price pair from CoinGecko",
           imageUrl: imageUrls.coingecko,
           expectedArgs: [
@@ -86,7 +83,7 @@ task("seed-functions-manager", "runs a function")
           secretsLocation: 0,
           language: 0,
           category: ethers.utils.formatBytes32String("Price Feed"),
-          subId: 941, //TODO fix this, it'll break when you run in prod
+          subId: BigInt(process.env.FUNCTIONS_SUBSCRIPTION_ID || 0), //TODO fix this, it'll break when you run in prod
           source: extractSourceFromDemo("./demos/coingecko-price.ts"),
           secrets: [],
         },
@@ -157,9 +154,13 @@ task("seed-functions-manager", "runs a function")
         const demo = demos[i];
         const owner = demoUsers[DEMO_OWNERS[i]];
         const localFm = functionsManagerRaw.connect(owner);
+        const functionId = await localFm.calculateFunctionId(
+          demo.register.functionName,
+          owner.address
+        );
+        console.log("(register function) Function ID: ", functionId);
 
-        console.log("Checking if function with id", demo.functionId, "exists");
-        const functionExists = await localFm.getFunction(demo.functionId);
+        const functionExists = await localFm.getFunction(functionId);
         if (
           functionExists &&
           functionExists.owner !== ethers.constants.AddressZero
@@ -175,45 +176,33 @@ task("seed-functions-manager", "runs a function")
           "Finished registering function: ",
           demo.register.functionName
         );
-        // TODO check for FunctionRegistered event
-        const registerEvent = receipt.events?.find(
+        const functionRegisteredEvent = receipt.events?.find(
           (e) => e.event === "FunctionRegistered"
         );
-        if (!registerEvent) {
-          throw new Error("No FunctionRegistered event found");
+        if (!functionRegisteredEvent) {
+          throw new Error("Could not find FunctionRegistered event");
         }
-        console.log("FunctionRegistered event: ", registerEvent.args);
+        // TODO check for FunctionRegistered event
       }
     }
 
-    console.log(
-      "All known function ids: ",
-      await functionsManagerRaw.getFunctionIds()
-    );
     // Execute each function
     for (let i = 0; i < demos.length; i++) {
       const demo = demos[i];
       const demoOwner = demoUsers[DEMO_OWNERS[i]];
-      const functionId = demo.functionId;
+      const functionId = await functionsManagerRaw.calculateFunctionId(
+        demo.register.functionName,
+        demoOwner.address
+      );
       const runs =
         Math.floor(Math.random() * taskArgs.numruns) + taskArgs.numrunsfloor;
       for (let j = 0; j < runs; j++) {
         console.log(`Starting run ${j}/${runs} for ${functionId}`);
-        // const callerIdx = Math.floor(Math.random() * 1);
         const callerIdx = Math.floor(Math.random() * 3);
         const caller = [user1, user2, user3][callerIdx];
-
         const functionManagerWithCaller = await functionsManagerRaw.connect(
-          caller
-        );
-        const functionManagerWithOwner = await functionsManagerRaw.connect(
           functionsManagerOwner
         );
-        const approveTx = await functionManagerWithOwner.approveTokenSpender(
-          caller.address,
-          ethers.utils.parseEther("100")
-        );
-        const approveReceipt = await approveTx.wait(1);
         const argsIdx = Math.floor(
           Math.random() * demo.execute.validArgs.length
         );
@@ -221,7 +210,7 @@ task("seed-functions-manager", "runs a function")
         const tx = await functionManagerWithCaller.executeRequest(
           functionId,
           args,
-          900_000,
+          300_000,
           {
             gasLimit: 1_000_000,
           }

@@ -35,18 +35,29 @@ task("register-function", "registers a function")
 
     // Function Metadata
     const request = {
-      fees: ethers.utils.parseEther("0.002"),
-      functionName: "Test Function",
-      desc: "Test description",
+      // fees: ethers.utils.parseEther("0.002"),
+      // functionName: "Test Function",
+      // desc: "Test description",
+      // imageUrl: "https://image.url/",
+      // expectedArgs: ["principalAmount", "APYTimes100"],
+      // codeLocation: 0,
+      // secretsLocation: 0,
+      // language: 0,
+      // subId: Number(process.env.FUNCTIONS_SUBSCRIPTION_ID),
+      // source: fs.readFileSync("./calculation-example.js").toString(),
+      // secrets: [],
+      fees: ethers.utils.parseEther("0.02"),
+      functionName: "CoinGecko Price",
+      desc: "Fetches a given price pair from CoinGecko",
       imageUrl: "https://image.url/",
-      expectedArgs: ["principalAmount", "APYTimes100"],
+      expectedArgs: ["base", "quote"],
       codeLocation: 0,
       secretsLocation: 0,
       language: 0,
-      subId: Number(process.env.FUNCTIONS_SUBSCRIPTION_ID),
-      source: fs.readFileSync("./calculation-example.js").toString(),
+      category: ethers.utils.formatBytes32String("Price Feed"),
+      subId: 1097, //TODO fix this, it'll break when you run in prod
+      source: fs.readFileSync("./coingecko-price.js").toString(),
       secrets: [],
-      category: ethers.utils.formatBytes32String("calculations"),
     };
 
     if (!request.subId || Number(request.subId) <= 0) {

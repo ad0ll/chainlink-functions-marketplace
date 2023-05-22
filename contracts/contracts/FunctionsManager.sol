@@ -15,10 +15,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     mapping(bytes32 => FunctionMetadata) public functionMetadatas;
     mapping(bytes32 => FunctionResponse) public functionResponses;
     mapping(uint64 => address) private subscriptionOwnerMapping;
-    mapping(bytes32 => bool) private existingNameOwnerPair;
     mapping(address => AuthorMetadata) public authorMetadata;
-    mapping(uint64 => string) public categoryNames;
     mapping(uint64 => uint96) public subscriptionBalances;
+    bytes32[] public functionIds;
     // mapping(bytes32 => FeePool) public feePools;
     LinkTokenInterface private LINK;
     FunctionsBillingRegistry private BILLING_REGISTRY;
@@ -128,10 +127,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     event FeeManagerCutUpdated(uint256 newFeeManagerCut);
     event MinimumSubscriptionDepositUpdated(uint256 newMinimumDeposit);
 
-    //TODO delete me
-    event Debug1(bytes32 functionId);
-    event Debug2(bytes32 requestId);
-
     // Good default values for baseFee is 10 ** 18 * 0.2 (0.2 LINK), and for feeManagerCut (5)
 
     constructor(
@@ -161,9 +156,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         // Require function name cannot be empty
         require(bytes(request.functionName).length > 0, "Function name cannot be empty");
         require(request.category.length > 0, "Category cannot be empty");
-        bytes32 dupeCheckBytes = keccak256(abi.encode(request.functionName, msg.sender));
-        require(!existingNameOwnerPair[dupeCheckBytes], "Function name already exists for this owner");
-        existingNameOwnerPair[dupeCheckBytes] = true;
+
+        console.log("registerFunction: %s", request.functionName);
+        bytes32 functionId = keccak256(abi.encode(request.functionName, msg.sender));
+        require(functionMetadatas[functionId].owner == address(0), "Function already exists");
 
         //Require function doesn't already exist
         FunctionMetadata memory metadata;
@@ -215,14 +211,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         }
 
         metadata.request = functionsRequest;
-
-        // Generate unique functions ID to be able to retrieve requests
-        // Different owners can have the same function name, but one owner cannot
-        bytes32 functionId = keccak256(abi.encode(request.functionName, msg.sender));
-        require(functionMetadatas[functionId].owner == address(0), "Function already exists");
-
         functionMetadatas[functionId] = metadata;
-
+        functionIds.push(functionId);
         // Emit FunctionRegistered event
         emit FunctionRegistered(functionId, msg.sender, metadata.category, metadata);
 
@@ -244,6 +234,11 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         subscriptionOwnerMapping[subId] = msg.sender;
 
         console.log("sender %s LINK balance %d", msg.sender, LINK.balanceOf(msg.sender));
+        // Doing the below transfer requires running ERC20's approve function first. See tests for example.
+        require(
+            LINK.transferFrom(msg.sender, address(this), minimumSubscriptionDeposit),
+            "Failed to transfer LINK to the Function Manager to fund the subscription"
+        );
 
         // Fund subscription with LINK transferAndCall
         require(
@@ -266,19 +261,33 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         console.log("executeRequest called with functionId:");
         console.logBytes32(functionId);
         FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
-        require(bytes(chainlinkFunction.name).length != 0, "function is not registered");
+        require(chainlinkFunction.owner != address(0), "function is not registered");
 
         Functions.Request memory functionsRequest = chainlinkFunction.request;
         if (args.length > 0) functionsRequest.addArgs(args);
 
         console.log("collecting and locking fees");
-        //        collectAndLockFees(functionId);
-        console.log("sending functions request");
+        // collectAndLockFees(functionId);
+        // --- Collect and lock fees ---
+        uint96 premiumFee = chainlinkFunction.fee;
+        uint96 totalFee = baseFee + premiumFee;
+        uint64 subId = chainlinkFunction.subId;
+        uint96 functionManagerCut = (premiumFee * feeManagerCut) / 100;
 
-        emit Debug1(functionId);
-        bytes32 assignedReqID = keccak256(abi.encodePacked(functionId, msg.sender, block.timestamp));
-        //        bytes32 assignedReqID = sendRequest(functionsRequest, chainlinkFunction.subId, gasLimit);
-        emit Debug2(assignedReqID);
+        console.log("sender %s LINK balance %d", msg.sender, LINK.balanceOf(msg.sender));
+        require(LINK.balanceOf(msg.sender) >= totalFee, "You do not have enough LINK to call this function");
+        console.log("Transferring %d LINK", totalFee);
+        // Doing the below transfer requires running ERC20's approve function first. See tests for example.
+        require(LINK.transferFrom(msg.sender, address(this), totalFee), "Failed to collect fees from caller");
+        console.log("reserved subscription fee %d", subscriptionBalances[subId]);
+        subscriptionBalances[subId] = subscriptionBalances[subId] + baseFee;
+        functionManagerProfitPool = functionManagerProfitPool + functionManagerCut;
+        chainlinkFunction.lockedProfitPool = chainlinkFunction.lockedProfitPool + premiumFee - functionManagerCut;
+        // --- Collect and lock fees ---
+
+        console.log("sending functions request");
+        bytes32 assignedReqID = sendRequest(functionsRequest, chainlinkFunction.subId, gasLimit);
+
         require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");
         functionResponses[assignedReqID].functionId = functionId;
         functionResponses[assignedReqID].caller = msg.sender;
@@ -288,10 +297,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             functionId: functionId,
             caller: msg.sender,
             requestId: assignedReqID,
-            owner: functionMetadatas[functionId].owner,
+            owner: chainlinkFunction.owner,
             callbackFunction: bytes32(""),
             baseFee: baseFee,
-            fee: functionMetadatas[functionId].fee,
+            fee: chainlinkFunction.fee,
             gasDeposit: 0
         });
 
@@ -361,35 +370,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         }
     }
 
-    function collectAndLockFees(bytes32 functionId) private {
-        uint96 premiumFee = functionMetadatas[functionId].fee;
-        uint96 totalFee = baseFee + premiumFee;
-        uint64 subId = functionMetadatas[functionId].subId;
-        uint96 functionManagerCut = (premiumFee * feeManagerCut) / 100;
-
-        console.log("sender %s LINK balance %d", msg.sender, LINK.balanceOf(msg.sender));
-        require(LINK.balanceOf(msg.sender) >= totalFee, "You do not have enough LINK to call this function");
-        console.log("Transferring %d LINK", totalFee);
-        // Doing the below transfer requires running ERC20's approve function first. See tests for example.
-        require(LINK.transferFrom(msg.sender, address(this), totalFee), "Failed to collect fees from caller");
-        console.log("reserved subscription fee %d", subscriptionBalances[subId]);
-        subscriptionBalances[subId] = subscriptionBalances[subId] + baseFee;
-
-        console.log(
-            "added baseFee %d LINK to subscription pool, total in pool: %d", baseFee, subscriptionBalances[subId]
-        );
-
-        functionManagerProfitPool = functionManagerProfitPool + functionManagerCut;
-        functionMetadatas[functionId].lockedProfitPool =
-            functionMetadatas[functionId].lockedProfitPool + premiumFee - functionManagerCut;
-        console.log(
-            "took %d from fee of %d LINK and added to feeManagerProfitPool, total in pool: %d ",
-            functionManagerCut,
-            premiumFee,
-            functionManagerProfitPool
-        );
-    }
-
     function unlockFees(bytes32 functionId) private {
         console.log("Unlocking fees");
         require(functionMetadatas[functionId].owner != address(0), "Function does not exist");
@@ -413,7 +393,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         functionMetadatas[functionId].totalFeesCollected += unlockAmount;
     }
 
-    // TODO This function should only be callable by a keeper that resolves functions that failed at the oracle level (such as if they ran out of gas)
+    // TODO If we keep this function, we need to let the keeper call it
     function forceUnlockFees(bytes32 functionId) external onlyOwner {
         FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
         require(chainlinkFunction.owner != address(0), "Function does not exist");
@@ -444,11 +424,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     /*
         EVERYTHING BELOW IS MINUTAE, just getting it out of the way of the rest of the code
     */
-
-    function calculateFunctionId(string calldata functionName, address owner) external pure returns (bytes32) {
-        return keccak256(abi.encode(functionName, owner));
-    }
-
     function setBaseFee(uint96 _baseFee) external onlyOwner {
         baseFee = _baseFee;
         emit BaseFeeUpdated(_baseFee);
@@ -479,6 +454,22 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         return subscriptionBalances[_subscriptionId];
     }
 
+    function getFunctionIds() external view returns (bytes32[] memory) {
+        console.log("getFunctionIds");
+        return functionIds;
+    }
+
+    function calculateFunctionId(string calldata functionName, address owner) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(functionName, owner));
+    }
+
+    function calculateFunctionIdFromRequest(FunctionsRegisterRequest memory request, address owner)
+        external
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(request.functionName, owner));
+    }
     /*
         EVERYTHING BELOW IS FOR TESTING ONLY, MUST BE REMOVED FOR PROD
     */
