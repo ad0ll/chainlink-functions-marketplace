@@ -128,6 +128,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     event FeeManagerCutUpdated(uint256 newFeeManagerCut);
     event MinimumSubscriptionDepositUpdated(uint256 newMinimumDeposit);
 
+    //TODO delete me
+    event Debug1(bytes32 functionId);
+    event Debug2(bytes32 requestId);
+
     // Good default values for baseFee is 10 ** 18 * 0.2 (0.2 LINK), and for feeManagerCut (5)
 
     constructor(
@@ -212,10 +216,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
         metadata.request = functionsRequest;
 
-        // ??? Ensure interface is correct, probably not important ???
-        // 5. Add function to FunctionsManager
         // Generate unique functions ID to be able to retrieve requests
-        bytes32 functionId = keccak256(abi.encode(metadata));
+        // Different owners can have the same function name, but one owner cannot
+        bytes32 functionId = keccak256(abi.encode(request.functionName, msg.sender));
         require(functionMetadatas[functionId].owner == address(0), "Function already exists");
 
         functionMetadatas[functionId] = metadata;
@@ -241,14 +244,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         subscriptionOwnerMapping[subId] = msg.sender;
 
         console.log("sender %s LINK balance %d", msg.sender, LINK.balanceOf(msg.sender));
-        // Doing the below transfer requires running ERC20's approve function first. See tests for example.
-        require(
-            LINK.transferFrom(msg.sender, address(this), minimumSubscriptionDeposit),
-            "Failed to transfer LINK to the Function Manager to fund the subscription"
-        );
 
         // Fund subscription with LINK transferAndCall
-        require(LINK.transferAndCall(address(BILLING_REGISTRY), minimumSubscriptionDeposit, abi.encode(subId)), 
+        require(
+            LINK.transferAndCall(address(BILLING_REGISTRY), minimumSubscriptionDeposit, abi.encode(subId)),
             "Failed to transfer LINK to Billing Registry to fund the subscription"
         );
 
@@ -273,10 +272,13 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         if (args.length > 0) functionsRequest.addArgs(args);
 
         console.log("collecting and locking fees");
-        collectAndLockFees(functionId);
+        //        collectAndLockFees(functionId);
         console.log("sending functions request");
-        bytes32 assignedReqID = sendRequest(functionsRequest, chainlinkFunction.subId, gasLimit);
 
+        emit Debug1(functionId);
+        bytes32 assignedReqID = keccak256(abi.encodePacked(functionId, msg.sender, block.timestamp));
+        //        bytes32 assignedReqID = sendRequest(functionsRequest, chainlinkFunction.subId, gasLimit);
+        emit Debug2(assignedReqID);
         require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");
         functionResponses[assignedReqID].functionId = functionId;
         functionResponses[assignedReqID].caller = msg.sender;
@@ -309,7 +311,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
      */
     function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
         // Allow only the Billing Registry to call fulfillRequest
-        require(address(BILLING_REGISTRY) == msg.sender, "Only the function owner or Billing Registry can call this function");
+        require(
+            address(BILLING_REGISTRY) == msg.sender,
+            "Only the function owner or Billing Registry can call this function"
+        );
         console.log("fulfilling request");
         FunctionResponse storage functionResponse = functionResponses[requestId];
         // Require response is registered
@@ -363,16 +368,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         uint96 functionManagerCut = (premiumFee * feeManagerCut) / 100;
 
         console.log("sender %s LINK balance %d", msg.sender, LINK.balanceOf(msg.sender));
-        require(
-            LINK.balanceOf(msg.sender) >= totalFee,
-            "You do not have enough LINK to call this function"
-        );
+        require(LINK.balanceOf(msg.sender) >= totalFee, "You do not have enough LINK to call this function");
         console.log("Transferring %d LINK", totalFee);
         // Doing the below transfer requires running ERC20's approve function first. See tests for example.
-        require(
-            LINK.transferFrom(msg.sender, address(this), totalFee),
-            "Failed to collect fees from caller"
-        );
+        require(LINK.transferFrom(msg.sender, address(this), totalFee), "Failed to collect fees from caller");
         console.log("reserved subscription fee %d", subscriptionBalances[subId]);
         subscriptionBalances[subId] = subscriptionBalances[subId] + baseFee;
 
@@ -414,7 +413,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         functionMetadatas[functionId].totalFeesCollected += unlockAmount;
     }
 
-    // TODO If we keep this function, we need to let the keeper call it
+    // TODO This function should only be callable by a keeper that resolves functions that failed at the oracle level (such as if they ran out of gas)
     function forceUnlockFees(bytes32 functionId) external onlyOwner {
         FunctionMetadata storage chainlinkFunction = functionMetadatas[functionId];
         require(chainlinkFunction.owner != address(0), "Function does not exist");
@@ -445,6 +444,11 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     /*
         EVERYTHING BELOW IS MINUTAE, just getting it out of the way of the rest of the code
     */
+
+    function calculateFunctionId(string calldata functionName, address owner) external pure returns (bytes32) {
+        return keccak256(abi.encode(functionName, owner));
+    }
+
     function setBaseFee(uint96 _baseFee) external onlyOwner {
         baseFee = _baseFee;
         emit BaseFeeUpdated(_baseFee);

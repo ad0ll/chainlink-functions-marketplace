@@ -4,7 +4,7 @@
 
 import {Functions} from "./functions-lib"; // DELETE THIS LINE IN SCRIPT
 
-export const coinGeckoPrice = async (args: string) => {
+export const calculationExample = async (args: string) => {
     // *** BEGIN_SRC ***
     // Arguments can be provided when a request is initated on-chain and used in the request source code as shown below
     const principalAmount = parseInt(args[4])

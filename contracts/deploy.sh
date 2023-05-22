@@ -35,3 +35,6 @@ sed -i '' "s/functionsManager: .*,/functionsManager: \"$FUNCTIONS_MANAGER_ADDRES
 echo "Replacing functionsManager address in frontend/src/common.tsx"
 sed -i '' "s/functionsManager: .*,/functionsManager: \"$FUNCTIONS_MANAGER_ADDRESS\",/" ../frontend/src/common.tsx
 
+
+echo "Adding newly deployed FunctionsManager to subscription $FUNCTIONS_SUBSCRIPTION_ID"
+npx hardhat create-subscription --functionsmanager $FUNCTIONS_MANAGER_ADDR --network polygonMumbai --test-network mumbai --subscriptionid $FUNCTIONS_SUBSCRIPTION_ID

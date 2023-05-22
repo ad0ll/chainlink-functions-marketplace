@@ -20,7 +20,7 @@ export const networkConfig = {
     },
     [MUMBAI_CHAIN_ID]: {
         // TODO replace with the actual function manager address
-        functionsManager: "0xd60f37507c9939A9ab37F327df617A2d2B8D7c1d",
+        functionsManager: "0x70fbe6dea07462dE839B3EE87A39fc29A8cfecc5",
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
         linkEthPriceFeed: "0x12162c3E810393dEC01362aBf156D7ecf6159528",
         functionsOracleProxy: "0xeA6721aC65BCeD841B8ec3fc5fEdeA6141a0aDE4",
@@ -30,7 +30,7 @@ export const networkConfig = {
         getScannerUrl: (address: string) => `https://mumbai.polygonscan.com/address/${address}`,
     },
     [SEPOLIA_CHAIN_ID]: {
-        functionsManager: "0xd60f37507c9939A9ab37F327df617A2d2B8D7c1d",
+        functionsManager: "0x70fbe6dea07462dE839B3EE87A39fc29A8cfecc5",
         linkToken: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
         linkEthPriceFeed: "0x42585eD362B3f1BCa95c640FdFf35Ef899212734",
         functionsOracleProxy: "0x649a2C205BE7A3d5e99206CEEFF30c794f0E31EC",
