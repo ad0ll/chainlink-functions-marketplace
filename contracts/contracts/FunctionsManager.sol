@@ -31,6 +31,11 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     uint96 public minimumSubscriptionDeposit = 10 ** 18 * 3; // 3 LINK (18 decimals)
     uint32 public feeManagerCut;
 
+    // Global metrics
+    uint256 public functionsRegisteredCount;
+    uint256 public functionsCalledCount;
+    uint256 public totalFeesCollected;
+
     // TODO Support authorMetadata
 
     // (Not in this contract) Set keeper threshold at 1 LINK
@@ -68,6 +73,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         uint96 fee;
         uint96 unlockedProfitPool; // There are only 1e9*1e18 = 1e27 juels in existence, uint96=(2^96 ~ 7e28)
         uint96 lockedProfitPool; // See ^
+        uint256 functionsCalledCount;
+        uint256 totalFeesCollected;
+        uint256 successfulResponseCount;
+        uint256 failedResponseCount;
     }
 
     // struct FeePool{
@@ -214,6 +223,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         // Emit FunctionRegistered event
         emit FunctionRegistered(functionId, msg.sender, metadata.category, metadata);
 
+        functionsRegisteredCount++;
+
         return functionId;
     }
 
@@ -281,6 +292,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             fee: functionMetadatas[functionId].fee,
             gasDeposit: 0
         });
+
+        functionsCalledCount++;
+        chainlinkFunction.functionsCalledCount++;
+
         return assignedReqID;
     }
 
@@ -331,6 +346,14 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             err: err,
             usedGas: 0
         });
+
+        // Track success/error rate of function
+        // Consider successful if no error was returned
+        if (err.length == 0) {
+            functionMetadatas[functionResponse.functionId].successfulResponseCount++;
+        } else {
+            functionMetadatas[functionResponse.functionId].failedResponseCount++;
+        }
     }
 
     function collectAndLockFees(bytes32 functionId) private {
@@ -386,6 +409,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             functionMetadatas[functionId].lockedProfitPool,
             functionMetadatas[functionId].unlockedProfitPool
         );
+        // Only consider fee collected after it's unlocked to author
+        totalFeesCollected += unlockAmount;
+        functionMetadatas[functionId].totalFeesCollected += unlockAmount;
     }
 
     // TODO If we keep this function, we need to let the keeper call it

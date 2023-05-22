@@ -6,6 +6,7 @@ import "./tasks/create-subscription";
 import "./tasks/execute-function";
 import "./tasks/register-function";
 import "./tasks/get-response";
+import "./tasks/get-function";
 
 dotenv.config();
 
@@ -48,6 +49,7 @@ export const networks: Record<string, any> = {
     gasPrice: undefined,
     confirmations: DEFAULT_VERIFICATION_BLOCK_CONFIRMATIONS,
     linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
+    usdcToken: "0x0FA8781a83E46826621b3BC094Ea2A0212e71B23",
     linkPriceFeed: "0x12162c3E810393dEC01362aBf156D7ecf6159528", // LINK/MATIC
     functionsOracleProxy: "0xeA6721aC65BCeD841B8ec3fc5fEdeA6141a0aDE4",
     functionsBillingRegistryProxy: "0xEe9Bf52E5Ea228404bB54BCFbbDa8c21131b9039",
@@ -60,6 +62,7 @@ export const networks: Record<string, any> = {
     chainId: 43113,
     confirmations: 2 * DEFAULT_VERIFICATION_BLOCK_CONFIRMATIONS,
     linkToken: "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846",
+    usdcToken: "0x5425890298aed601595a70AB815c96711a31Bc65",
     linkPriceFeed: "0x79c91fd4F8b3DaBEe17d286EB11cEE4D83521775", // LINK/AVAX
     functionsOracleProxy: "0xE569061eD8244643169e81293b0aA0d3335fD563",
     functionsBillingRegistryProxy: "0x452C33Cef9Bc773267Ac5F8D85c1Aca2bA4bcf0C",
