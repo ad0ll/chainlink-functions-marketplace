@@ -54,6 +54,7 @@ task("execute-function", "runs a function")
     );
     const linkToken = linkTokenRaw.connect(signer);
     linkToken.approve(functionsManager.address, ethers.utils.parseEther("10"));
+    
 
     console.log("Executing function: ", taskArgs.functionid);
     const args = taskArgs.args ? taskArgs.args.split(",") : [];

@@ -136,3 +136,6 @@ We use a lot of MATIC and LINK. Here's the routine to get as much as possible ea
 5. Go to Alchemy's faucet https://mumbaifaucet.com/, **DON'T SIGN IN**, get 0.5 MATIC
 6. Sign it with your Alchemy account. Get 1 MATIC.
 7. Go to https://faucets.chain.link/mumbai, and get 0.5 MATIC and 20 LINK
+
+
+ npx hardhat get-subscription --billingregistry 0xEe9Bf52E5Ea228404bB54BCFbbDa8c21131b9039 --subscriptionid 941 --checkauth $FUNCTIONS_MANAGER_ADDR

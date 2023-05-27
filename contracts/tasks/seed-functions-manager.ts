@@ -2,6 +2,7 @@ import { task, types } from "hardhat/config";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import fs from "fs";
 import { FunctionsManager } from "../typechain-types";
+import { networks } from "../hardhat.config";
 
 task("seed-functions-manager", "runs a function")
   .addOptionalParam(
@@ -28,12 +29,12 @@ task("seed-functions-manager", "runs a function")
     5,
     types.int
   )
-  .setAction(async (taskArgs, { ethers }) => {
+  .setAction(async (taskArgs, { ethers, network }) => {
     console.log("Building demos");
 
     const imageUrls = {
       maxHeadroom: "https://i.imgur.com/VE7uGB9.gif",
-      //TODO Swap below with the official version (Google Drive link: https://drive.google.com/drive/folders/1owvdEhRDtmwxE-7cAdxBXhjswiDPDT9W) uploaded on the vercel app since we can't get a direct link from google drive..
+      //TODO Swap below with the official version (Google Drive link: https://drive.google.com/drive/folders/1owvdEhRDtmwxE-7cAdxBXhjswiDPDT9W) uploaded on the vercel app since we can't get a direct link from google drive
       coingecko:
         "https://i.pinimg.com/736x/be/c9/b3/bec9b33d6638ff927a96d0e93546a056.jpg",
       calculateApy:
@@ -101,7 +102,6 @@ task("seed-functions-manager", "runs a function")
         },
       },
     ];
-
     console.log("Finished bootstrapping demos");
 
     if (!taskArgs.functionsmanager) {
@@ -168,7 +168,7 @@ task("seed-functions-manager", "runs a function")
           continue;
         }
         console.log("Got function", functionExists);
-        
+
         console.log("Got function.owner", functionExists.owner);
         const registerCall = await localFm.registerFunction(demo.register, {
           gasLimit: 2_000_000,
@@ -178,6 +178,7 @@ task("seed-functions-manager", "runs a function")
           "Finished registering function: ",
           demo.register.functionName
         );
+
         // TODO check for FunctionRegistered event
         const registerEvent = receipt.events?.find(
           (e) => e.event === "FunctionRegistered"
@@ -188,11 +189,16 @@ task("seed-functions-manager", "runs a function")
         console.log("FunctionRegistered event: ", registerEvent.args);
       }
     }
-
     console.log(
       "All known function ids: ",
       await functionsManagerRaw.getFunctionIds()
     );
+
+    const linkTokenRaw = await ethers.getContractAt(
+      "LinkToken",
+      networks[network.name].linkToken
+    );
+
     // Execute each function
     for (let i = 0; i < demos.length; i++) {
       const demo = demos[i];
@@ -213,10 +219,14 @@ task("seed-functions-manager", "runs a function")
           functionsManagerOwner
         );
         console.log("Approving token spender for caller", caller.address);
-        const approveTx = await functionManagerWithOwner.approveTokenSpender(
-          caller.address,
-          ethers.utils.parseEther("100")
+
+        const linkToken = linkTokenRaw.connect(caller);
+        const approveTx = await linkToken.approve(
+          functionsManagerRaw.address,
+          ethers.utils.parseEther("10"),
+          { gasLimit: 1_000_000 }
         );
+
         const approveReceipt = await approveTx.wait(1);
         const argsIdx = Math.floor(
           Math.random() * demo.execute.validArgs.length
