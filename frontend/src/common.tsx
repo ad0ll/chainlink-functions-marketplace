@@ -20,24 +20,28 @@ export const networkConfig = {
     },
     [MUMBAI_CHAIN_ID]: {
         // TODO replace with the actual function manager address
-        functionsManager: "0xd1135B1351d6Ae3E51964990541DBf12BBf84e1E",
+        functionsManager: "0x6DE6eCd4dAf6b8bf6Ba613071053256ab6084323",
+        realFunctionsManager: "0xd1135B1351d6Ae3E51964990541DBf12BBf84e1E",
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
         linkEthPriceFeed: "0x12162c3E810393dEC01362aBf156D7ecf6159528",
         functionsOracleProxy: "0xeA6721aC65BCeD841B8ec3fc5fEdeA6141a0aDE4",
         functionsBillingRegistryProxy: "0xEe9Bf52E5Ea228404bB54BCFbbDa8c21131b9039",
         functionsPublicKey:
             "a30264e813edc9927f73e036b7885ee25445b836979cb00ef112bc644bd16de2db866fa74648438b34f52bb196ffa386992e94e0a3dc6913cee52e2e98f1619c",
-        getScannerUrl: (address: string) => `https://mumbai.polygonscan.com/address/${address}`,
+        getScannerAddressUrl: (address: string) => `https://mumbai.polygonscan.com/address/${address}`,
+        getScannerTxUrl: (address: string) => `https://mumbai.polygonscan.com/tx/${address}`,
     },
     [SEPOLIA_CHAIN_ID]: {
-        functionsManager: "0xd1135B1351d6Ae3E51964990541DBf12BBf84e1E",
+        functionsManager: "0x6DE6eCd4dAf6b8bf6Ba613071053256ab6084323",
+        realFunctionsManager: "0xd1135B1351d6Ae3E51964990541DBf12BBf84e1E",
         linkToken: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
         linkEthPriceFeed: "0x42585eD362B3f1BCa95c640FdFf35Ef899212734",
         functionsOracleProxy: "0x649a2C205BE7A3d5e99206CEEFF30c794f0E31EC",
         functionsBillingRegistryProxy: "0x3c79f56407DCB9dc9b852D139a317246f43750Cc",
         functionsPublicKey:
             "a30264e813edc9927f73e036b7885ee25445b836979cb00ef112bc644bd16de2db866fa74648438b34f52bb196ffa386992e94e0a3dc6913cee52e2e98f1619c",
-        getScannerUrl: (address: string) => `https://sepolia.etherscan.io/address/${address}`,
+        getScannerAddressUrl: (address: string) => `https://sepolia.etherscan.io/address/${address}`,
+        getScannerTxUrl: (txHash: string) => `https://mumbai.polygonscan.com/tx/${txHash}`,
     },
 }
 

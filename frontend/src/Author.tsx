@@ -45,7 +45,7 @@ const AuthorAddressCard: React.FC<{ address?: string }> = ({address}) => {
                             marginRight: 2,
                         }}>{truncateIfAddress(address || "")}</Typography>
             <Tooltip title={"Open in scanner"}>
-                <Link to={networkConfig[chainId].getScannerUrl(address || "")}>
+                <Link to={networkConfig[chainId].getScannerAddressUrl(address || "")}>
                     <Typography variant={"h6"}>{<OpenInNewIcon/>}</Typography>
                 </Link>
             </Tooltip>

@@ -37,7 +37,7 @@
   "scripts": {
     "start": "webpack serve --mode development --open --config webpack.development.js",
     "build": "webpack --mode production --config webpack.production.js",
-    "generate:contracts": "typechain --target=ethers-v6 --out-dir=src/abi/types src/generated/abi/*.json",
+    "generate:contracts": "typechain --target=ethers-v6 --out-dir=src/generated/contract-types src/generated/abi/*.json",
     "test": "jest",
     "codegen": "graphql-codegen --config graphql-codegen.ts"
   },
@@ -64,6 +64,7 @@
     "ts-jest": "^29.1.0",
     "ts-loader": "^9.4.2",
     "ts-node": "^10.9.1",
+    "typechain": "^8.2.0",
     "typescript": "^5.0.4",
     "webpack": "^5.78.0",
     "webpack-cli": "^5.0.1",
