@@ -9,6 +9,7 @@ import "./tasks/get-response";
 import "./tasks/seed-functions-manager";
 import "./tasks/get-function";
 import "./tasks/get-subscription";
+import "./tasks/add-user-to-subscription";
 
 dotenv.config();
 

@@ -185,8 +185,16 @@ task(
         const owner = demo.owner;
         const localFm = functionsManagerRaw.connect(owner);
 
+        const existingFunction = await localFm.getFunction(demo.functionId);
+        console.log("Existing function: ", existingFunction);
+        if (existingFunction.owner !== ethers.constants.HashZero) {
+          console.log("Function already registered, skipping");
+          continue;
+        }
+
         const registerCall = await localFm.registerFunction(demo.register, {
           gasLimit: 2_000_000,
+          gasPrice: ethers.utils.parseUnits("150", "gwei"),
         });
         const receipt = await registerCall.wait(1);
         console.log(
@@ -217,8 +225,15 @@ task(
     for (let i = 0; i < signers.length; i++) {
       const signer = signers[i];
       console.log(`${signer.address} approving functions manager as spender `);
-
       const linkToken = linkTokenRaw.connect(signer);
+      const allow = await linkToken.allowance(
+        signer.address,
+        functionsManagerRaw.address
+      );
+      if (allow.gte(ethers.utils.parseEther("5"))) {
+        console.log("Functions manager already approved, skipping...");
+        continue;
+      }
       const approveTx = await linkToken.approve(
         functionsManagerRaw.address,
         ethers.utils.parseEther("10")
@@ -248,9 +263,10 @@ task(
         const tx = await functionManagerWithCaller.executeRequest(
           functionId,
           requestInfo.args,
-          300_000,
+          1_000_000,
           {
             gasLimit: 2_000_000,
+            gasPrice: ethers.utils.parseUnits("150", "gwei"),
           }
         );
         const execReceipt = await tx.wait(1);
