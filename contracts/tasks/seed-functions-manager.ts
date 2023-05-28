@@ -197,6 +197,7 @@ task(
     if (subInfo.balance.lte(ethers.utils.parseEther("3"))) {
       throw new Error("Not enough balance in subscription");
     }
+
     if (taskArgs.registerfunctions) {
       console.log("Registering functions...");
       for (let i = 0; i < demos.length; i++) {
@@ -287,9 +288,9 @@ task(
         const tx = await functionManagerWithCaller.executeRequest(
           functionId,
           requestInfo.args,
-          1_000_000,
+          300_000,
           {
-            gasLimit: 2_000_000,
+            gasLimit: 2_500_000,
             // gasPrice: ethers.utils.parseUnits("35", "gwei"),
             // maxPriorityFeePerGas: ethers.utils.parseUnits("5", "gwei"),
             // maxFeePerGas: ethers.utils.parseUnits("5", "gwei"),

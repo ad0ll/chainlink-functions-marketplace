@@ -285,7 +285,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         console.log("Transferring %d LINK", totalFee);
 
         // Doing the below transfer requires running ERC20's approve function first. See tests for example.
-        // require(LINK.transferFrom(msg.sender, address(this), totalFee), "Failed to collect fees from caller");
+        require(LINK.transferFrom(msg.sender, address(this), totalFee), "Failed to collect fees from caller");
 
         console.log("reserved subscription fee %d", subscriptionBalances[subId]);
         subscriptionBalances[subId] += baseFee;
@@ -298,7 +298,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
         console.log("sending functions request");
         // bytes32 assignedReqID =
-        //     keccak256(abi.encodePacked(msg.sender, chainlinkFunction.subId, gasLimit, block.timestamp));
+        // keccak256(abi.encodePacked(msg.sender, chainlinkFunction.subId, gasLimit, block.timestamp));
         bytes32 assignedReqID = sendRequest(functionRequest, chainlinkFunction.subId, gasLimit);
         require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");
 
