@@ -57,12 +57,22 @@ export const TypographyWithLinkIcon: React.FC<{
     width?: number,
     includeSuffix?: boolean
     children: ReactNode
-} & TypographyProps> = ({height = "inherit", width = "inherit", includeSuffix = true, children, style}, props) => {
+    typographyStyle?: React.CSSProperties
+    typographyProps?: TypographyProps
+} & TypographyProps> = ({
+                            height = "inherit",
+                            width = "inherit",
+                            includeSuffix = true,
+                            children,
+                            typographyStyle,
+                            typographyProps
+                        }) => {
     return <Box style={{"display": "flex", "alignItems": "center"}}>
         <SvgIcon component={LinkTokenIcon} viewBox="0 0 800 800" height={height} width={width}
-                 style={{marginRight: 4, ...style}}/>
-        <Typography {...props} style={{...props.style, marginRight: 4}}>{children}</Typography>
-        {includeSuffix && <Typography {...props} style={{...props.style, marginRight: 4}}>LINK</Typography>}
+                 style={{marginRight: 4, ...typographyStyle}}/>
+        <Typography {...typographyProps} style={{...typographyStyle, marginRight: 4}}>{children}</Typography>
+        {includeSuffix &&
+            <Typography {...typographyProps} style={{...typographyStyle, marginRight: 4}}>LINK</Typography>}
     </Box>
 }
 export const blockTimestampToDate = (timestamp: number) => {
