@@ -93,7 +93,8 @@ task(
     );
     console.log(functionManager.address);
     console.log(signer.address);
-    const linkAmount = await functionManager.minimumSubscriptionDeposit();
+    // const linkAmount = await functionManager.minimumSubscriptionBalance();
+    const linkAmount = 0;
     console.log("minimum subscription deposit is: ", linkAmount.toString());
 
     let subscriptionId: number;

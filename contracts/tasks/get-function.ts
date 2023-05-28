@@ -29,7 +29,9 @@ task("get-function", "gets function response")
     const functionsManager = functionsManagerRaw.connect(signer);
 
     console.log("Getting metadata for functionId: ", taskArgs.functionid);
-    const metadata = await functionsManager.getFunction(taskArgs.functionid);
+    const metadata = await functionsManager.getFunctionMetadata(
+      taskArgs.functionid
+    );
 
     console.log(`Metadata: ${JSON.stringify(metadata)}`);
   });

@@ -232,15 +232,16 @@ contract MockBillingRegistry {
             abi.encodeWithSelector(FunctionsClientInterface.handleOracleFulfillment.selector, requestId, response, err);
 
         // TODO set gas amount
-        FunctionsManager.FunctionResponse memory req = functionsManager.getFunctionResponse(requestId);
-        FunctionsManager.FunctionMetadata memory meta = functionsManager.getFunction(req.functionId);
+        // FunctionsManager.FunctionResponse memory req = functionsManager.getFunctionResponse(requestId);
+        bytes32 functionId = functionsManager.getFunctionResponse(requestId).functionId;
+        uint64 subId = functionsManager.getFunctionExecuteMetadata(functionId).subId;
         // bool success = callWithExactGas(meta.subId, address(functionsManager), callback);
         bool success = callWithExactGas(3_000_000, address(functionsManager), callback);
-        if (s_subscriptions[meta.subId].balance < BASE_FEE) {
+        if (s_subscriptions[subId].balance < BASE_FEE) {
             revert InsufficientBalance();
         }
-        s_subscriptions[meta.subId].balance -= BASE_FEE;
-        emit FulfillAndBillLog(requestId, meta.subId, response, err, success);
+        s_subscriptions[subId].balance -= BASE_FEE;
+        emit FulfillAndBillLog(requestId, subId, response, err, success);
         console.log("Finished calling fulfillAndBill");
         return success;
     }

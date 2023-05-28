@@ -59,7 +59,7 @@ task(
     const demos: DemoConfig[] = [
       {
         functionId:
-          "0x5f5cad2778707654691b9276b6efcc451154287a5e6f1d24a3a068799348619c",
+          "0x1f74d62f6e1316c0e29016c5c0e3858b5ff9268df2ba20b1681079bfe2eaef0d",
         owner: user1,
         register: {
           fees: ethers.utils.parseEther("0.02"),
@@ -86,7 +86,7 @@ task(
       },
       {
         functionId:
-          "0xa3e7e69dd8bac0c4506af68d25c5aff3e163493cce345f187e34906ccc936bb8",
+          "0xf542a86f16d4d82d9ac34bb8861d40a73f19f4e51b467a1b55b43cad25057ce5",
         owner: user2,
         register: {
           fees: ethers.utils.parseEther("0.02"),
@@ -113,7 +113,7 @@ task(
       },
       {
         functionId:
-          "0x144853f43d3b8e966203b3f8ae15dae36c91b9269c55fb4114d92e24c82b6df4",
+          "0x1cad7a1167bd441b2a8e30bbd40637f03ace876976424bdadce5e8d2b7edd012",
         owner: user3,
         register: {
           fees: ethers.utils.parseEther("0.05"),
@@ -143,7 +143,7 @@ task(
       },
       {
         functionId:
-          "0xb7ced75f5bc1d50bd5cfebba6436321806d7fdb1e31c1e9ebf3440fd6fe66707",
+          "0xf32eee13ccd65bffbe943934a4788f3da1a096e474bbb09bd0a98911d28d3770",
         owner: user4,
         register: {
           fees: ethers.utils.parseEther("0.05"),
@@ -175,9 +175,27 @@ task(
       "FunctionsManager",
       taskArgs.functionsmanager
     );
-
     console.log("Function manager owner: ", functionsManagerOwner.address);
+    const FunctionsBillingRegistry = await ethers.getContractAt(
+      "FunctionsBillingRegistry",
+      networks[network.name].functionsBillingRegistryProxy
+    );
 
+    console.log(
+      "Getting subscription info for: ",
+      process.env.FUNCTIONS_SUBSCRIPTION_ID
+    );
+    const subInfo = await FunctionsBillingRegistry.getSubscription(
+      process.env.FUNCTIONS_SUBSCRIPTION_ID
+    );
+    // console.log("Subscription info: ", subInfo);
+    console.log(
+      "Subscription balance: ",
+      ethers.utils.formatEther(subInfo.balance.toString())
+    );
+    if (subInfo.balance.lte(ethers.utils.parseEther("3"))) {
+      throw new Error("Not enough balance in subscription");
+    }
     if (taskArgs.registerfunctions) {
       console.log("Registering functions...");
       for (let i = 0; i < demos.length; i++) {
@@ -185,16 +203,18 @@ task(
         const owner = demo.owner;
         const localFm = functionsManagerRaw.connect(owner);
 
-        const existingFunction = await localFm.getFunction(demo.functionId);
+        const existingFunction = await localFm.getFunctionMetadata(
+          demo.functionId
+        );
         console.log("Existing function: ", existingFunction);
-        if (existingFunction.owner !== ethers.constants.HashZero) {
+        if (existingFunction.name !== "") {
           console.log("Function already registered, skipping");
           continue;
         }
 
         const registerCall = await localFm.registerFunction(demo.register, {
           gasLimit: 2_000_000,
-          gasPrice: ethers.utils.parseUnits("150", "gwei"),
+          gasPrice: ethers.utils.parseUnits("35", "gwei"),
         });
         const receipt = await registerCall.wait(1);
         console.log(
@@ -266,7 +286,9 @@ task(
           1_000_000,
           {
             gasLimit: 2_000_000,
-            gasPrice: ethers.utils.parseUnits("150", "gwei"),
+            gasPrice: ethers.utils.parseUnits("35", "gwei"),
+            // maxPriorityFeePerGas: ethers.utils.parseUnits("5", "gwei"),
+            // maxFeePerGas: ethers.utils.parseUnits("5", "gwei"),
           }
         );
         const execReceipt = await tx.wait(1);
