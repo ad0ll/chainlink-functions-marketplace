@@ -32,13 +32,31 @@ import Jazzicon from "./Jazzicon";
 import {generateDefaultSnippetString, SoliditySyntaxHighlighter} from "./Snippets";
 import {DocumentNode, useQuery} from "@apollo/client";
 import {Query} from "./gql/graphql";
-import {blockTimestampToDate, MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID, TypographyWithLinkIcon} from "./common";
+import {
+    blockTimestampToDate,
+    MUMBAI_CHAIN_ID,
+    networkConfig,
+    SEPOLIA_CHAIN_ID,
+    SHORT_POLL_INTERVAL,
+    TypographyWithLinkIcon
+} from "./common";
 import {Search as SearchIcon} from "@mui/icons-material";
 import {ethers} from "ethers"
 import {useWeb3React} from "@web3-react/core";
 
 
-const ListingTable: React.FC<{ query: DocumentNode, args: Object }> = ({query, args}) => {
+type AvailableListingColumns = "name" | "author" | "category" | "fee" | "created" | "actions";
+const ListingTable: React.FC<{
+    query: DocumentNode,
+    args: Object,
+    pollInterval?: number,
+    columns?: AvailableListingColumns[]
+}> = ({
+          query,
+          args,
+          pollInterval = SHORT_POLL_INTERVAL,
+          columns = ["name", "author", "category", "fee", "created", "actions"]
+      }) => {
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [nameDescFilter, setNameDescFilter] = useState("");
@@ -51,7 +69,8 @@ const ListingTable: React.FC<{ query: DocumentNode, args: Object }> = ({query, a
             skip,
             first: pageSize,
             ...args
-        }
+        },
+        pollInterval,
     })
 
     const notify = () => toast.success("Copied snippet to keyboard");
@@ -81,18 +100,23 @@ const ListingTable: React.FC<{ query: DocumentNode, args: Object }> = ({query, a
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell width={"55%"}>Function</TableCell>
-                        <TableCell width={"10%"}>Author</TableCell>
-                        <TableCell width={"10%"}>Category</TableCell>
-                        <TableCell width={"10%"}>Fee</TableCell>
-                        <TableCell width={"10%"}>Added</TableCell>
-                        <TableCell width={"5%"}>{/* Copy snippet button */}</TableCell>
-                        {/*    TODO Add "Added" or whatever column name for when the function was created. See block timestamp "*/}
+                        {columns.find(f => f === "name") &&
+                            <TableCell width={"55%"}><Typography>Function</Typography></TableCell>}
+                        {columns.find(f => f === "author") &&
+                            <TableCell width={"10%"}><Typography>Author</Typography></TableCell>}
+                        {columns.find(f => f === "category") &&
+                            <TableCell width={"10%"}><Typography>Category</Typography></TableCell>}
+                        {columns.find(f => f === "fee") &&
+                            <TableCell width={"10%"}><Typography>Fee</Typography></TableCell>}
+                        {columns.find(f => f === "created") &&
+                            <TableCell width={"10%"}><Typography>Added</Typography></TableCell>}
+                        {columns.find(f => f === "actions") &&
+                            <TableCell width={"5%"}><Typography>Actions</Typography></TableCell>}
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {data.functionRegistereds.map((f, i) => <TableRow key={i}>
-                        <TableCell>
+                        {columns.find(f => f === "name") && <TableCell>
                             {/*TODO Fix overflow*/}
                             <Link to={`/buy/${f.id}`} style={{display: "flex", alignItems: "center"}}>
                                 <CardMedia
@@ -104,8 +128,8 @@ const ListingTable: React.FC<{ query: DocumentNode, args: Object }> = ({query, a
                                     {f.metadata_name}
                                 </Typography>
                             </Link>
-                        </TableCell>
-                        <TableCell>
+                        </TableCell>}
+                        {columns.find(f => f === "author") && <TableCell>
                             <Card elevation={2}>
                                 <CardActionArea
                                     component={Link}
@@ -123,19 +147,20 @@ const ListingTable: React.FC<{ query: DocumentNode, args: Object }> = ({query, a
                                     </Typography>
                                 </CardActionArea>
                             </Card>
-                        </TableCell>
-                        <TableCell>
-                            <Typography>{ethers.decodeBytes32String(f.metadata_category)}</Typography>
-                        </TableCell>
-                        <TableCell>
+                        </TableCell>}
+                        {columns.find(f => f === "category") &&
+                            <TableCell>
+                                <Typography>{ethers.decodeBytes32String(f.metadata_category)}</Typography>
+                            </TableCell>}
+                        {columns.find(f => f === "fee") && <TableCell>
                             <TypographyWithLinkIcon includeSuffix={false}>
                                 {renderCurrency(f.metadata_fee)}
                             </TypographyWithLinkIcon>
-                        </TableCell>
-                        <TableCell>
+                        </TableCell>}
+                        {columns.find(f => f === "created") && <TableCell>
                             <Typography>{blockTimestampToDate(f.blockTimestamp)}</Typography>
-                        </TableCell>
-                        <TableCell>
+                        </TableCell>}
+                        {columns.find(f => f === "actions") && <TableCell>
                             <Tooltip placement={"bottom-start"} title={<Box sx={{minWidth: 450}}>
                                 <Typography variant={"h6"}>Click to copy contract snippet</Typography>
                                 <SoliditySyntaxHighlighter>
@@ -144,7 +169,7 @@ const ListingTable: React.FC<{ query: DocumentNode, args: Object }> = ({query, a
                             </Box>}>
                                 <ContentCopyIcon onClick={notify}/>
                             </Tooltip>
-                        </TableCell>
+                        </TableCell>}
                     </TableRow>)}
                 </TableBody>
                 <TableFooter>

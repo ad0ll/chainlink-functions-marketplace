@@ -178,7 +178,7 @@ export const Sell: React.FC = () => {
 
     // return (<Paper width={{xs: "100%", sm: "80%", md: "60%", lg: "40%"}} sx={{marginTop: 2}} margin={"auto"}>
     return (<Box width={{xs: "100%", sm: "80%", md: "70%", lg: "50%"}} sx={{marginTop: 2}} margin={"auto"}>
-        <Typography variant={"h4"} sx={{padding: 2, textAlign: "center"}}>Create a new
+        <Typography variant={"h3"} sx={{padding: 2, textAlign: "center"}}>Create a new
             function</Typography>
         <form onSubmit={onSubmit}>
             <Stack spacing={2}>

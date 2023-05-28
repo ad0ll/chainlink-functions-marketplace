@@ -9,6 +9,7 @@ export const GOERLI_CHAIN_ID = 5
 export const MATIC_CHAIN_ID = 137
 export const MUMBAI_CHAIN_ID = 80001
 export const SEPOLIA_CHAIN_ID = 11155111
+export const SHORT_POLL_INTERVAL = 2000
 
 // This was pulled from the hardhat starter kit's network-config.js file at the repo root
 export const networkConfig = {
