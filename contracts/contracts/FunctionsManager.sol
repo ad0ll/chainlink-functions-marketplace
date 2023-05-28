@@ -147,6 +147,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         baseFee = _baseFee;
         feeManagerCut = _feeManagerCut;
         minimumSubscriptionBalance = _minimumSubscriptionBalance;
+        LINK.approve(address(this), 10 ** 18 * 1_000_000_000); // Allow spending up to 1bil LINK
     }
 
     function registerFunction(FunctionsRegisterRequest calldata request) public payable returns (bytes32) {
@@ -284,7 +285,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         console.log("Transferring %d LINK", totalFee);
 
         // Doing the below transfer requires running ERC20's approve function first. See tests for example.
-        require(LINK.transferFrom(msg.sender, address(this), totalFee), "Failed to collect fees from caller");
+        // require(LINK.transferFrom(msg.sender, address(this), totalFee), "Failed to collect fees from caller");
 
         console.log("reserved subscription fee %d", subscriptionBalances[subId]);
         subscriptionBalances[subId] += baseFee;
@@ -411,6 +412,27 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         uint96 amountToTransfer = subscriptionBalances[_subscriptionId];
         subscriptionBalances[_subscriptionId] = 0;
         LINK.transferAndCall(address(BILLING_REGISTRY), amountToTransfer, abi.encode(_subscriptionId));
+    }
+
+    function withdrawFunctionsManagerProfitToOwner() external onlyOwner {
+        console.log("Withdrawing all fees to FunctionsManager owner %s", owner());
+        uint96 amountToTransfer = functionManagerProfitPool;
+        functionManagerProfitPool = 0;
+        LINK.transfer(owner(), amountToTransfer);
+    }
+
+    function withdrawFunctionProfitToAuthor(bytes32 functionId) external {
+        // TODO, are there any checks we should have here? Like, should we check that the caller is the owner? Does it matter who calls this?
+        console.log("Withdrawing all fees");
+        uint96 amountToTransfer = functionExecuteMetadatas[functionId].unlockedProfitPool;
+        functionExecuteMetadatas[functionId].unlockedProfitPool = 0;
+        LINK.transfer(functionExecuteMetadatas[functionId].owner, amountToTransfer);
+    }
+
+    function withdrawMultipleFunctionProfitToAuthor(bytes32[] memory functionIds) external {
+        for (uint256 i = 0; i < functionIds.length; i++) {
+            this.withdrawFunctionProfitToAuthor(functionIds[i]);
+        }
     }
 
     /*

@@ -25,7 +25,6 @@ echo "Extracted address: $FUNCTIONS_MANAGER_ADDRESS, replacing in files"
 
 # Replace the value of FUNCTIONS_MANAGER_ADDRESS in .envrc with the address (macos)
 sed -i '' "s/FUNCTIONS_MANAGER_ADDR=.*/FUNCTIONS_MANAGER_ADDR=\"$FUNCTIONS_MANAGER_ADDRESS\"/" .envrc
-direnv allow
 
 # Replace functionsManager: .* with functionsManager: $FUNCTIONS_MANAGER_ADDRESS in hardhat.config.ts
 echo "Replacing functionsManager address in hardhat.config.ts"
@@ -35,6 +34,6 @@ sed -i '' "s/functionsManager: .*,/functionsManager: \"$FUNCTIONS_MANAGER_ADDRES
 echo "Replacing functionsManager address in frontend/src/common.tsx"
 sed -i '' "s/functionsManager: .*,/functionsManager: \"$FUNCTIONS_MANAGER_ADDRESS\",/" ../frontend/src/common.tsx
 
-
-echo "Adding newly deployed FunctionsManager to subscription $FUNCTIONS_SUBSCRIPTION_ID"
-npx hardhat create-subscription --functionsmanager $FUNCTIONS_MANAGER_ADDR --network polygonMumbai --test-network mumbai --subscriptionid $FUNCTIONS_SUBSCRIPTION_ID
+direnv allow
+echo "Adding newly deployed FunctionsManager $FUNCTIONS_MANAGER_ADDRESS to subscription $FUNCTIONS_SUBSCRIPTION_ID"
+npx hardhat create-subscription --functionsmanager $FUNCTIONS_MANAGER_ADDRESS --network polygonMumbai --test-network mumbai --subscriptionid $FUNCTIONS_SUBSCRIPTION_ID
