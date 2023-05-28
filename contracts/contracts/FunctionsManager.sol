@@ -147,7 +147,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         baseFee = _baseFee;
         feeManagerCut = _feeManagerCut;
         minimumSubscriptionBalance = _minimumSubscriptionBalance;
-        LINK.approve(address(this), 10 ** 18 * 1_000_000_000); // Allow spending up to 1bil LINK
+        // LINK.approve(address(this), 10 ** 18 * 1_000_000_000); // Allow spending up to 1bil LINK
     }
 
     function registerFunction(FunctionsRegisterRequest calldata request) public payable returns (bytes32) {
@@ -422,8 +422,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     }
 
     function withdrawFunctionProfitToAuthor(bytes32 functionId) external {
-        // TODO, are there any checks we should have here? Like, should we check that the caller is the owner? Does it matter who calls this?
-        console.log("Withdrawing all fees");
+        require(
+            msg.sender == owner() || msg.sender == functionExecuteMetadatas[functionId].owner,
+            "Must be FunctionsManager owner or function owner to withdraw profit to function owner"
+        );
         uint96 amountToTransfer = functionExecuteMetadatas[functionId].unlockedProfitPool;
         functionExecuteMetadatas[functionId].unlockedProfitPool = 0;
         LINK.transfer(functionExecuteMetadatas[functionId].owner, amountToTransfer);
