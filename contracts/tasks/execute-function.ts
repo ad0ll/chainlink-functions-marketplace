@@ -54,14 +54,12 @@ task("execute-function", "runs a function")
     );
     const linkToken = linkTokenRaw.connect(signer);
     linkToken.approve(functionsManager.address, ethers.utils.parseEther("10"));
-    
 
     console.log("Executing function: ", taskArgs.functionid);
     const args = taskArgs.args ? taskArgs.args.split(",") : [];
     const rawExecute = await functionsManager.executeRequest(
       taskArgs.functionid,
       args,
-      taskArgs.callbackGasLimit,
       {
         gasLimit: taskArgs.gaslimit,
         gasPrice: ethers.utils.parseUnits("120", "gwei"),

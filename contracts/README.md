@@ -88,6 +88,8 @@ export PRIVATE_KEY="<single private key used in some scripts>"
 export EVENT_SPAMMER_ADDR=""
 # Required by some scripts/tasks
 export FUNCTIONS_MANAGER_ADDR=""
+# Required by some scripts/tasks
+export FUNCTIONS_SUBSCRIPTION_ID=""
 ```
 
 ### Deploy the FunctionManager contract
@@ -125,7 +127,7 @@ npx hardhat register-function --network polygonMumbai --functionsmanager $FUNCTI
 npx hardhat execute-function --functions-manager $FUNCTION_MANAGER_ADDR --network $HARDHAT_NETWORK --function-id <hex-string-of-function-id>
 ```
 
-### 
+###
 
 ## How to get maximum testnet MATIC from faucets
 
@@ -159,4 +161,10 @@ npx hardhat add-user-to-subscription --network polygonMumbai --test-network mumb
 
 ```bash
 npx hardhat seed-functions-manager --network polygonMumbai --functionsmanager $FUNCTIONS_MANAGER_ADDR
+```
+
+## Get a response from a function call w/ decoded output:
+
+```bash
+npx hardhat get-response --requestid 0x4354fc408d26f200d02417dcd135c0262290da9d08fb170d6eedbf912a23bf7b
 ```

@@ -36,8 +36,15 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     uint64 public functionsRegisteredCount;
     uint96 public functionsCalledCount;
     uint96 public totalFeesCollected;
+    uint32 public maxGasLimit = 300_000; //Leave this at 300k, see service limits doc
 
     // TODO Support authorMetadata
+    enum ReturnTypes {
+        Bytes,
+        Uint256,
+        Int256,
+        String
+    }
 
     // (Not in this contract) Set keeper threshold at 1 LINK
     struct FunctionsRegisterRequest {
@@ -52,6 +59,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         Functions.CodeLanguage language;
         bytes32 category;
         uint64 subId;
+        ReturnTypes expectedReturnType;
         bytes secrets; // Encrypted secrets blob for Location.Inline or url for Location.Remote
     }
 
@@ -77,11 +85,12 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     // Functions metadata, used for display and snippet generation in the webapp
     struct FunctionMetadata {
         address owner;
+        bytes32 category;
+        ReturnTypes expectedReturnType;
         string name;
         string desc;
         string imageUrl;
         string[] expectedArgs;
-        bytes32 category;
     }
 
     // struct FeePool{
@@ -110,7 +119,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         address indexed caller,
         address owner,
         bytes32 callbackFunction,
-        uint256 gasDeposit,
         uint96 baseFee,
         uint96 fee
     );
@@ -121,16 +129,14 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         address indexed caller,
         address owner,
         bytes32 callbackFunction,
-        uint256 usedGas,
         bytes response,
         bytes err
     );
 
-    event OCRResponse(bytes32 indexed requestId, bytes result, bytes err);
-
-    event BaseFeeUpdated(uint256 newBaseFee);
-    event FeeManagerCutUpdated(uint256 newFeeManagerCut);
-    event MinimumSubscriptionBalanceUpdated(uint256 newMinimumDeposit);
+    event BaseFeeUpdated(uint96 newBaseFee);
+    event FeeManagerCutUpdated(uint32 newFeeManagerCut);
+    event MinimumSubscriptionBalanceUpdated(uint96 newMinimumSubscriptionBalance);
+    event MaxGasLimitUpdated(uint32 newMaxGasLimit);
 
     constructor(
         address link,
@@ -138,7 +144,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         address oracleProxy,
         uint96 _baseFee,
         uint32 _feeManagerCut,
-        uint96 _minimumSubscriptionBalance
+        uint96 _minimumSubscriptionBalance,
+        uint32 _maxGasLimit
     ) FunctionsClient(oracleProxy) ConfirmedOwner(msg.sender) {
         require(_feeManagerCut <= 100, "Fee manager cut must be less than or equal to 100");
         LINK = LinkTokenInterface(link);
@@ -147,7 +154,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         baseFee = _baseFee;
         feeManagerCut = _feeManagerCut;
         minimumSubscriptionBalance = _minimumSubscriptionBalance;
-        // LINK.approve(address(this), 10 ** 18 * 1_000_000_000); // Allow spending up to 1bil LINK
+        maxGasLimit = _maxGasLimit;
     }
 
     function registerFunction(FunctionsRegisterRequest calldata request) public payable returns (bytes32) {
@@ -168,6 +175,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         metadata.imageUrl = request.imageUrl;
         metadata.expectedArgs = request.expectedArgs;
         metadata.category = request.category;
+        metadata.expectedReturnType = request.expectedReturnType;
 
         FunctionExecuteMetadata memory executeMetadata;
         executeMetadata.owner = msg.sender;
@@ -252,14 +260,15 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     }
 
     /**
-     * @notice Send a simple request
+     * @notice Send a simple request, note, you can't specify the gasLimit in this contract because we
+     *   haven't yet figured out how best to charge the caller for gas
      *
      * @param functionId Uniquely generated ID from registerFunctions to identify functions
      * @param args List of arguments expected by the Function request
-     * @param gasLimit Maximum amount of gas used to call the client contract's `handleOracleFulfillment` function
+     *
      * @return Functions request ID
      */
-    function executeRequest(bytes32 functionId, string[] calldata args, uint32 gasLimit) public returns (bytes32) {
+    function executeRequest(bytes32 functionId, string[] calldata args) public returns (bytes32) {
         console.log("executeRequest called with functionId:");
         console.logBytes32(functionId);
         FunctionExecuteMetadata memory chainlinkFunction = functionExecuteMetadatas[functionId];
@@ -298,8 +307,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
         console.log("sending functions request");
         // bytes32 assignedReqID =
-        // keccak256(abi.encodePacked(msg.sender, chainlinkFunction.subId, gasLimit, block.timestamp));
-        bytes32 assignedReqID = sendRequest(functionRequest, chainlinkFunction.subId, gasLimit);
+        // keccak256(abi.encodePacked(msg.sender, chainlinkFunction.subId, maxGasLimit, block.timestamp));
+        bytes32 assignedReqID = sendRequest(functionRequest, chainlinkFunction.subId, maxGasLimit);
         require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");
 
         // Create FunctionsResponse record
@@ -316,8 +325,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             owner: chainlinkFunction.owner,
             callbackFunction: bytes32(""),
             baseFee: baseFee,
-            fee: chainlinkFunction.fee,
-            gasDeposit: 0
+            fee: chainlinkFunction.fee
         });
 
         return assignedReqID;
@@ -380,8 +388,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             owner: functionMetadata.owner,
             callbackFunction: functionResponse.callbackFunction,
             response: response,
-            err: err,
-            usedGas: 0
+            err: err
         });
     }
 
@@ -453,6 +460,11 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     function setMinimumSubscriptionBalance(uint96 _minimumSubBalance) external onlyOwner {
         minimumSubscriptionBalance = _minimumSubBalance;
         emit MinimumSubscriptionBalanceUpdated(_minimumSubBalance);
+    }
+
+    function setMaxGasLimit(uint32 _maxGasLimit) external onlyOwner {
+        maxGasLimit = _maxGasLimit;
+        emit MaxGasLimitUpdated(_maxGasLimit);
     }
 
     function getFunctionMetadata(bytes32 _functionId) external view returns (FunctionMetadata memory) {

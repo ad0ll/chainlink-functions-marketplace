@@ -13,7 +13,8 @@ async function main() {
     oracle,
     ethers.utils.parseEther("0.2"),
     5,
-    ethers.utils.parseEther("0.5")
+    ethers.utils.parseEther("0.5"),
+    300_000, //Gas limit, leave at 300_000.
   );
 
   await functionsManager.deployed();
