@@ -193,6 +193,7 @@ task(
       "Subscription balance: ",
       ethers.utils.formatEther(subInfo.balance.toString())
     );
+    //TODO Scan consumers for function 
     if (subInfo.balance.lte(ethers.utils.parseEther("3"))) {
       throw new Error("Not enough balance in subscription");
     }
@@ -250,6 +251,7 @@ task(
         signer.address,
         functionsManagerRaw.address
       );
+      console.log("Allowance: ", ethers.utils.formatEther(allow.toString()));
       if (allow.gte(ethers.utils.parseEther("5"))) {
         console.log("Functions manager already approved, skipping...");
         continue;

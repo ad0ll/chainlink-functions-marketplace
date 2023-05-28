@@ -273,12 +273,18 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         uint96 totalFee = baseFee + chainlinkFunction.fee;
         uint64 subId = chainlinkFunction.subId;
         uint96 functionManagerCut = (chainlinkFunction.fee * feeManagerCut) / 100;
+
+        require(
+            LINK.allowance(msg.sender, address(this)) >= totalFee,
+            "User is not approved to transfer LINK to functions manager"
+        );
+
         console.log("sender %s LINK balance %d", msg.sender, LINK.balanceOf(msg.sender));
-        // require(LINK.balanceOf(msg.sender) >= totalFee, "You do not have enough LINK to call this function");
+        require(LINK.balanceOf(msg.sender) >= totalFee, "You do not have enough LINK to call this function");
         console.log("Transferring %d LINK", totalFee);
 
         // Doing the below transfer requires running ERC20's approve function first. See tests for example.
-        // require(LINK.transferFrom(msg.sender, address(this), totalFee), "Failed to collect fees from caller");
+        require(LINK.transferFrom(msg.sender, address(this), totalFee), "Failed to collect fees from caller");
 
         console.log("reserved subscription fee %d", subscriptionBalances[subId]);
         subscriptionBalances[subId] += baseFee;
@@ -290,9 +296,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         functionExecuteMetadatas[functionId] = chainlinkFunction;
 
         console.log("sending functions request");
-        bytes32 assignedReqID =
-            keccak256(abi.encodePacked(msg.sender, chainlinkFunction.subId, gasLimit, block.timestamp));
-        // bytes32 assignedReqID = sendRequest(functionRequest, chainlinkFunction.subId, gasLimit);
+        // bytes32 assignedReqID =
+        //     keccak256(abi.encodePacked(msg.sender, chainlinkFunction.subId, gasLimit, block.timestamp));
+        bytes32 assignedReqID = sendRequest(functionRequest, chainlinkFunction.subId, gasLimit);
         require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");
 
         // Create FunctionsResponse record
