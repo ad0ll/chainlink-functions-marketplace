@@ -1,5 +1,15 @@
 This is a draft of the video script
 
+Intro:
+
+* In exchange,
+* The functions marketplace is a webapp and contract combo that calls functions on the behalf of someone.
+*
+
+Overview:
+
+* The
+
 Home page:
 
 * On the home page, you'll see live stats for the marketplace

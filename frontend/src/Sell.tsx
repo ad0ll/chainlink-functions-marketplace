@@ -11,6 +11,7 @@ import {
     Stack,
     SvgIcon,
     TextField,
+    Tooltip,
     Typography
 } from "@mui/material";
 import {useFieldArray, useForm} from "react-hook-form";
@@ -23,12 +24,13 @@ import {useWeb3React} from "@web3-react/core";
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import FunctionsManagerJson from "./generated/abi/FunctionsManager.json"
-import FunctionsOracleJson from "./generated/abi/FunctionsOracle.json"
-import {FunctionsManager, FunctionsOracle} from "./generated/contract-types";
+import FunctionsBillingRegistryJson from "./generated/abi/FunctionsBillingRegistry.json"
+// import FunctionsOracleJson from "./generated/abi/FunctionsOracle.json"
+import {FunctionsBillingRegistry, FunctionsManager} from "./generated/contract-types";
 import {useContract} from "./contractHooks";
 import {encodeBytes32String, ethers} from "ethers";
 import {toast} from "react-toastify";
-
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 type FormValues = {
     name: string,
@@ -68,6 +70,13 @@ initial deposit should be number, use ethers.ParseUnits for validation
 export const Sell: React.FC = () => {
     const {account, chainId, provider} = useWeb3React();
     const [showAdvanced, setShowAdvanced] = React.useState<boolean>(false);
+
+
+    if (!chainId) {
+        return <Typography>Could not get chain id from the connected wallet</Typography>
+    } else if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
+        return <Typography>Wrong chain id. Please connect to Mumbai or Sepolia</Typography>
+    }
     const {register, handleSubmit, getValues, setValue, watch, formState, control} = useForm<FormValues>({
         defaultValues: {
             // subscriptionId: "NEW",
@@ -87,22 +96,18 @@ export const Sell: React.FC = () => {
             category: encodeBytes32String("Test Category"),
             subscriptionId: "941",
             source: "console.log('Hello world!')",
+            suggestedGasLimit: 300000,
+            oracle: networkConfig[chainId].functionsOracleProxy,
         }
     });
-
     const {fields: args, insert, remove} = useFieldArray({
         name: "expectedArgs", // Specify the name of the array field
         control,
     });
 
-    if (!chainId) {
-        return <Typography>Could not get chain id from the connected wallet</Typography>
-    } else if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
-        return <Typography>Wrong chain id. Please connect to Mumbai or Sepolia</Typography>
-    }
 
     const functionsManagerContract = useContract(networkConfig[chainId].realFunctionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager;
-    const oracleProxyContract = useContract(networkConfig[chainId].functionsOracleProxy, FunctionsOracleJson.abi) as unknown as FunctionsOracle;
+    const functionsBillingRegistry = useContract(networkConfig[chainId].functionsBillingRegistryProxy, FunctionsBillingRegistryJson.abi) as unknown as FunctionsBillingRegistry;
 
 
     const errors = formState.errors;
@@ -116,6 +121,35 @@ export const Sell: React.FC = () => {
             }),
             fee: ethers.parseUnits(data.fee.toString()),
 
+        }
+
+        if (post.subscriptionId !== "NEW") {
+            const [balance, owner, consumers] = await functionsBillingRegistry.getSubscription(post.subscriptionId);
+            console.log("Fetched subscription", balance, owner, consumers)
+            if (balance === BigInt(0)) {
+                toast.error("Subscription does not exist or balance is Zero");
+                return;
+            }
+            if (owner !== account) {
+                toast.error("Can't use a subscription unless you are the owner");
+                return;
+            }
+            const functionsManagerExists = consumers.find(c => c.toLowerCase() === networkConfig[chainId].realFunctionsManager.toLowerCase())
+            if (functionsManagerExists) {
+                console.log("FunctionsManager is authorized consumer of function")
+                return;
+            }
+            toast.info("FunctionsManager not authorized to consume subscription, adding it now...");
+
+            const addConsumerTx = await
+                functionsBillingRegistry.addConsumer(post.subscriptionId, networkConfig[chainId].realFunctionsManager);
+            const addConsumerReceipt = await provider?.waitForTransaction(addConsumerTx.hash, 1);
+            console.log("Add consumer receipt", addConsumerReceipt);
+            if (addConsumerReceipt?.status === 0) {
+                toast.error("Failed to add FunctionsManager as consumer");
+                return;
+            }
+            toast.success("FunctionsManager added as consumer to subscription " + post.subscriptionId);
         }
 
 
@@ -136,6 +170,7 @@ export const Sell: React.FC = () => {
             secrets: encodeBytes32String(""),
             // secrets: post.secretsPreEncrypted ? post.secrets : ethers.utils.keccak256(post.secrets)
         }, {gasLimit: "1000000"})
+
 
         console.log("Register TX:", registerTx)
         // toast((<div>
@@ -308,6 +343,13 @@ export const Sell: React.FC = () => {
                 }
                 {showAdvanced &&
                     <TextField id={"suggested-gas-limit-text"}
+                               inputProps={{
+                                   endAdornment:
+                                       <Tooltip title={"Cannot be changed in the current version of the marketplace"}>
+                                           <HelpOutlineIcon/>
+                                       </Tooltip>
+                               }}
+                               disabled
                                label={"Suggested Gas Limit"} {...register("suggestedGasLimit")}
                                error={!!errors.suggestedGasLimit}/>}
                 {showAdvanced &&
@@ -315,14 +357,12 @@ export const Sell: React.FC = () => {
                                label={"Subscription ID"} {...register("subscriptionId")}
                                error={!!errors.subscriptionId}/>}
                 {showAdvanced &&
+                    <TextField id={"oracle-text"} label={"Oracle"} {...register("oracle")} error={!!errors.oracle}/>}
+                {showAdvanced &&
                     <TextField id={"initial-deposit-text"}
                                label={"Initial Deposit"} {...register("initialDeposit")}
                                error={!!errors.initialDeposit}/>}
                 <Button type={"submit"} variant={"contained"} color={"primary"}>Submit</Button>
-                {showAdvanced &&
-                    <TextField id={"oracle-text"} label={"Oracle"} {...register("oracle")} error={!!errors.oracle}/>}
-
-                {/*<Button type={"submit"} variant={"contained"} color={"primary"}>Pre-fill</Button>*/}
 
             </Stack>
             {/* TODO Add secrets */}

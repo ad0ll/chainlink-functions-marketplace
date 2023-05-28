@@ -11,7 +11,7 @@ import FunctionsManagerJson from "./generated/abi/FunctionsManager.json";
 import {FunctionsManager} from "./generated/contract-types";
 import {useWeb3React} from "@web3-react/core";
 import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
-
+import {ethers} from "ethers";
 
 const LISTING_QUERY = gql`
     query EventSpammerFunctionRegistered($first: Int!, $skip: Int!) {
@@ -120,7 +120,7 @@ const GlobalMetrics: React.FC = () => {
                                >
                                    <LinkTokenIcon height={36}
                                                   width={36}
-                                                  style={{marginRight: 8}}/>{totalFeesCollected.toString()} LINK</Typography>
+                                                  style={{marginRight: 8}}/>{ethers.formatEther(totalFeesCollected.toString())} LINK</Typography>
                                }/>
         </Grid>
     </Grid>
