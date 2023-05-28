@@ -62,6 +62,7 @@ describe("FunctionsManager", function () {
       functionsManager,
       billingRegistry,
       linkTokenOwner,
+      linkToken,
       functionsManagerOwner,
       otherAccount,
     };
@@ -93,6 +94,7 @@ describe("FunctionsManager", function () {
       ["10000", "450"],
       30000
     );
+
     const receipt = await tx.wait();
     console.log("Finished calling executeRequest");
     const executeRequestEvent = receipt.events?.find(
@@ -187,6 +189,7 @@ describe("FunctionsManager", function () {
         otherAccount,
         // sub1,
         billingRegistry,
+        linkToken,
       } = await loadFixture(deployFunctionsManager);
 
       const functionsManager = await rawFunctionsManager.connect(otherAccount);
@@ -194,6 +197,13 @@ describe("FunctionsManager", function () {
         "Calling registerFunction as otherAccount: ",
         otherAccount.address
       );
+
+      const linkTokenAsUser = await linkToken.connect(otherAccount);
+      const approveTx = await linkTokenAsUser.approve(
+        functionsManager.address,
+        ethers.utils.parseEther("10")
+      );
+      const approveReceipt = await approveTx.wait();
 
       let tx = await functionsManager.registerFunction(request);
       let receipt = await tx.wait();

@@ -78,10 +78,10 @@ task(
         execute: {
           callers: {
             [user2.address]: { caller: user2, args: ["1000000", "450"] },
-            [user3.address]: { caller: user3, args: ["1000000", "500"] },
-            [user4.address]: { caller: user4, args: ["2500000", "300"] },
+            // [user3.address]: { caller: user3, args: ["1000000", "500"] },
+            // [user4.address]: { caller: user4, args: ["2500000", "300"] },
           },
-          gasLimit: 500_000,
+          gasLimit: 1_000_000,
         },
       },
       {
@@ -105,8 +105,8 @@ task(
         execute: {
           callers: {
             [user1.address]: { caller: user1, args: ["1", "2"] },
-            [user3.address]: { caller: user3, args: ["100", "200", "300"] },
-            [user4.address]: { caller: user4, args: ["12", "9", "23", "6"] },
+            // [user3.address]: { caller: user3, args: ["100", "200", "300"] },
+            // [user4.address]: { caller: user4, args: ["12", "9", "23", "6"] },
           },
           gasLimit: 500_000,
         },
@@ -135,8 +135,8 @@ task(
         execute: {
           callers: {
             [user1.address]: { caller: user1, args: ["ethereum", "usd"] },
-            [user2.address]: { caller: user2, args: ["bitcoin", "usd"] },
-            [user4.address]: { caller: user4, args: ["ethereum", "eur"] },
+            // [user2.address]: { caller: user2, args: ["bitcoin", "usd"] },
+            // [user4.address]: { caller: user4, args: ["ethereum", "eur"] },
           },
           gasLimit: 500_000,
         },
@@ -162,8 +162,8 @@ task(
         execute: {
           callers: {
             [user1.address]: { caller: user1, args: ["ETH", "USD"] },
-            [user2.address]: { caller: user2, args: ["BTC", "USD"] },
-            [user3.address]: { caller: user3, args: ["BTC", "ETH"] },
+            // [user2.address]: { caller: user2, args: ["BTC", "USD"] },
+            // [user3.address]: { caller: user3, args: ["BTC", "ETH"] },
           },
           gasLimit: 500_000,
         },
@@ -193,10 +193,11 @@ task(
       "Subscription balance: ",
       ethers.utils.formatEther(subInfo.balance.toString())
     );
-    //TODO Scan consumers for function 
+    //TODO Scan consumers for function
     if (subInfo.balance.lte(ethers.utils.parseEther("3"))) {
       throw new Error("Not enough balance in subscription");
     }
+
     if (taskArgs.registerfunctions) {
       console.log("Registering functions...");
       for (let i = 0; i < demos.length; i++) {
@@ -214,8 +215,8 @@ task(
         }
 
         const registerCall = await localFm.registerFunction(demo.register, {
-          gasLimit: 2_000_000,
-          gasPrice: ethers.utils.parseUnits("35", "gwei"),
+          gasLimit: 2_500_000,
+          //   gasPrice: ethers.utils.parseUnits("35", "gwei"),
         });
         const receipt = await registerCall.wait(1);
         console.log(
@@ -245,7 +246,9 @@ task(
 
     for (let i = 0; i < signers.length; i++) {
       const signer = signers[i];
-      console.log(`${signer.address} approving functions manager as spender `);
+      console.log(
+        `${signer.address} approving functions manager ${functionsManagerRaw.address} as spender `
+      );
       const linkToken = linkTokenRaw.connect(signer);
       const allow = await linkToken.allowance(
         signer.address,
@@ -285,10 +288,10 @@ task(
         const tx = await functionManagerWithCaller.executeRequest(
           functionId,
           requestInfo.args,
-          1_000_000,
+          300_000,
           {
-            gasLimit: 2_000_000,
-            gasPrice: ethers.utils.parseUnits("35", "gwei"),
+            gasLimit: 2_500_000,
+            // gasPrice: ethers.utils.parseUnits("35", "gwei"),
             // maxPriorityFeePerGas: ethers.utils.parseUnits("5", "gwei"),
             // maxFeePerGas: ethers.utils.parseUnits("5", "gwei"),
           }
@@ -313,4 +316,26 @@ task(
     }
 
     // TODO Check that the events have come through
+    console.log("Withdrawing LINK from functions manager");
+    console.log("Withdrawing FunctionsManager owner profit");
+    const functionManagerWithdrawOwner = functionsManagerRaw.connect(
+      functionsManagerOwner // TODO: change to unique callers
+    );
+    const withdrawTxRaw =
+      await functionManagerWithdrawOwner.withdrawFunctionsManagerProfitToOwner();
+    const withdrawTx = await withdrawTxRaw.wait(1);
+    console.log(
+      "Finished withdrawing FunctionsManager owner profit",
+      withdrawTx
+    );
+    for (let i = 0; i < demos.length; i++) {
+      const author = demos[i].owner;
+      const functionManagerWithdrawAuthor = functionsManagerRaw.connect(author);
+      const withdrawAuthorTxRaw =
+        await functionManagerWithdrawAuthor.withdrawFunctionProfitToAuthor(
+          demos[i].functionId
+        );
+      const withdrawAuthorTx = await withdrawAuthorTxRaw.wait(1);
+      console.log("Finished withdrawing author profit", withdrawAuthorTx);
+    }
   });
