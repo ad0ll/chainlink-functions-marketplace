@@ -177,6 +177,25 @@ task(
       const demo = demos[i];
       const owner = demo.owner;
 
+      const localFm = functionsManagerRaw.connect(owner);
+
+      const functionId = keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["string", "address"],
+          [demo.register.functionName, demo.owner.address]
+        )
+      );
+      const existingFunction = await localFm.getFunctionMetadata(functionId);
+      if (existingFunction.name !== "") {
+        console.log(
+          `Function Name: ${existingFunction.name} | Owner: ${existingFunction.owner} | Function ID: ${functionId}`
+        );
+        console.log("Function already registered, skipping");
+        demo.functionId = functionId;
+        continue;
+      }
+      console.log("Function does not exist, registering...");
+
       console.log("Getting subscription info for: ", demo.register.subId);
       const subInfo = await FunctionsBillingRegistry.getSubscription(
         demo.register.subId
@@ -209,25 +228,6 @@ task(
       if (!ownerAuthorized) {
         throw new Error("Owner not authorized as consumer on subscription");
       }
-
-      const localFm = functionsManagerRaw.connect(owner);
-
-      const functionId = keccak256(
-        ethers.utils.defaultAbiCoder.encode(
-          ["string", "address"],
-          [demo.register.functionName, demo.owner.address]
-        )
-      );
-      const existingFunction = await localFm.getFunctionMetadata(functionId);
-      if (existingFunction.name !== "") {
-        console.log(
-          `Function Name: ${existingFunction.name} | Owner: ${existingFunction.owner} | Function ID: ${functionId}`
-        );
-        console.log("Function already registered, skipping");
-        demo.functionId = functionId;
-        continue;
-      }
-      console.log("Function does not exist, registering...");
 
       const registerCall = await localFm.registerFunction(demo.register, {
         gasLimit: 2_500_000,
