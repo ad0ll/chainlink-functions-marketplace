@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import {FunctionsClient} from "./functions/FunctionsClient.sol";
 import {Functions} from "./functions/Functions.sol";
 import {FunctionsBillingRegistry} from "./functions/FunctionsBillingRegistry.sol";
+import {FunctionsBillingRegistryInterface} from "./functions/interfaces/FunctionsBillingRegistryInterface.sol";
 import {FunctionsOracleInterface} from "./functions/interfaces/FunctionsOracleInterface.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
 import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
@@ -30,7 +31,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     uint96 public minimumSubscriptionBalance = 10 ** 18 * 1; // 1 LINK (18 decimals)
     uint96 public functionManagerProfitPool; // The fee manager's cut of fees, whole number representing percentage
     uint32 public feeManagerCut;
-    uint96 public baseFee = 10 ** 18 * 0.2; // 0.2 LINK (18 decimals)
 
     // Global metrics
     uint64 public functionsRegisteredCount;
@@ -110,7 +110,12 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     // Event emitted when a Function is registered
     // Recording owner twice isn't ideal, but we want to be able to filter on owner
     event FunctionRegistered(
-        bytes32 indexed functionId, address indexed owner, bytes32 indexed category, FunctionMetadata metadata
+        bytes32 indexed functionId,
+        address indexed owner,
+        bytes32 indexed category,
+        FunctionMetadata metadata,
+        uint96 fee,
+        uint64 subId
     );
 
     event FunctionCalled(
@@ -133,7 +138,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         bytes err
     );
 
-    event BaseFeeUpdated(uint96 newBaseFee);
     event FeeManagerCutUpdated(uint32 newFeeManagerCut);
     event MinimumSubscriptionBalanceUpdated(uint96 newMinimumSubscriptionBalance);
     event MaxGasLimitUpdated(uint32 newMaxGasLimit);
@@ -142,7 +146,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         address link,
         address billingRegistryProxy,
         address oracleProxy,
-        uint96 _baseFee,
         uint32 _feeManagerCut,
         uint96 _minimumSubscriptionBalance,
         uint32 _maxGasLimit
@@ -151,7 +154,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         LINK = LinkTokenInterface(link);
         BILLING_REGISTRY = FunctionsBillingRegistry(billingRegistryProxy);
         ORACLE_PROXY = FunctionsOracleInterface(oracleProxy);
-        baseFee = _baseFee;
         feeManagerCut = _feeManagerCut;
         minimumSubscriptionBalance = _minimumSubscriptionBalance;
         maxGasLimit = _maxGasLimit;
@@ -224,7 +226,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         functionExecuteMetadatas[functionId] = executeMetadata;
         functionRequests[functionId] = functionRequest;
 
-        emit FunctionRegistered(functionId, msg.sender, metadata.category, metadata);
+        emit FunctionRegistered(
+            functionId, msg.sender, metadata.category, metadata, executeMetadata.fee, executeMetadata.subId
+        );
 
         functionsRegisteredCount++;
 
@@ -280,6 +284,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         console.log("collecting and locking fees");
 
         // --- Collect and lock fees ---
+        bytes memory emptyBytes;
+        FunctionsBillingRegistryInterface.RequestBilling memory emptyRequestBilling;
+        uint96 baseFee = BILLING_REGISTRY.getRequiredFee(emptyBytes, emptyRequestBilling);
         uint96 totalFee = baseFee + chainlinkFunction.fee;
         uint64 subId = chainlinkFunction.subId;
         uint96 functionManagerCut = (chainlinkFunction.fee * feeManagerCut) / 100;
@@ -447,11 +454,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     /*
         EVERYTHING BELOW IS MINUTAE, just getting it out of the way of the rest of the code
     */
-    function setBaseFee(uint96 _baseFee) external onlyOwner {
-        baseFee = _baseFee;
-        emit BaseFeeUpdated(_baseFee);
-    }
-
     function setFeeManagerCut(uint32 _feeManagerCut) external onlyOwner {
         feeManagerCut = _feeManagerCut;
         emit FeeManagerCutUpdated(_feeManagerCut);

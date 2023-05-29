@@ -80,6 +80,7 @@ const ListingTable: React.FC<{
         return <Typography><CircularProgress/>Loading...</Typography>
     }
     if (error) {
+        console.log(error)
         return <Typography>Something went wrong</Typography>
     }
     if (!data) {
@@ -154,7 +155,7 @@ const ListingTable: React.FC<{
                             </TableCell>}
                         {columns.find(f => f === "fee") && <TableCell>
                             <TypographyWithLinkIcon includeSuffix={false}>
-                                {renderCurrency(f.metadata_fee)}
+                                {renderCurrency(f.fee)}
                             </TypographyWithLinkIcon>
                         </TableCell>}
                         {columns.find(f => f === "created") && <TableCell>

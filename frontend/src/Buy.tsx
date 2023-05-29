@@ -37,17 +37,14 @@ const DRILLDOWN_QUERY = gql`
             id
             functionId
             owner
-            metadata_fee
             metadata_owner
-            metadata_subId
             metadata_name
             metadata_desc
             metadata_imageUrl
-            metadata_subscriptionPool
-            metadata_lockedProfitPool
-            metadata_unlockedProfitPool
             metadata_expectedArgs
             metadata_category
+            fee
+            subId
         }
     }
 
@@ -255,8 +252,8 @@ export const Buy: React.FC = () => {
                     <GridRow label={"Fee"}>
                         <Box display={"flex"} flexDirection={"row"}>
                             <TypographyWithLinkIcon
-                                variant={"body1"}>{formatEther(BigInt(func.metadata_fee) + BASE_FEE)}</TypographyWithLinkIcon>
-                            <Typography>({formatEther(BASE_FEE)} base, {formatEther(func.metadata_fee)} premium)</Typography>
+                                variant={"body1"}>{formatEther(BigInt(func.fee) + BASE_FEE)}</TypographyWithLinkIcon>
+                            <Typography>({formatEther(BASE_FEE)} base, {formatEther(func.fee)} premium)</Typography>
                         </Box>
                     </GridRow>
 

@@ -10,7 +10,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import {useWeb3React} from "@web3-react/core";
 
 const OWNER_LISTING_QUERY = gql`
-    query EventSpammerFunctionRegistered($first: Int!, $skip: Int!, $owner: Bytes!) {
+    query AuthorFunctionRegistereds($first: Int!, $skip: Int!, $owner: Bytes!) {
         functionRegistereds(
             orderBy: blockNumber
             orderDirection: desc
@@ -21,11 +21,11 @@ const OWNER_LISTING_QUERY = gql`
             id
             functionId
             owner
-            metadata_fee
             metadata_name
             metadata_desc
             metadata_imageUrl
             metadata_category
+            fee
             blockTimestamp
         }
     }
