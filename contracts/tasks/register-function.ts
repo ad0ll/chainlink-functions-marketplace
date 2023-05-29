@@ -58,6 +58,7 @@ task("register-function", "registers a function")
       subId: BigInt(process.env.FUNCTIONS_SUBSCRIPTION_ID || 0), //TODO fix this, it'll break when you run in prod
       source: fs.readFileSync("./coingecko-price.js").toString(),
       secrets: [],
+      expectedReturnType: 1, //uint256
     };
 
     if (!request.subId || Number(request.subId) <= 0) {

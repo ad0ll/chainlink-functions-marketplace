@@ -55,6 +55,10 @@ task(
     const [functionsManagerOwner, user1, user2, user3, user4] =
       await ethers.getSigners();
     const signers = [functionsManagerOwner, user1, user2, user3, user4];
+    const functionsManagerRaw = await ethers.getContractAt(
+      "FunctionsManager",
+      taskArgs.functionsmanager
+    );
 
     const demos: DemoConfig[] = [
       {
@@ -74,6 +78,7 @@ task(
           subId: process.env.FUNCTIONS_SUBSCRIPTION_ID,
           source: fs.readFileSync("./demos/compound-interest.js").toString(),
           secrets: [],
+          expectedReturnType: 1, //uint256
         },
         execute: {
           callers: {
@@ -101,6 +106,7 @@ task(
           subId: process.env.FUNCTIONS_SUBSCRIPTION_ID,
           source: fs.readFileSync("./demos/geometric-mean.js").toString(),
           secrets: [],
+          expectedReturnType: 1, //uint256
         },
         execute: {
           callers: {
@@ -131,6 +137,7 @@ task(
           subId: process.env.FUNCTIONS_SUBSCRIPTION_ID,
           source: fs.readFileSync("./demos/coingecko-price.js").toString(),
           secrets: [],
+          expectedReturnType: 1, //uint256
         },
         execute: {
           callers: {
@@ -158,6 +165,7 @@ task(
           subId: process.env.FUNCTIONS_SUBSCRIPTION_ID,
           source: fs.readFileSync("./demos/cryptocompare-price.js").toString(),
           secrets: [],
+          expectedReturnType: 1, //uint256
         },
         execute: {
           callers: {
@@ -171,10 +179,6 @@ task(
     ];
     console.log("Finished bootstrapping demos");
 
-    const functionsManagerRaw = await ethers.getContractAt(
-      "FunctionsManager",
-      taskArgs.functionsmanager
-    );
     console.log("Function manager owner: ", functionsManagerOwner.address);
     const FunctionsBillingRegistry = await ethers.getContractAt(
       "FunctionsBillingRegistry",
@@ -288,12 +292,8 @@ task(
         const tx = await functionManagerWithCaller.executeRequest(
           functionId,
           requestInfo.args,
-          300_000,
           {
             gasLimit: 2_500_000,
-            // gasPrice: ethers.utils.parseUnits("35", "gwei"),
-            // maxPriorityFeePerGas: ethers.utils.parseUnits("5", "gwei"),
-            // maxFeePerGas: ethers.utils.parseUnits("5", "gwei"),
           }
         );
         const execReceipt = await tx.wait(1);
