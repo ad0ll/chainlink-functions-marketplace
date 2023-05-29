@@ -12,15 +12,13 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Tooltip,
     Typography
 } from "@mui/material";
 import {Link} from "react-router-dom";
 import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RechartTooltip, XAxis, YAxis} from "recharts";
-import {nDaysAgoUTCInSeconds, SHORT_POLL_INTERVAL, TypographyWithLinkIcon} from "./common";
+import {nDaysAgoUTCInSeconds, SHORT_POLL_INTERVAL} from "./common";
 import {gql, useQuery} from "@apollo/client";
 import {FunctionRegistered, Query} from "./gql/graphql";
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import {BigNumberish, ethers, formatEther} from "ethers";
 import ArticleIcon from '@mui/icons-material/Article';
 import {useWeb3React} from "@web3-react/core";
@@ -29,7 +27,7 @@ import PaymentsIcon from '@mui/icons-material/Payments';
 const OWNER_DASHBOARD_QUERY = gql`
     query EventSpammerOwnerPage($owner: Bytes!){
         functionRegistereds(
-            orderBy: metadata_unlockedProfitPool
+            orderBy: blockTimestamp
             orderDirection: desc
             where: {
                 owner: $owner
@@ -39,20 +37,20 @@ const OWNER_DASHBOARD_QUERY = gql`
             functionId
             owner
             blockTimestamp
-            metadata_fee
-            metadata_subId
+            fee
+            subId
             metadata_name
             metadata_imageUrl
-            metadata_subscriptionPool
-            metadata_lockedProfitPool
-            metadata_unlockedProfitPool
+            #            metadata_subscriptionPool
+            #            metadata_lockedProfitPool
+            #            metadata_unlockedProfitPool
         }
     }`
 
 
 //TODO below should be functionCallCompleteds, but we aren't producing those yet
 const OWNER_DASHBOARD_STATS_QUERY = gql`
-    query EventSpammerOwnerPageStats($functionId: Bytes!, $blockTimestamp_gt: BigInt!){
+    query EventSpammerOwnerPageCounts($functionId: Bytes!, $blockTimestamp_gt: BigInt!){
         functionCalleds(where: {
             functionId: $functionId,
             blockTimestamp_gt: $blockTimestamp_gt
@@ -216,19 +214,19 @@ export const OwnerDashboard: React.FC = () => {
                         <TableCell><Typography>Calls 24h</Typography></TableCell>
                         <TableCell><Typography>Calls 7d</Typography></TableCell>
                         {/*Hide if showDetail is false*/}
-                        {showDetails && <TableCell>
-                            <Tooltip
-                                title={"These funds cover the base fee that must be paid by your subscription when making a call to Chainlink Functions. They will be transferred over to your subscription automatically when it runs low. You can't withdraw these funds manually without deleting your listing."}>
-                                <Typography>Reserved<HelpOutlineIcon/></Typography>
-                            </Tooltip>
-                        </TableCell>}
-                        {showDetails && <TableCell>
-                            <Tooltip
-                                title={"This number represents the total number of fees contained in in-flight requests. Funds here will be unlocked when "}>
-                                <Typography>Locked <HelpOutlineIcon/></Typography>
-                            </Tooltip>
-                        </TableCell>}
-                        <TableCell><Typography>Available</Typography></TableCell>
+                        {/*{showDetails && <TableCell>*/}
+                        {/*    <Tooltip*/}
+                        {/*        title={"These funds cover the base fee that must be paid by your subscription when making a call to Chainlink Functions. They will be transferred over to your subscription automatically when it runs low. You can't withdraw these funds manually without deleting your listing."}>*/}
+                        {/*        <Typography>Reserved<HelpOutlineIcon/></Typography>*/}
+                        {/*    </Tooltip>*/}
+                        {/*</TableCell>}*/}
+                        {/*{showDetails && <TableCell>*/}
+                        {/*    <Tooltip*/}
+                        {/*        title={"This number represents the total number of fees contained in in-flight requests. Funds here will be unlocked when "}>*/}
+                        {/*        <Typography>Locked <HelpOutlineIcon/></Typography>*/}
+                        {/*    </Tooltip>*/}
+                        {/*</TableCell>}*/}
+                        {/*<TableCell><Typography>Available</Typography></TableCell>*/}
                         <TableCell><Typography>Withdraw</Typography></TableCell>
                     </TableRow>
                 </TableHead>
@@ -239,11 +237,11 @@ export const OwnerDashboard: React.FC = () => {
                                 to={`/buy/${func.id}`}><Typography>{func.metadata_name}</Typography></Link></TableCell>
                             <StatsCell func={func} blockTimestamp={nDaysAgoUTCInSeconds(1).toString()}></StatsCell>
                             <StatsCell func={func} blockTimestamp={nDaysAgoUTCInSeconds(7).toString()}></StatsCell>
-                            {showDetails &&
-                                <TableCell><TypographyWithLinkIcon>{formatEther(func.metadata_subscriptionPool)}</TypographyWithLinkIcon></TableCell>}
-                            {showDetails &&
-                                <TableCell><TypographyWithLinkIcon>{formatEther(func.metadata_lockedProfitPool)}</TypographyWithLinkIcon></TableCell>}
-                            <TableCell><TypographyWithLinkIcon>{formatEther(func.metadata_unlockedProfitPool)}</TypographyWithLinkIcon></TableCell>
+                            {/*{showDetails &&*/}
+                            {/*    <TableCell><TypographyWithLinkIcon>{formatEther(func.metadata_subscriptionPool)}</TypographyWithLinkIcon></TableCell>}*/}
+                            {/*{showDetails &&*/}
+                            {/*    <TableCell><TypographyWithLinkIcon>{formatEther(func.metadata_lockedProfitPool)}</TypographyWithLinkIcon></TableCell>}*/}
+                            {/*<TableCell><TypographyWithLinkIcon>{formatEther(func.metadata_unlockedProfitPool)}</TypographyWithLinkIcon></TableCell>*/}
                             <TableCell>
                                 <Button color={"secondary"}>Withdraw</Button>
                             </TableCell>

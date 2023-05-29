@@ -20,9 +20,7 @@ export const networkConfig = {
         linkToken: "0xb0897686c545045afc77cf20ec7a532e3120e0f1",
     },
     [MUMBAI_CHAIN_ID]: {
-        // TODO replace with the actual function manager address
-        functionsManager: "0xCEa65fe75ff32E56DDe6e5342f1e6bd711c39bb8",
-        realFunctionsManager: "0xd1135B1351d6Ae3E51964990541DBf12BBf84e1E",
+        functionsManager: "0x3D5b76E593749A3CD8Dc8B1EE9A4e0725dFD36D6",
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
         linkEthPriceFeed: "0x12162c3E810393dEC01362aBf156D7ecf6159528",
         functionsOracleProxy: "0xeA6721aC65BCeD841B8ec3fc5fEdeA6141a0aDE4",
@@ -33,8 +31,7 @@ export const networkConfig = {
         getScannerTxUrl: (address: string) => `https://mumbai.polygonscan.com/tx/${address}`,
     },
     [SEPOLIA_CHAIN_ID]: {
-        functionsManager: "0xCEa65fe75ff32E56DDe6e5342f1e6bd711c39bb8",
-        realFunctionsManager: "0xd1135B1351d6Ae3E51964990541DBf12BBf84e1E",
+        functionsManager: "0x3D5b76E593749A3CD8Dc8B1EE9A4e0725dFD36D6",
         linkToken: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
         linkEthPriceFeed: "0x42585eD362B3f1BCa95c640FdFf35Ef899212734",
         functionsOracleProxy: "0x649a2C205BE7A3d5e99206CEEFF30c794f0E31EC",

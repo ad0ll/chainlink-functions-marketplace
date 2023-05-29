@@ -4,8 +4,10 @@ import {
     Autocomplete,
     Box,
     Button,
+    FormControl,
     Grid,
     IconButton,
+    InputLabel,
     MenuItem,
     Select,
     Stack,
@@ -49,7 +51,8 @@ type FormValues = {
         name: string,
         type?: string,
         comment?: string
-    }[]
+    }[],
+    expectedReturnType: 0 | 1 | 2 | 3
 }
 
 /*
@@ -89,15 +92,24 @@ export const Sell: React.FC = () => {
             imageUrl: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png?v=025",
             fee: 0.05,
             expectedArgs: [
-                {name: "test", type: "uint8", comment: "This is a test parameter"},
-                {name: "test2", type: "uint256", comment: "This is test parameter2"},
-                {name: "test2", type: "string", comment: "This is test parameter3"}
+                {name: "base", type: "string", comment: "The base currency of the price pair"},
+                {name: "quote", type: "string", comment: "The target currency of the price pair"},
             ],
-            category: encodeBytes32String("Test Category"),
+            category: "Price Feed",
             subscriptionId: "941",
-            source: "console.log('Hello world!')",
+            source: `const base = args[0];
+const quote = args[1];
+
+const response = await Functions.makeHttpRequest({
+  url: \`https://api.coingecko.com/api/v3/simple/price?ids=\$\{base\}&vs_currencies=\$\{quote\}\`,
+});
+
+const res = response.data[\`\$\{base\}.\$\{quote\}\`];
+
+return Functions.encodeUint256(Math.round(res * 100));`,
             suggestedGasLimit: 300000,
             oracle: networkConfig[chainId].functionsOracleProxy,
+            expectedReturnType: 1,
         }
     });
     const {fields: args, insert, remove} = useFieldArray({
@@ -106,7 +118,7 @@ export const Sell: React.FC = () => {
     });
 
 
-    const functionsManagerContract = useContract(networkConfig[chainId].realFunctionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager;
+    const functionsManagerContract = useContract(networkConfig[chainId].functionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager;
     const functionsBillingRegistry = useContract(networkConfig[chainId].functionsBillingRegistryProxy, FunctionsBillingRegistryJson.abi) as unknown as FunctionsBillingRegistry;
 
 
@@ -119,6 +131,7 @@ export const Sell: React.FC = () => {
             expectedArgs: data.expectedArgs.map(t => {
                 return `${t.name}:${t.type}:${t.comment}`
             }),
+            category: encodeBytes32String(data.category),
             fee: ethers.parseUnits(data.fee.toString()),
 
         }
@@ -134,22 +147,23 @@ export const Sell: React.FC = () => {
                 toast.error("Can't use a subscription unless you are the owner");
                 return;
             }
-            const functionsManagerExists = consumers.find(c => c.toLowerCase() === networkConfig[chainId].realFunctionsManager.toLowerCase())
-            if (functionsManagerExists) {
-                console.log("FunctionsManager is authorized consumer of function")
-                return;
-            }
-            toast.info("FunctionsManager not authorized to consume subscription, adding it now...");
+            const functionsManagerExists = consumers.find(c => c.toLowerCase() === networkConfig[chainId].functionsManager.toLowerCase())
+            if (!functionsManagerExists) {
+                toast.info("FunctionsManager not authorized to consume subscription, adding it now...");
 
-            const addConsumerTx = await
-                functionsBillingRegistry.addConsumer(post.subscriptionId, networkConfig[chainId].realFunctionsManager);
-            const addConsumerReceipt = await provider?.waitForTransaction(addConsumerTx.hash, 1);
-            console.log("Add consumer receipt", addConsumerReceipt);
-            if (addConsumerReceipt?.status === 0) {
-                toast.error("Failed to add FunctionsManager as consumer");
-                return;
+                const addConsumerTx = await
+                    functionsBillingRegistry.addConsumer(post.subscriptionId, networkConfig[chainId].functionsManager);
+                const addConsumerReceipt = await provider?.waitForTransaction(addConsumerTx.hash, 1);
+                console.log("Add consumer receipt", addConsumerReceipt);
+                if (addConsumerReceipt?.status === 0) {
+                    toast.error("Failed to add FunctionsManager as consumer");
+                    return;
+                }
+                toast.success("FunctionsManager added as consumer to subscription " + post.subscriptionId);
             }
-            toast.success("FunctionsManager added as consumer to subscription " + post.subscriptionId);
+            console.log("FunctionsManager is authorized consumer of function")
+
+
         }
 
 
@@ -168,8 +182,9 @@ export const Sell: React.FC = () => {
             subId: post.subscriptionId,
             source: post.source,
             secrets: encodeBytes32String(""),
+            expectedReturnType: 0,
             // secrets: post.secretsPreEncrypted ? post.secrets : ethers.utils.keccak256(post.secrets)
-        }, {gasLimit: "1000000"})
+        }, {gasLimit: "2500000"})
 
 
         console.log("Register TX:", registerTx)
@@ -333,6 +348,18 @@ export const Sell: React.FC = () => {
                         </Grid>
                     </Grid>))}
                 </Stack>
+                <FormControl>
+                    <InputLabel id="expectedReturnType-label">Expected return type</InputLabel>
+                    <Select label={"Expected return type"}
+                            labelId={"expectedReturnType-label"}
+                            defaultValue={0} {...register("expectedReturnType")}
+                            error={!!errors.expectedReturnType}>
+                        <MenuItem value={0}>bytes</MenuItem>
+                        <MenuItem value={1}>uint</MenuItem>
+                        <MenuItem value={2}>int</MenuItem>
+                        <MenuItem value={3}>string</MenuItem>
+                    </Select>
+                </FormControl>
                 {showAdvanced
                     ? <Button startIcon={<ExpandLessIcon/>} color={"secondary"} sx={{width: "100%"}}
                               onClick={() => setShowAdvanced(!showAdvanced)}>

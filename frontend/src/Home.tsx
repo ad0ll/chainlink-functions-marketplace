@@ -24,7 +24,7 @@ const LISTING_QUERY = gql`
             id
             functionId
             owner
-            metadata_fee
+            fee
             metadata_name
             metadata_desc
             metadata_imageUrl
@@ -76,7 +76,7 @@ const GlobalMetrics: React.FC = () => {
     }
 
 
-    const functionsManagerContract = useContract(networkConfig[chainId].realFunctionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager;
+    const functionsManagerContract = useContract(networkConfig[chainId].functionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager;
     const [functionsRegisteredCount, setFunctionsRegisteredCount] = React.useState<BigInt>(0n);
     const [functionsCalledCount, setFunctionsCalledCount] = React.useState<BigInt>(0n);
     const [totalFeesCollected, setTotalFeesCollected] = React.useState<BigInt>(0n);

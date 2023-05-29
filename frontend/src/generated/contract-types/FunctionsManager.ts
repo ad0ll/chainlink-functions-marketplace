@@ -23,6 +23,138 @@ import type {
   TypedContractMethod,
 } from "./common";
 
+export declare namespace FunctionsManager {
+  export type FunctionMetadataStruct = {
+    owner: AddressLike;
+    category: BytesLike;
+    expectedReturnType: BigNumberish;
+    name: string;
+    desc: string;
+    imageUrl: string;
+    expectedArgs: string[];
+  };
+
+  export type FunctionMetadataStructOutput = [
+    owner: string,
+    category: string,
+    expectedReturnType: bigint,
+    name: string,
+    desc: string,
+    imageUrl: string,
+    expectedArgs: string[]
+  ] & {
+    owner: string;
+    category: string;
+    expectedReturnType: bigint;
+    name: string;
+    desc: string;
+    imageUrl: string;
+    expectedArgs: string[];
+  };
+
+  export type FunctionsRegisterRequestStruct = {
+    fees: BigNumberish;
+    functionName: string;
+    desc: string;
+    imageUrl: string;
+    source: string;
+    expectedArgs: string[];
+    codeLocation: BigNumberish;
+    secretsLocation: BigNumberish;
+    language: BigNumberish;
+    category: BytesLike;
+    subId: BigNumberish;
+    expectedReturnType: BigNumberish;
+    secrets: BytesLike;
+  };
+
+  export type FunctionsRegisterRequestStructOutput = [
+    fees: bigint,
+    functionName: string,
+    desc: string,
+    imageUrl: string,
+    source: string,
+    expectedArgs: string[],
+    codeLocation: bigint,
+    secretsLocation: bigint,
+    language: bigint,
+    category: string,
+    subId: bigint,
+    expectedReturnType: bigint,
+    secrets: string
+  ] & {
+    fees: bigint;
+    functionName: string;
+    desc: string;
+    imageUrl: string;
+    source: string;
+    expectedArgs: string[];
+    codeLocation: bigint;
+    secretsLocation: bigint;
+    language: bigint;
+    category: string;
+    subId: bigint;
+    expectedReturnType: bigint;
+    secrets: string;
+  };
+
+  export type FunctionExecuteMetadataStruct = {
+    owner: AddressLike;
+    subId: BigNumberish;
+    fee: BigNumberish;
+    unlockedProfitPool: BigNumberish;
+    functionsCalledCount: BigNumberish;
+    lockedProfitPool: BigNumberish;
+    totalFeesCollected: BigNumberish;
+    successfulResponseCount: BigNumberish;
+    failedResponseCount: BigNumberish;
+  };
+
+  export type FunctionExecuteMetadataStructOutput = [
+    owner: string,
+    subId: bigint,
+    fee: bigint,
+    unlockedProfitPool: bigint,
+    functionsCalledCount: bigint,
+    lockedProfitPool: bigint,
+    totalFeesCollected: bigint,
+    successfulResponseCount: bigint,
+    failedResponseCount: bigint
+  ] & {
+    owner: string;
+    subId: bigint;
+    fee: bigint;
+    unlockedProfitPool: bigint;
+    functionsCalledCount: bigint;
+    lockedProfitPool: bigint;
+    totalFeesCollected: bigint;
+    successfulResponseCount: bigint;
+    failedResponseCount: bigint;
+  };
+
+  export type FunctionResponseStruct = {
+    functionId: BytesLike;
+    caller: AddressLike;
+    callbackFunction: BytesLike;
+    response: BytesLike;
+    err: BytesLike;
+  };
+
+  export type FunctionResponseStructOutput = [
+    functionId: string,
+    caller: string,
+    callbackFunction: string,
+    response: string,
+    err: string
+  ] & {
+    functionId: string;
+    caller: string;
+    callbackFunction: string;
+    response: string;
+    err: string;
+  };
+}
+
 export declare namespace Functions {
   export type RequestStruct = {
     codeLocation: BigNumberish;
@@ -50,173 +182,55 @@ export declare namespace Functions {
   };
 }
 
-export declare namespace FunctionsManager {
-  export type FunctionMetadataStruct = {
-    owner: AddressLike;
-    subId: BigNumberish;
-    name: string;
-    desc: string;
-    imageUrl: string;
-    expectedArgs: string[];
-    request: Functions.RequestStruct;
-    category: BytesLike;
-    fee: BigNumberish;
-    unlockedProfitPool: BigNumberish;
-    lockedProfitPool: BigNumberish;
-    functionsCalledCount: BigNumberish;
-    totalFeesCollected: BigNumberish;
-    successfulResponseCount: BigNumberish;
-    failedResponseCount: BigNumberish;
-  };
-
-  export type FunctionMetadataStructOutput = [
-    owner: string,
-    subId: bigint,
-    name: string,
-    desc: string,
-    imageUrl: string,
-    expectedArgs: string[],
-    request: Functions.RequestStructOutput,
-    category: string,
-    fee: bigint,
-    unlockedProfitPool: bigint,
-    lockedProfitPool: bigint,
-    functionsCalledCount: bigint,
-    totalFeesCollected: bigint,
-    successfulResponseCount: bigint,
-    failedResponseCount: bigint
-  ] & {
-    owner: string;
-    subId: bigint;
-    name: string;
-    desc: string;
-    imageUrl: string;
-    expectedArgs: string[];
-    request: Functions.RequestStructOutput;
-    category: string;
-    fee: bigint;
-    unlockedProfitPool: bigint;
-    lockedProfitPool: bigint;
-    functionsCalledCount: bigint;
-    totalFeesCollected: bigint;
-    successfulResponseCount: bigint;
-    failedResponseCount: bigint;
-  };
-
-  export type FunctionResponseStruct = {
-    functionId: BytesLike;
-    caller: AddressLike;
-    callbackFunction: BytesLike;
-    gasDeposit: BigNumberish;
-    response: BytesLike;
-    err: BytesLike;
-  };
-
-  export type FunctionResponseStructOutput = [
-    functionId: string,
-    caller: string,
-    callbackFunction: string,
-    gasDeposit: bigint,
-    response: string,
-    err: string
-  ] & {
-    functionId: string;
-    caller: string;
-    callbackFunction: string;
-    gasDeposit: bigint;
-    response: string;
-    err: string;
-  };
-
-  export type FunctionsRegisterRequestStruct = {
-    fees: BigNumberish;
-    functionName: string;
-    desc: string;
-    imageUrl: string;
-    expectedArgs: string[];
-    codeLocation: BigNumberish;
-    secretsLocation: BigNumberish;
-    language: BigNumberish;
-    category: BytesLike;
-    subId: BigNumberish;
-    source: string;
-    secrets: BytesLike;
-  };
-
-  export type FunctionsRegisterRequestStructOutput = [
-    fees: bigint,
-    functionName: string,
-    desc: string,
-    imageUrl: string,
-    expectedArgs: string[],
-    codeLocation: bigint,
-    secretsLocation: bigint,
-    language: bigint,
-    category: string,
-    subId: bigint,
-    source: string,
-    secrets: string
-  ] & {
-    fees: bigint;
-    functionName: string;
-    desc: string;
-    imageUrl: string;
-    expectedArgs: string[];
-    codeLocation: bigint;
-    secretsLocation: bigint;
-    language: bigint;
-    category: string;
-    subId: bigint;
-    source: string;
-    secrets: string;
-  };
-}
-
 export interface FunctionsManagerInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "acceptOwnership"
       | "approveTokenSpender"
       | "authorMetadata"
-      | "baseFee"
-      | "categoryNames"
+      | "calculateFunctionId"
+      | "calculateFunctionIdFromRequest"
       | "estimateCost"
       | "executeRequest"
       | "feeManagerCut"
       | "forceUnlockFees"
+      | "functionExecuteMetadatas"
       | "functionManagerProfitPool"
       | "functionMetadatas"
       | "functionResponses"
       | "functionsCalledCount"
       | "functionsRegisteredCount"
       | "getDONPublicKey"
+      | "getFunctionExecuteMetadata"
       | "getFunctionMetadata"
       | "getFunctionResponse"
       | "getSubscriptionBalance"
       | "handleOracleFulfillment"
+      | "maxGasLimit"
       | "minimumSubscriptionBalance"
-      | "minimumSubscriptionDeposit"
       | "owner"
       | "refillSubscription"
       | "registerFunction"
-      | "setBaseFee"
       | "setFeeManagerCut"
-      | "setMinimumDeposit"
+      | "setMaxGasLimit"
+      | "setMinimumSubscriptionBalance"
       | "subscriptionBalances"
       | "totalFeesCollected"
       | "transferOwnership"
+      | "withdrawFunctionProfitToAuthor"
+      | "withdrawFunctionsManagerProfitToOwner"
+      | "withdrawMultipleFunctionProfitToAuthor"
   ): FunctionFragment;
 
   getEvent(
     nameOrSignatureOrTopic:
-      | "BaseFeeUpdated"
       | "FeeManagerCutUpdated"
       | "FulfillRequest"
       | "FunctionCallCompleted"
       | "FunctionCalled"
       | "FunctionRegistered"
-      | "MinimumSubscriptionDepositUpdated"
-      | "OCRResponse"
+      | "MaxGasLimitUpdated"
+      | "MinimumSubscriptionBalanceUpdated"
       | "OwnershipTransferRequested"
       | "OwnershipTransferred"
       | "RequestFulfilled"
@@ -235,10 +249,13 @@ export interface FunctionsManagerInterface extends Interface {
     functionFragment: "authorMetadata",
     values: [AddressLike]
   ): string;
-  encodeFunctionData(functionFragment: "baseFee", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "categoryNames",
-    values: [BigNumberish]
+    functionFragment: "calculateFunctionId",
+    values: [string, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "calculateFunctionIdFromRequest",
+    values: [FunctionsManager.FunctionsRegisterRequestStruct, AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "estimateCost",
@@ -246,7 +263,7 @@ export interface FunctionsManagerInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "executeRequest",
-    values: [BytesLike, string[], BigNumberish]
+    values: [BytesLike, string[]]
   ): string;
   encodeFunctionData(
     functionFragment: "feeManagerCut",
@@ -254,6 +271,10 @@ export interface FunctionsManagerInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "forceUnlockFees",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "functionExecuteMetadatas",
     values: [BytesLike]
   ): string;
   encodeFunctionData(
@@ -279,6 +300,10 @@ export interface FunctionsManagerInterface extends Interface {
   encodeFunctionData(
     functionFragment: "getDONPublicKey",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getFunctionExecuteMetadata",
+    values: [BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "getFunctionMetadata",
@@ -297,11 +322,11 @@ export interface FunctionsManagerInterface extends Interface {
     values: [BytesLike, BytesLike, BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "minimumSubscriptionBalance",
+    functionFragment: "maxGasLimit",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "minimumSubscriptionDeposit",
+    functionFragment: "minimumSubscriptionBalance",
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
@@ -314,15 +339,15 @@ export interface FunctionsManagerInterface extends Interface {
     values: [FunctionsManager.FunctionsRegisterRequestStruct]
   ): string;
   encodeFunctionData(
-    functionFragment: "setBaseFee",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "setFeeManagerCut",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "setMinimumDeposit",
+    functionFragment: "setMaxGasLimit",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setMinimumSubscriptionBalance",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -337,6 +362,18 @@ export interface FunctionsManagerInterface extends Interface {
     functionFragment: "transferOwnership",
     values: [AddressLike]
   ): string;
+  encodeFunctionData(
+    functionFragment: "withdrawFunctionProfitToAuthor",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "withdrawFunctionsManagerProfitToOwner",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "withdrawMultipleFunctionProfitToAuthor",
+    values: [BytesLike[]]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "acceptOwnership",
@@ -350,9 +387,12 @@ export interface FunctionsManagerInterface extends Interface {
     functionFragment: "authorMetadata",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "baseFee", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "categoryNames",
+    functionFragment: "calculateFunctionId",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "calculateFunctionIdFromRequest",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -369,6 +409,10 @@ export interface FunctionsManagerInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "forceUnlockFees",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "functionExecuteMetadatas",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -396,6 +440,10 @@ export interface FunctionsManagerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "getFunctionExecuteMetadata",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "getFunctionMetadata",
     data: BytesLike
   ): Result;
@@ -412,11 +460,11 @@ export interface FunctionsManagerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "minimumSubscriptionBalance",
+    functionFragment: "maxGasLimit",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "minimumSubscriptionDeposit",
+    functionFragment: "minimumSubscriptionBalance",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
@@ -428,13 +476,16 @@ export interface FunctionsManagerInterface extends Interface {
     functionFragment: "registerFunction",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "setBaseFee", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "setFeeManagerCut",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "setMinimumDeposit",
+    functionFragment: "setMaxGasLimit",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setMinimumSubscriptionBalance",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -449,18 +500,18 @@ export interface FunctionsManagerInterface extends Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
-}
-
-export namespace BaseFeeUpdatedEvent {
-  export type InputTuple = [newBaseFee: BigNumberish];
-  export type OutputTuple = [newBaseFee: bigint];
-  export interface OutputObject {
-    newBaseFee: bigint;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
+  decodeFunctionResult(
+    functionFragment: "withdrawFunctionProfitToAuthor",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "withdrawFunctionsManagerProfitToOwner",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "withdrawMultipleFunctionProfitToAuthor",
+    data: BytesLike
+  ): Result;
 }
 
 export namespace FeeManagerCutUpdatedEvent {
@@ -500,7 +551,6 @@ export namespace FunctionCallCompletedEvent {
     caller: AddressLike,
     owner: AddressLike,
     callbackFunction: BytesLike,
-    usedGas: BigNumberish,
     response: BytesLike,
     err: BytesLike
   ];
@@ -510,7 +560,6 @@ export namespace FunctionCallCompletedEvent {
     caller: string,
     owner: string,
     callbackFunction: string,
-    usedGas: bigint,
     response: string,
     err: string
   ];
@@ -520,7 +569,6 @@ export namespace FunctionCallCompletedEvent {
     caller: string;
     owner: string;
     callbackFunction: string;
-    usedGas: bigint;
     response: string;
     err: string;
   }
@@ -537,7 +585,6 @@ export namespace FunctionCalledEvent {
     caller: AddressLike,
     owner: AddressLike,
     callbackFunction: BytesLike,
-    gasDeposit: BigNumberish,
     baseFee: BigNumberish,
     fee: BigNumberish
   ];
@@ -547,7 +594,6 @@ export namespace FunctionCalledEvent {
     caller: string,
     owner: string,
     callbackFunction: string,
-    gasDeposit: bigint,
     baseFee: bigint,
     fee: bigint
   ];
@@ -557,7 +603,6 @@ export namespace FunctionCalledEvent {
     caller: string;
     owner: string;
     callbackFunction: string;
-    gasDeposit: bigint;
     baseFee: bigint;
     fee: bigint;
   }
@@ -572,19 +617,25 @@ export namespace FunctionRegisteredEvent {
     functionId: BytesLike,
     owner: AddressLike,
     category: BytesLike,
-    metadata: FunctionsManager.FunctionMetadataStruct
+    metadata: FunctionsManager.FunctionMetadataStruct,
+    fee: BigNumberish,
+    subId: BigNumberish
   ];
   export type OutputTuple = [
     functionId: string,
     owner: string,
     category: string,
-    metadata: FunctionsManager.FunctionMetadataStructOutput
+    metadata: FunctionsManager.FunctionMetadataStructOutput,
+    fee: bigint,
+    subId: bigint
   ];
   export interface OutputObject {
     functionId: string;
     owner: string;
     category: string;
     metadata: FunctionsManager.FunctionMetadataStructOutput;
+    fee: bigint;
+    subId: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -592,11 +643,11 @@ export namespace FunctionRegisteredEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace MinimumSubscriptionDepositUpdatedEvent {
-  export type InputTuple = [newMinimumDeposit: BigNumberish];
-  export type OutputTuple = [newMinimumDeposit: bigint];
+export namespace MaxGasLimitUpdatedEvent {
+  export type InputTuple = [newMaxGasLimit: BigNumberish];
+  export type OutputTuple = [newMaxGasLimit: bigint];
   export interface OutputObject {
-    newMinimumDeposit: bigint;
+    newMaxGasLimit: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -604,17 +655,11 @@ export namespace MinimumSubscriptionDepositUpdatedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace OCRResponseEvent {
-  export type InputTuple = [
-    requestId: BytesLike,
-    result: BytesLike,
-    err: BytesLike
-  ];
-  export type OutputTuple = [requestId: string, result: string, err: string];
+export namespace MinimumSubscriptionBalanceUpdatedEvent {
+  export type InputTuple = [newMinimumSubscriptionBalance: BigNumberish];
+  export type OutputTuple = [newMinimumSubscriptionBalance: bigint];
   export interface OutputObject {
-    requestId: string;
-    result: string;
-    err: string;
+    newMinimumSubscriptionBalance: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -736,9 +781,20 @@ export interface FunctionsManager extends BaseContract {
     "view"
   >;
 
-  baseFee: TypedContractMethod<[], [bigint], "view">;
+  calculateFunctionId: TypedContractMethod<
+    [functionName: string, owner: AddressLike],
+    [string],
+    "view"
+  >;
 
-  categoryNames: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+  calculateFunctionIdFromRequest: TypedContractMethod<
+    [
+      request: FunctionsManager.FunctionsRegisterRequestStruct,
+      owner: AddressLike
+    ],
+    [string],
+    "view"
+  >;
 
   estimateCost: TypedContractMethod<
     [
@@ -752,7 +808,7 @@ export interface FunctionsManager extends BaseContract {
   >;
 
   executeRequest: TypedContractMethod<
-    [functionId: BytesLike, args: string[], gasLimit: BigNumberish],
+    [functionId: BytesLike, args: string[]],
     [string],
     "nonpayable"
   >;
@@ -765,19 +821,12 @@ export interface FunctionsManager extends BaseContract {
     "nonpayable"
   >;
 
-  functionManagerProfitPool: TypedContractMethod<[], [bigint], "view">;
-
-  functionMetadatas: TypedContractMethod<
+  functionExecuteMetadatas: TypedContractMethod<
     [arg0: BytesLike],
     [
       [
         string,
         bigint,
-        string,
-        string,
-        string,
-        Functions.RequestStructOutput,
-        string,
         bigint,
         bigint,
         bigint,
@@ -788,15 +837,10 @@ export interface FunctionsManager extends BaseContract {
       ] & {
         owner: string;
         subId: bigint;
-        name: string;
-        desc: string;
-        imageUrl: string;
-        request: Functions.RequestStructOutput;
-        category: string;
         fee: bigint;
         unlockedProfitPool: bigint;
-        lockedProfitPool: bigint;
         functionsCalledCount: bigint;
+        lockedProfitPool: bigint;
         totalFeesCollected: bigint;
         successfulResponseCount: bigint;
         failedResponseCount: bigint;
@@ -805,14 +849,30 @@ export interface FunctionsManager extends BaseContract {
     "view"
   >;
 
+  functionManagerProfitPool: TypedContractMethod<[], [bigint], "view">;
+
+  functionMetadatas: TypedContractMethod<
+    [arg0: BytesLike],
+    [
+      [string, string, bigint, string, string, string] & {
+        owner: string;
+        category: string;
+        expectedReturnType: bigint;
+        name: string;
+        desc: string;
+        imageUrl: string;
+      }
+    ],
+    "view"
+  >;
+
   functionResponses: TypedContractMethod<
     [arg0: BytesLike],
     [
-      [string, string, string, bigint, string, string] & {
+      [string, string, string, string, string] & {
         functionId: string;
         caller: string;
         callbackFunction: string;
-        gasDeposit: bigint;
         response: string;
         err: string;
       }
@@ -825,6 +885,12 @@ export interface FunctionsManager extends BaseContract {
   functionsRegisteredCount: TypedContractMethod<[], [bigint], "view">;
 
   getDONPublicKey: TypedContractMethod<[], [string], "view">;
+
+  getFunctionExecuteMetadata: TypedContractMethod<
+    [_functionId: BytesLike],
+    [FunctionsManager.FunctionExecuteMetadataStructOutput],
+    "view"
+  >;
 
   getFunctionMetadata: TypedContractMethod<
     [_functionId: BytesLike],
@@ -850,9 +916,9 @@ export interface FunctionsManager extends BaseContract {
     "nonpayable"
   >;
 
-  minimumSubscriptionBalance: TypedContractMethod<[], [bigint], "view">;
+  maxGasLimit: TypedContractMethod<[], [bigint], "view">;
 
-  minimumSubscriptionDeposit: TypedContractMethod<[], [bigint], "view">;
+  minimumSubscriptionBalance: TypedContractMethod<[], [bigint], "view">;
 
   owner: TypedContractMethod<[], [string], "view">;
 
@@ -868,20 +934,20 @@ export interface FunctionsManager extends BaseContract {
     "payable"
   >;
 
-  setBaseFee: TypedContractMethod<
-    [_baseFee: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
-
   setFeeManagerCut: TypedContractMethod<
     [_feeManagerCut: BigNumberish],
     [void],
     "nonpayable"
   >;
 
-  setMinimumDeposit: TypedContractMethod<
-    [_minimumDeposit: BigNumberish],
+  setMaxGasLimit: TypedContractMethod<
+    [_maxGasLimit: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  setMinimumSubscriptionBalance: TypedContractMethod<
+    [_minimumSubBalance: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -896,6 +962,24 @@ export interface FunctionsManager extends BaseContract {
 
   transferOwnership: TypedContractMethod<
     [to: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  withdrawFunctionProfitToAuthor: TypedContractMethod<
+    [functionId: BytesLike],
+    [void],
+    "nonpayable"
+  >;
+
+  withdrawFunctionsManagerProfitToOwner: TypedContractMethod<
+    [],
+    [void],
+    "nonpayable"
+  >;
+
+  withdrawMultipleFunctionProfitToAuthor: TypedContractMethod<
+    [functionIds: BytesLike[]],
     [void],
     "nonpayable"
   >;
@@ -928,11 +1012,22 @@ export interface FunctionsManager extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "baseFee"
-  ): TypedContractMethod<[], [bigint], "view">;
+    nameOrSignature: "calculateFunctionId"
+  ): TypedContractMethod<
+    [functionName: string, owner: AddressLike],
+    [string],
+    "view"
+  >;
   getFunction(
-    nameOrSignature: "categoryNames"
-  ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
+    nameOrSignature: "calculateFunctionIdFromRequest"
+  ): TypedContractMethod<
+    [
+      request: FunctionsManager.FunctionsRegisterRequestStruct,
+      owner: AddressLike
+    ],
+    [string],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "estimateCost"
   ): TypedContractMethod<
@@ -948,7 +1043,7 @@ export interface FunctionsManager extends BaseContract {
   getFunction(
     nameOrSignature: "executeRequest"
   ): TypedContractMethod<
-    [functionId: BytesLike, args: string[], gasLimit: BigNumberish],
+    [functionId: BytesLike, args: string[]],
     [string],
     "nonpayable"
   >;
@@ -959,21 +1054,13 @@ export interface FunctionsManager extends BaseContract {
     nameOrSignature: "forceUnlockFees"
   ): TypedContractMethod<[functionId: BytesLike], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "functionManagerProfitPool"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "functionMetadatas"
+    nameOrSignature: "functionExecuteMetadatas"
   ): TypedContractMethod<
     [arg0: BytesLike],
     [
       [
         string,
         bigint,
-        string,
-        string,
-        string,
-        Functions.RequestStructOutput,
-        string,
         bigint,
         bigint,
         bigint,
@@ -984,18 +1071,32 @@ export interface FunctionsManager extends BaseContract {
       ] & {
         owner: string;
         subId: bigint;
-        name: string;
-        desc: string;
-        imageUrl: string;
-        request: Functions.RequestStructOutput;
-        category: string;
         fee: bigint;
         unlockedProfitPool: bigint;
-        lockedProfitPool: bigint;
         functionsCalledCount: bigint;
+        lockedProfitPool: bigint;
         totalFeesCollected: bigint;
         successfulResponseCount: bigint;
         failedResponseCount: bigint;
+      }
+    ],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "functionManagerProfitPool"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "functionMetadatas"
+  ): TypedContractMethod<
+    [arg0: BytesLike],
+    [
+      [string, string, bigint, string, string, string] & {
+        owner: string;
+        category: string;
+        expectedReturnType: bigint;
+        name: string;
+        desc: string;
+        imageUrl: string;
       }
     ],
     "view"
@@ -1005,11 +1106,10 @@ export interface FunctionsManager extends BaseContract {
   ): TypedContractMethod<
     [arg0: BytesLike],
     [
-      [string, string, string, bigint, string, string] & {
+      [string, string, string, string, string] & {
         functionId: string;
         caller: string;
         callbackFunction: string;
-        gasDeposit: bigint;
         response: string;
         err: string;
       }
@@ -1025,6 +1125,13 @@ export interface FunctionsManager extends BaseContract {
   getFunction(
     nameOrSignature: "getDONPublicKey"
   ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "getFunctionExecuteMetadata"
+  ): TypedContractMethod<
+    [_functionId: BytesLike],
+    [FunctionsManager.FunctionExecuteMetadataStructOutput],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getFunctionMetadata"
   ): TypedContractMethod<
@@ -1050,10 +1157,10 @@ export interface FunctionsManager extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "minimumSubscriptionBalance"
+    nameOrSignature: "maxGasLimit"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
-    nameOrSignature: "minimumSubscriptionDeposit"
+    nameOrSignature: "minimumSubscriptionBalance"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "owner"
@@ -1069,14 +1176,18 @@ export interface FunctionsManager extends BaseContract {
     "payable"
   >;
   getFunction(
-    nameOrSignature: "setBaseFee"
-  ): TypedContractMethod<[_baseFee: BigNumberish], [void], "nonpayable">;
-  getFunction(
     nameOrSignature: "setFeeManagerCut"
   ): TypedContractMethod<[_feeManagerCut: BigNumberish], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "setMinimumDeposit"
-  ): TypedContractMethod<[_minimumDeposit: BigNumberish], [void], "nonpayable">;
+    nameOrSignature: "setMaxGasLimit"
+  ): TypedContractMethod<[_maxGasLimit: BigNumberish], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "setMinimumSubscriptionBalance"
+  ): TypedContractMethod<
+    [_minimumSubBalance: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "subscriptionBalances"
   ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
@@ -1086,14 +1197,16 @@ export interface FunctionsManager extends BaseContract {
   getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[to: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "withdrawFunctionProfitToAuthor"
+  ): TypedContractMethod<[functionId: BytesLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "withdrawFunctionsManagerProfitToOwner"
+  ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "withdrawMultipleFunctionProfitToAuthor"
+  ): TypedContractMethod<[functionIds: BytesLike[]], [void], "nonpayable">;
 
-  getEvent(
-    key: "BaseFeeUpdated"
-  ): TypedContractEvent<
-    BaseFeeUpdatedEvent.InputTuple,
-    BaseFeeUpdatedEvent.OutputTuple,
-    BaseFeeUpdatedEvent.OutputObject
-  >;
   getEvent(
     key: "FeeManagerCutUpdated"
   ): TypedContractEvent<
@@ -1130,18 +1243,18 @@ export interface FunctionsManager extends BaseContract {
     FunctionRegisteredEvent.OutputObject
   >;
   getEvent(
-    key: "MinimumSubscriptionDepositUpdated"
+    key: "MaxGasLimitUpdated"
   ): TypedContractEvent<
-    MinimumSubscriptionDepositUpdatedEvent.InputTuple,
-    MinimumSubscriptionDepositUpdatedEvent.OutputTuple,
-    MinimumSubscriptionDepositUpdatedEvent.OutputObject
+    MaxGasLimitUpdatedEvent.InputTuple,
+    MaxGasLimitUpdatedEvent.OutputTuple,
+    MaxGasLimitUpdatedEvent.OutputObject
   >;
   getEvent(
-    key: "OCRResponse"
+    key: "MinimumSubscriptionBalanceUpdated"
   ): TypedContractEvent<
-    OCRResponseEvent.InputTuple,
-    OCRResponseEvent.OutputTuple,
-    OCRResponseEvent.OutputObject
+    MinimumSubscriptionBalanceUpdatedEvent.InputTuple,
+    MinimumSubscriptionBalanceUpdatedEvent.OutputTuple,
+    MinimumSubscriptionBalanceUpdatedEvent.OutputObject
   >;
   getEvent(
     key: "OwnershipTransferRequested"
@@ -1173,18 +1286,7 @@ export interface FunctionsManager extends BaseContract {
   >;
 
   filters: {
-    "BaseFeeUpdated(uint256)": TypedContractEvent<
-      BaseFeeUpdatedEvent.InputTuple,
-      BaseFeeUpdatedEvent.OutputTuple,
-      BaseFeeUpdatedEvent.OutputObject
-    >;
-    BaseFeeUpdated: TypedContractEvent<
-      BaseFeeUpdatedEvent.InputTuple,
-      BaseFeeUpdatedEvent.OutputTuple,
-      BaseFeeUpdatedEvent.OutputObject
-    >;
-
-    "FeeManagerCutUpdated(uint256)": TypedContractEvent<
+    "FeeManagerCutUpdated(uint32)": TypedContractEvent<
       FeeManagerCutUpdatedEvent.InputTuple,
       FeeManagerCutUpdatedEvent.OutputTuple,
       FeeManagerCutUpdatedEvent.OutputObject
@@ -1206,7 +1308,7 @@ export interface FunctionsManager extends BaseContract {
       FulfillRequestEvent.OutputObject
     >;
 
-    "FunctionCallCompleted(bytes32,bytes32,address,address,bytes32,uint256,bytes,bytes)": TypedContractEvent<
+    "FunctionCallCompleted(bytes32,bytes32,address,address,bytes32,bytes,bytes)": TypedContractEvent<
       FunctionCallCompletedEvent.InputTuple,
       FunctionCallCompletedEvent.OutputTuple,
       FunctionCallCompletedEvent.OutputObject
@@ -1217,7 +1319,7 @@ export interface FunctionsManager extends BaseContract {
       FunctionCallCompletedEvent.OutputObject
     >;
 
-    "FunctionCalled(bytes32,bytes32,address,address,bytes32,uint256,uint96,uint96)": TypedContractEvent<
+    "FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96)": TypedContractEvent<
       FunctionCalledEvent.InputTuple,
       FunctionCalledEvent.OutputTuple,
       FunctionCalledEvent.OutputObject
@@ -1228,7 +1330,7 @@ export interface FunctionsManager extends BaseContract {
       FunctionCalledEvent.OutputObject
     >;
 
-    "FunctionRegistered(bytes32,address,bytes32,tuple)": TypedContractEvent<
+    "FunctionRegistered(bytes32,address,bytes32,tuple,uint96,uint64)": TypedContractEvent<
       FunctionRegisteredEvent.InputTuple,
       FunctionRegisteredEvent.OutputTuple,
       FunctionRegisteredEvent.OutputObject
@@ -1239,26 +1341,26 @@ export interface FunctionsManager extends BaseContract {
       FunctionRegisteredEvent.OutputObject
     >;
 
-    "MinimumSubscriptionDepositUpdated(uint256)": TypedContractEvent<
-      MinimumSubscriptionDepositUpdatedEvent.InputTuple,
-      MinimumSubscriptionDepositUpdatedEvent.OutputTuple,
-      MinimumSubscriptionDepositUpdatedEvent.OutputObject
+    "MaxGasLimitUpdated(uint32)": TypedContractEvent<
+      MaxGasLimitUpdatedEvent.InputTuple,
+      MaxGasLimitUpdatedEvent.OutputTuple,
+      MaxGasLimitUpdatedEvent.OutputObject
     >;
-    MinimumSubscriptionDepositUpdated: TypedContractEvent<
-      MinimumSubscriptionDepositUpdatedEvent.InputTuple,
-      MinimumSubscriptionDepositUpdatedEvent.OutputTuple,
-      MinimumSubscriptionDepositUpdatedEvent.OutputObject
+    MaxGasLimitUpdated: TypedContractEvent<
+      MaxGasLimitUpdatedEvent.InputTuple,
+      MaxGasLimitUpdatedEvent.OutputTuple,
+      MaxGasLimitUpdatedEvent.OutputObject
     >;
 
-    "OCRResponse(bytes32,bytes,bytes)": TypedContractEvent<
-      OCRResponseEvent.InputTuple,
-      OCRResponseEvent.OutputTuple,
-      OCRResponseEvent.OutputObject
+    "MinimumSubscriptionBalanceUpdated(uint96)": TypedContractEvent<
+      MinimumSubscriptionBalanceUpdatedEvent.InputTuple,
+      MinimumSubscriptionBalanceUpdatedEvent.OutputTuple,
+      MinimumSubscriptionBalanceUpdatedEvent.OutputObject
     >;
-    OCRResponse: TypedContractEvent<
-      OCRResponseEvent.InputTuple,
-      OCRResponseEvent.OutputTuple,
-      OCRResponseEvent.OutputObject
+    MinimumSubscriptionBalanceUpdated: TypedContractEvent<
+      MinimumSubscriptionBalanceUpdatedEvent.InputTuple,
+      MinimumSubscriptionBalanceUpdatedEvent.OutputTuple,
+      MinimumSubscriptionBalanceUpdatedEvent.OutputObject
     >;
 
     "OwnershipTransferRequested(address,address)": TypedContractEvent<

@@ -50,7 +50,8 @@ describe("FunctionsManager", function () {
       functionsOracle.address,
       ethers.utils.parseEther("0.2"),
       5,
-      ethers.utils.parseEther("3")
+      ethers.utils.parseEther("3"),
+      300_000
     );
 
     await functionsManager.deployed();
