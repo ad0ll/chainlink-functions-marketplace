@@ -2,14 +2,15 @@ import { task, types } from "hardhat/config";
 import fs from "fs";
 import { FunctionsManager } from "../typechain-types";
 import { networks } from "../hardhat.config";
-import { Signer } from "ethers";
+import { keccak256 } from "ethers/lib/utils";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 type DemoConfig = {
   functionId: string;
-  owner: Signer;
+  owner: SignerWithAddress;
   register: FunctionsManager.FunctionsRegisterRequestStruct;
   execute: {
-    callers: Record<string, { caller: Signer; args: string[] }>;
+    args: string[][];
     gasLimit: number;
   };
 };
@@ -35,12 +36,6 @@ task(
     process.env.FUNCTION_MANAGER_ADDR,
     types.string
   )
-  .addOptionalParam(
-    "registerfunctions",
-    "Whether to register functions",
-    true,
-    types.boolean
-  )
   .setAction(async (taskArgs, { ethers, network }) => {
     console.log("Building demos");
 
@@ -58,8 +53,7 @@ task(
 
     const demos: DemoConfig[] = [
       {
-        functionId:
-          "0x1f74d62f6e1316c0e29016c5c0e3858b5ff9268df2ba20b1681079bfe2eaef0d",
+        functionId: "",
         owner: user1,
         register: {
           fees: ethers.utils.parseEther("0.02"),
@@ -76,17 +70,16 @@ task(
           secrets: [],
         },
         execute: {
-          callers: {
-            [user2.address]: { caller: user2, args: ["1000000", "450"] },
-            [user3.address]: { caller: user3, args: ["1000000", "500"] },
-            [user4.address]: { caller: user4, args: ["2500000", "300"] },
-          },
+          args: [
+            ["1000000", "450"],
+            ["1000000", "500"],
+            ["2500000", "300"],
+          ],
           gasLimit: 500_000,
         },
       },
       {
-        functionId:
-          "0xf542a86f16d4d82d9ac34bb8861d40a73f19f4e51b467a1b55b43cad25057ce5",
+        functionId: "",
         owner: user2,
         register: {
           fees: ethers.utils.parseEther("0.02"),
@@ -103,17 +96,16 @@ task(
           secrets: [],
         },
         execute: {
-          callers: {
-            [user1.address]: { caller: user1, args: ["1", "2"] },
-            [user3.address]: { caller: user3, args: ["100", "200", "300"] },
-            [user4.address]: { caller: user4, args: ["12", "9", "23", "6"] },
-          },
+          args: [
+            ["1", "2"],
+            ["100", "200", "300"],
+            ["12", "9", "23", "6"],
+          ],
           gasLimit: 500_000,
         },
       },
       {
-        functionId:
-          "0x1cad7a1167bd441b2a8e30bbd40637f03ace876976424bdadce5e8d2b7edd012",
+        functionId: "",
         owner: user3,
         register: {
           fees: ethers.utils.parseEther("0.05"),
@@ -133,17 +125,16 @@ task(
           secrets: [],
         },
         execute: {
-          callers: {
-            [user1.address]: { caller: user1, args: ["ethereum", "usd"] },
-            [user2.address]: { caller: user2, args: ["bitcoin", "usd"] },
-            [user4.address]: { caller: user4, args: ["ethereum", "eur"] },
-          },
+          args: [
+            ["ethereum", "usd"],
+            ["bitcoin", "usd"],
+            ["ethereum", "eur"],
+          ],
           gasLimit: 500_000,
         },
       },
       {
-        functionId:
-          "0xf32eee13ccd65bffbe943934a4788f3da1a096e474bbb09bd0a98911d28d3770",
+        functionId: "",
         owner: user4,
         register: {
           fees: ethers.utils.parseEther("0.05"),
@@ -160,11 +151,11 @@ task(
           secrets: [],
         },
         execute: {
-          callers: {
-            [user1.address]: { caller: user1, args: ["ETH", "USD"] },
-            [user2.address]: { caller: user2, args: ["BTC", "USD"] },
-            [user3.address]: { caller: user3, args: ["BTC", "ETH"] },
-          },
+          args: [
+            ["ETH", "USD"],
+            ["BTC", "USD"],
+            ["BTC", "ETH"],
+          ],
           gasLimit: 500_000,
         },
       },
@@ -181,60 +172,83 @@ task(
       networks[network.name].functionsBillingRegistryProxy
     );
 
-    console.log(
-      "Getting subscription info for: ",
-      process.env.FUNCTIONS_SUBSCRIPTION_ID
-    );
-    const subInfo = await FunctionsBillingRegistry.getSubscription(
-      process.env.FUNCTIONS_SUBSCRIPTION_ID
-    );
-    // console.log("Subscription info: ", subInfo);
-    console.log(
-      "Subscription balance: ",
-      ethers.utils.formatEther(subInfo.balance.toString())
-    );
-    //TODO Scan consumers for function 
-    if (subInfo.balance.lte(ethers.utils.parseEther("3"))) {
-      throw new Error("Not enough balance in subscription");
-    }
-    if (taskArgs.registerfunctions) {
-      console.log("Registering functions...");
-      for (let i = 0; i < demos.length; i++) {
-        const demo = demos[i];
-        const owner = demo.owner;
-        const localFm = functionsManagerRaw.connect(owner);
+    console.log("Registering functions...");
+    for (let i = 0; i < demos.length; i++) {
+      const demo = demos[i];
+      const owner = demo.owner;
 
-        const existingFunction = await localFm.getFunctionMetadata(
-          demo.functionId
-        );
-        console.log("Existing function: ", existingFunction);
-        if (existingFunction.name !== "") {
-          console.log("Function already registered, skipping");
-          continue;
+      console.log("Getting subscription info for: ", demo.register.subId);
+      const subInfo = await FunctionsBillingRegistry.getSubscription(
+        demo.register.subId
+      );
+
+      console.log(
+        "Subscription balance: ",
+        ethers.utils.formatEther(subInfo.balance.toString())
+      );
+      if (subInfo.balance.lte(ethers.utils.parseEther("3"))) {
+        throw new Error("Not enough balance in subscription");
+      }
+      let managerAuthorized = false;
+      let ownerAuthorized = owner.address === subInfo.owner;
+      for (const consumer of subInfo.consumers) {
+        if (consumer === functionsManagerRaw.address) {
+          managerAuthorized = true;
         }
+        if (consumer === owner.address) {
+          ownerAuthorized = true;
+        }
+      }
 
-        const registerCall = await localFm.registerFunction(demo.register, {
-          gasLimit: 2_000_000,
-          gasPrice: ethers.utils.parseUnits("35", "gwei"),
-        });
-        const receipt = await registerCall.wait(1);
+      if (!managerAuthorized) {
+        throw new Error(
+          "Function Manager not authorized as consumer on subscription"
+        );
+      }
+
+      if (!ownerAuthorized) {
+        throw new Error("Owner not authorized as consumer on subscription");
+      }
+
+      const localFm = functionsManagerRaw.connect(owner);
+
+      const functionId = keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["string", "address"],
+          [demo.register.functionName, demo.owner.address]
+        )
+      );
+      const existingFunction = await localFm.getFunctionMetadata(functionId);
+      if (existingFunction.name !== "") {
         console.log(
-          "Finished registering function: ",
-          demo.register.functionName
+          `Function Name: ${existingFunction.name} | Owner: ${existingFunction.owner} | Function ID: ${functionId}`
         );
+        console.log("Function already registered, skipping");
+        demo.functionId = functionId;
+        continue;
+      }
+      console.log("Function does not exist, registering...");
 
-        const registerEvent = receipt.events?.find(
-          (e) => e.event === "FunctionRegistered"
+      const registerCall = await localFm.registerFunction(demo.register, {
+        gasLimit: 2_000_000,
+      });
+      const receipt = await registerCall.wait(1);
+      console.log(
+        "Finished registering function: ",
+        demo.register.functionName
+      );
+
+      const registerEvent = receipt.events?.find(
+        (e) => e.event === "FunctionRegistered"
+      );
+      if (!registerEvent) {
+        throw new Error("No FunctionRegistered event found");
+      }
+      if (registerEvent.args) {
+        console.log(
+          `Generated Function ID ${registerEvent.args[0]} for ${demo.register.functionName}`
         );
-        if (!registerEvent) {
-          throw new Error("No FunctionRegistered event found");
-        }
-        if (registerEvent.args) {
-          console.log(
-            `Generated Function ID ${registerEvent.args[0]} for ${demo.register.functionName}`
-          );
-          demo.functionId = registerEvent.args[0];
-        }
+        demo.functionId = registerEvent.args[0];
       }
     }
 
@@ -268,15 +282,14 @@ task(
     for (let i = 0; i < demos.length; i++) {
       const demo = demos[i];
       const functionId = demo.functionId;
-      const callerList = Object.entries(demo.execute.callers);
-      for (let j = 0; j < callerList.length; j++) {
+      for (let j = 0; j < demo.execute.args.length; j++) {
         console.log(
-          `Starting run ${j + 1}/${callerList.length} for ${functionId}`
+          `Starting run ${j + 1}/${demo.execute.args.length} for ${functionId}`
         );
-        const [callerAddr, requestInfo] = callerList[j];
+        const args = demo.execute.args[j];
 
         const functionManagerWithCaller = functionsManagerRaw.connect(
-          functionsManagerOwner // TODO: change to unique callers
+          functionsManagerOwner
         );
 
         console.log(
@@ -284,18 +297,15 @@ task(
         );
         const tx = await functionManagerWithCaller.executeRequest(
           functionId,
-          requestInfo.args,
-          1_000_000,
+          args,
+          300_000,
           {
             gasLimit: 2_000_000,
-            gasPrice: ethers.utils.parseUnits("35", "gwei"),
-            // maxPriorityFeePerGas: ethers.utils.parseUnits("5", "gwei"),
-            // maxFeePerGas: ethers.utils.parseUnits("5", "gwei"),
           }
         );
         const execReceipt = await tx.wait(1);
         console.log(
-          `Finished run ${j + 1}/${callerList.length} for ${
+          `Finished run ${j + 1}/${demo.execute.args.length} for ${
             demo.register.functionName
           }`
         );
@@ -311,6 +321,4 @@ task(
         }
       }
     }
-
-    // TODO Check that the events have come through
   });
