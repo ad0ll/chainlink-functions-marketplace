@@ -1,5 +1,15 @@
 This is a draft of the video script
 
+Intro:
+
+* In exchange,
+* The functions marketplace is a webapp and contract combo that calls functions on the behalf of someone.
+*
+
+Overview:
+
+* The
+
 Home page:
 
 * On the home page, you'll see live stats for the marketplace
@@ -11,19 +21,24 @@ Home page:
 * If I want to get up and running right away, I can click on the copy button over here to the right to get a fully
   functional snippet that I can paste into my contract.
 * If I want to learn more about the function, or if I want to tweak the snippet, I can click on the function name to
-  view more details.
+  view more details. Let's do that now.
+
 
 Drilldown:
 
 * In the drilldown, I can see the function name, the fee, the description, and other details about the function. I can
   also see a real time string of all calls made to this function, (pause), and I can also see the full snippet.
-* Let's say I want to optimize for the lowest gas price possible. I can click on the "Customize" button
+* Let's say I want to optimize for the lowest gas price possible. I can click on the "Customize" button and adjust the parameters for the snippet
+* I can then copy and paste this into my contract
+
 * If I just want a preview, I can click the "Try it now" button for a one time call in the browser without having to
   deploy a contract.
 
 Owner dashboard:
 
-* Now lets say I want to sell my web2 data on the marketplace. To do that, I'll click
+* Now lets say I want to sell my web2 data on the marketplace. To do that, I'll click on "Sell" to access the new function form.
+* Here's the new function form. This form has a combination of metadata.
+* By default, we use 
 
 By the way, everything shown in the demo is real and running against the Chainlink Functions contracts
 You can access the marketplace at the link in the description (<- Show link in video)

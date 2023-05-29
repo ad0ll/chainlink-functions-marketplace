@@ -258,7 +258,7 @@ async function main() {
   // ]);
 
   // await deployNProxyContracts([o3, o4, o5], 10);
-  await generateNFunctionCalls(eventSpammer, 10);
+  await generateNFunctionCalls(eventSpammer, 0);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -17,13 +17,14 @@ import {
 } from "@mui/material";
 import {Link} from "react-router-dom";
 import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RechartTooltip, XAxis, YAxis} from "recharts";
-import {nDaysAgoUTCInSeconds, TypographyWithLinkIcon} from "./common";
+import {nDaysAgoUTCInSeconds, SHORT_POLL_INTERVAL, TypographyWithLinkIcon} from "./common";
 import {gql, useQuery} from "@apollo/client";
 import {FunctionRegistered, Query} from "./gql/graphql";
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import {BigNumberish, ethers, formatEther} from "ethers";
 import ArticleIcon from '@mui/icons-material/Article';
 import {useWeb3React} from "@web3-react/core";
+import PaymentsIcon from '@mui/icons-material/Payments';
 
 const OWNER_DASHBOARD_QUERY = gql`
     query EventSpammerOwnerPage($owner: Bytes!){
@@ -83,13 +84,15 @@ const StatsCell: React.FC<{ func: FunctionRegistered, blockTimestamp: BigNumberi
         variables: {
             functionId: func.functionId,
             blockTimestamp_gt: blockTimestamp
-        }
+        },
+        // TODO Swap this out for a subscription if there's time
+        pollInterval: SHORT_POLL_INTERVAL
     })
     if (loading) {
-        return <Typography><CircularProgress/>Loading...</Typography>
+        return <TableCell><Typography><CircularProgress/>Loading...</Typography></TableCell>
     }
     if (error) {
-        return <Typography>Something went wrong</Typography>
+        return <TableCell><Typography>Something went wrong</Typography></TableCell>
     }
 
     //TODO Below should be functionCallCompleteds, but we aren't producing those yet
@@ -104,7 +107,8 @@ const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
         variables: {
             owner: owner,
             blockTimestamp_gt: blockTimestamp,
-        }
+        },
+        pollInterval: SHORT_POLL_INTERVAL
     });
 
     if (loading) {
@@ -146,16 +150,14 @@ const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
 
     return <Grid container xs={12} spacing={2}>
         <Grid item xs={12} sm={6}>
-            <Card style={{display: "flex", flexDirection: "column", alignItems: "center"}} elevation={4}>
+            <Card sx={{paddingTop: 2, display: "flex", flexDirection: "column", alignItems: "center"}} elevation={4}>
                 <Typography variant={"h4"}>Total calls</Typography>
-                <Typography>
-                    <RechartsLineChart data={callData} dataKey={"calls"} xKey={"date"} yKey={"calls"}
-                                       stroke={"#8884d8"} fill={"#8884d8"}/>
-                </Typography>
+                <RechartsLineChart data={callData} dataKey={"calls"} xKey={"date"} yKey={"calls"}
+                                   stroke={"#8884d8"} fill={"#8884d8"}/>
             </Card>
         </Grid>
         <Grid item xs={12} sm={6}>
-            <Card style={{display: "flex", flexDirection: "column", alignItems: "center"}} elevation={4}>
+            <Card sx={{paddingTop: 2, display: "flex", flexDirection: "column", alignItems: "center"}} elevation={4}>
                 <Typography variant={"h4"}>Earnings</Typography>
                 <Typography>
                     <RechartsLineChart data={feeData} dataKey={"fees"} xKey={"date"}
@@ -179,7 +181,8 @@ export const OwnerDashboard: React.FC = () => {
     const {loading, error, data} = useQuery<Query>(OWNER_DASHBOARD_QUERY, {
         variables: {
             owner: account
-        }
+        },
+        pollInterval: SHORT_POLL_INTERVAL
     })
     if (loading) {
         return <Typography><CircularProgress/>Loading...</Typography>
@@ -188,21 +191,23 @@ export const OwnerDashboard: React.FC = () => {
         console.log(error)
         return <Typography>Something went wrong</Typography>
     }
+    console.log(data)
 
-    console.log(nDaysAgoUTCInSeconds(1))
     const blockTimestamp = nDaysAgoUTCInSeconds(7)
     return <Stack spacing={2}>
-        <Typography variant={"h3"} style={{textAlign: "center"}}>Owner Dashboard</Typography>
+        <Typography variant={"h3"} sx={{padding: 2, textAlign: "center"}}>Owner dashboard</Typography>
         <StatCards owner={account} blockTimestamp={blockTimestamp}/>
 
         <TableContainer sx={{border: "1px solid white", padding: 2}}>
             <Box sx={{border: "1px solid primary.main", display: "flex"}}>
                 <Typography variant={"h4"}>My Functions</Typography>
-                {<Button startIcon={<ArticleIcon/>} style={{maxWidth: 300, marginLeft: "auto"}}
+                {<Button startIcon={<ArticleIcon/>} sx={{maxWidth: 300, marginLeft: "auto", marginRight: 1}}
                          variant={showDetails ? "contained" : "outlined"} onClick={() => setShowDetails(!showDetails)}
                          color={"secondary"}>
                     {showDetails ? "Hide" : "Show"} details
                 </Button>}
+                <Button startIcon={<PaymentsIcon/>} variant={"contained"} color={"secondary"}>Withdraw
+                    All</Button>
             </Box>
             <Table>
                 <TableHead>
@@ -247,10 +252,6 @@ export const OwnerDashboard: React.FC = () => {
                 </TableBody>
             </Table>
         </TableContainer>
-        <Box sx={{display: "flex", flexDirection: "row-reverse", justifyContent: "center"}}>
-            <Button sx={{padding: 1, minWidth: 200, maxWidth: 400}} variant={"contained"} color={"secondary"}>Withdraw
-                All</Button>
-        </Box>
     </Stack>
 }
 

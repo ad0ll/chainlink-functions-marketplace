@@ -10,6 +10,7 @@ import "./tasks/seed-functions-manager";
 import "./tasks/get-function";
 import "./tasks/get-subscription";
 import "./tasks/add-user-to-subscription";
+import "./tasks/scrub-consumers";
 
 dotenv.config();
 
@@ -50,7 +51,7 @@ export const networks: Record<string, any> = {
     accounts: PRIVATE_KEYS,
     verifyApiKey: process.env.POLYGONSCAN_API_KEY || "UNSET",
     chainId: 80001,
-    // gasPrice: undefined,
+    gasPrice: undefined,
     confirmations: DEFAULT_VERIFICATION_BLOCK_CONFIRMATIONS,
     linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
     usdcToken: "0x0FA8781a83E46826621b3BC094Ea2A0212e71B23",
@@ -58,7 +59,7 @@ export const networks: Record<string, any> = {
     functionsOracleProxy: "0xeA6721aC65BCeD841B8ec3fc5fEdeA6141a0aDE4",
     functionsBillingRegistryProxy: "0xEe9Bf52E5Ea228404bB54BCFbbDa8c21131b9039",
     functionsPublicKey: SHARED_DON_PUBLIC_KEY,
-    gasPrice: 35_000_000_000,
+    // gasPrice: 35_000_000_000,
   },
   avalancheFuji: {
     url: process.env.AVALANCHE_FUJI_RPC_URL || "UNSET",

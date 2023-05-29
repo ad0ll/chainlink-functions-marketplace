@@ -39,7 +39,7 @@ graph add 0x649a2C205BE7A3d5e99206CEEFF30c794f0E31EC --contract-name FunctionsOr
 
 The codegen will break FunctionsOracle because
 of [this issue](https://github.com/graphprotocol/graph-tooling/issues/1017). You can fix it by replacing all instances
-of the following in graph/src/*:
+of the following in graph/src/\*:
 
 ```typescript
 entity.senders = event.params.senders;
@@ -125,6 +125,8 @@ npx hardhat register-function --network polygonMumbai --functionsmanager $FUNCTI
 npx hardhat execute-function --functions-manager $FUNCTION_MANAGER_ADDR --network $HARDHAT_NETWORK --function-id <hex-string-of-function-id>
 ```
 
+### 
+
 ## How to get maximum testnet MATIC from faucets
 
 We use a lot of MATIC and LINK. Here's the routine to get as much as possible each day:
@@ -137,5 +139,24 @@ We use a lot of MATIC and LINK. Here's the routine to get as much as possible ea
 6. Sign it with your Alchemy account. Get 1 MATIC.
 7. Go to https://faucets.chain.link/mumbai, and get 0.5 MATIC and 20 LINK
 
+npx hardhat get-subscription --billingregistry 0xEe9Bf52E5Ea228404bB54BCFbbDa8c21131b9039 --subscriptionid 941 --checkauth $FUNCTIONS_MANAGER_ADDR
 
- npx hardhat get-subscription --billingregistry 0xEe9Bf52E5Ea228404bB54BCFbbDa8c21131b9039 --subscriptionid 941 --checkauth $FUNCTIONS_MANAGER_ADDR
+## Run tests against mocks for gas reports
+
+Mocks aren't completely accurate (maybe 70-80%), but they're close enough for ballparks.
+
+```bash
+    REPORT_GAS=true npx hardhat test --network hardhat
+```
+
+## Add user to a subscription:
+
+```bash
+npx hardhat add-user-to-subscription --network polygonMumbai --test-network mumbai --subscriptionid $FUNCTIONS_SUBSCRIPTION_ID --authorizeuser 0x6e21f424111492b79f24e5400412913af2820a01
+```
+
+## Seed a deployed functions manager with functions + calls:
+
+```bash
+npx hardhat seed-functions-manager --network polygonMumbai --functionsmanager $FUNCTIONS_MANAGER_ADDR
+```

@@ -1,14 +1,25 @@
-import React from "react";
+import React, {ReactNode} from "react";
 import {Box, Card, CardActionArea, CardMedia, Typography} from "@mui/material";
 import {fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./utils/util";
 import {Link} from "react-router-dom";
 import {FunctionRegistered} from "./gql/graphql";
 
+export const GlobalMetricsCard: React.FC<{ label: string, value: ReactNode | string }> = ({label, value}) => {
+    return <Card elevation={4}
+                 sx={{
+                     borderRadius: 2,
+                     padding: 2
+                 }}
+    >
+        {typeof value === "string" ? <Typography variant={"h3"} sx={{textAlign: "center"}}>{value}</Typography> : value}
+        <Typography variant={"h5"} sx={{textAlign: "center"}}>{label}</Typography>
+    </Card>
+}
 
 // Used in the "Recently Added" carousel of the homepage
 export const RecentlyAddedCard: React.FC<{ func: FunctionRegistered }> = ({func}) => {
     // const imageElem = <Jazzicon diameter={80} seed={jsNumberForAddress(func.address)}/>
-    return <Card elevation={4}>
+    return <Card elevation={4} sx={{borderRadius: 2}}>
         <CardActionArea
             sx={{
                 display: "flex",
@@ -18,8 +29,8 @@ export const RecentlyAddedCard: React.FC<{ func: FunctionRegistered }> = ({func}
                 // textOverflow: "ellipsis",
                 overflow: "hidden",
                 whiteSpace: "nowrap",
-                borderRadius: 2,
-                padding: 2
+                padding: 2,
+                borderRadius: 2
             }}
             component={Link} to={`buy/${func.id}`}
         >

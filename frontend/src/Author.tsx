@@ -34,19 +34,28 @@ const AuthorAddressCard: React.FC<{ address?: string }> = ({address}) => {
     const {chainId} = useWeb3React();
     if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) return (<></>)
     //TODO Fetch author metadata from the contract, no need to fetch from the graph
-    return <Stack spacing={2} width={"auto"} margin={"auto"}>
+    return <Stack spacing={2} width={"auto"} margin={"auto"} sx={{marginTop: 2}}>
         <img style={{maxWidth: 150, margin: "auto"}}
             // src={func.metadata_imageUrl || jazziconImageString(func.functionId)}
              src={jazziconImageString(address)}
              onError={(e) => fallbackToJazzicon(e, address || "")}/>
-        <Card sx={{display: "flex", alignItems: "center", width: "auto", padding: 1}} elevation={2}>
-            <Typography variant={"h4"} color={"secondary"}
+        <Card sx={{
+            display: "flex",
+            alignItems: "center",
+            alignContent: "center",
+            width: "auto",
+            paddingTop: 1,
+            paddingBottom: 1,
+            paddingLeft: 2,
+            paddingRight: 2
+        }} elevation={2}>
+            <Typography variant={"h5"} color={"secondary"}
                         sx={{
-                            marginRight: 2,
+                            marginRight: 1,
                         }}>{truncateIfAddress(address || "")}</Typography>
             <Tooltip title={"Open in scanner"}>
-                <Link to={networkConfig[chainId].getScannerUrl(address || "")}>
-                    <Typography variant={"h6"}>{<OpenInNewIcon/>}</Typography>
+                <Link to={networkConfig[chainId].getScannerAddressUrl(address || "")}>
+                    {<OpenInNewIcon/>}
                 </Link>
             </Tooltip>
         </Card>
@@ -62,8 +71,9 @@ export const Author: React.FC = () => {
                 Placeholder for author metadata + call history
             </Typography>
         </Box>
-        <Typography variant={"h4"} color={"secondary"}>Functions by {truncateIfAddress(address || "")}</Typography>
-        <ListingTable query={OWNER_LISTING_QUERY} args={{owner: address}}/>
+        <Typography variant={"h4"}>Functions by {truncateIfAddress(address || "")}</Typography>
+        <ListingTable query={OWNER_LISTING_QUERY} args={{owner: address}}
+                      columns={["name", "category", "fee", "created", "actions"]}/>
     </Stack>)
 }
 

@@ -202,7 +202,7 @@ export const Buy: React.FC = () => {
                 </Typography>
                 {/*Link to scanner for mumbai */}
                 <Tooltip title={"Open in scanner"}>
-                    <Link to={networkConfig[chainId].getScannerUrl(func.owner)}>
+                    <Link to={networkConfig[chainId].getScannerAddressUrl(func.owner)}>
                         <Typography variant={"h6"}>{<OpenInNewIcon/>}</Typography>
                     </Link>
                 </Tooltip>

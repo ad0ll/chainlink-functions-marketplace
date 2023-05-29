@@ -75,7 +75,7 @@ task(
             ["1000000", "500"],
             ["2500000", "300"],
           ],
-          gasLimit: 500_000,
+          gasLimit: 1_000_000,
         },
       },
       {
@@ -230,7 +230,7 @@ task(
       console.log("Function does not exist, registering...");
 
       const registerCall = await localFm.registerFunction(demo.register, {
-        gasLimit: 2_000_000,
+        gasLimit: 2_500_000,
       });
       const receipt = await registerCall.wait(1);
       console.log(
@@ -259,7 +259,9 @@ task(
 
     for (let i = 0; i < signers.length; i++) {
       const signer = signers[i];
-      console.log(`${signer.address} approving functions manager as spender `);
+      console.log(
+        `${signer.address} approving functions manager ${functionsManagerRaw.address} as spender `
+      );
       const linkToken = linkTokenRaw.connect(signer);
       const allow = await linkToken.allowance(
         signer.address,
@@ -300,7 +302,7 @@ task(
           args,
           300_000,
           {
-            gasLimit: 2_000_000,
+            gasLimit: 2_500_000,
           }
         );
         const execReceipt = await tx.wait(1);
@@ -320,5 +322,29 @@ task(
           console.log(`Request ID: ${calledEvent.args[1]}`);
         }
       }
+    }
+
+    // TODO Check that the events have come through
+    console.log("Withdrawing LINK from functions manager");
+    console.log("Withdrawing FunctionsManager owner profit");
+    const functionManagerWithdrawOwner = functionsManagerRaw.connect(
+      functionsManagerOwner // TODO: change to unique callers
+    );
+    const withdrawTxRaw =
+      await functionManagerWithdrawOwner.withdrawFunctionsManagerProfitToOwner();
+    const withdrawTx = await withdrawTxRaw.wait(1);
+    console.log(
+      "Finished withdrawing FunctionsManager owner profit",
+      withdrawTx
+    );
+    for (let i = 0; i < demos.length; i++) {
+      const author = demos[i].owner;
+      const functionManagerWithdrawAuthor = functionsManagerRaw.connect(author);
+      const withdrawAuthorTxRaw =
+        await functionManagerWithdrawAuthor.withdrawFunctionProfitToAuthor(
+          demos[i].functionId
+        );
+      const withdrawAuthorTx = await withdrawAuthorTxRaw.wait(1);
+      console.log("Finished withdrawing author profit", withdrawAuthorTx);
     }
   });
