@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import {
     Box,
     Button,
@@ -12,17 +12,22 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    Tooltip,
     Typography
 } from "@mui/material";
 import {Link} from "react-router-dom";
 import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RechartTooltip, XAxis, YAxis} from "recharts";
-import {nDaysAgoUTCInSeconds, SHORT_POLL_INTERVAL} from "./common";
+import {MUMBAI_CHAIN_ID, nDaysAgoUTCInSeconds, networkConfig, SEPOLIA_CHAIN_ID, SHORT_POLL_INTERVAL} from "./common";
 import {gql, useQuery} from "@apollo/client";
 import {FunctionRegistered, Query} from "./gql/graphql";
 import {BigNumberish, ethers, formatEther} from "ethers";
 import ArticleIcon from '@mui/icons-material/Article';
 import {useWeb3React} from "@web3-react/core";
 import PaymentsIcon from '@mui/icons-material/Payments';
+import FunctionsManagerJson from "./generated/abi/FunctionsManager.json";
+import {FunctionsManager} from "./generated/contract-types";
+import {useContract} from "./contractHooks";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
 const OWNER_DASHBOARD_QUERY = gql`
     query EventSpammerOwnerPage($owner: Bytes!){
@@ -95,6 +100,41 @@ const StatsCell: React.FC<{ func: FunctionRegistered, blockTimestamp: BigNumberi
 
     //TODO Below should be functionCallCompleteds, but we aren't producing those yet
     return (<TableCell><Typography>{data?.functionCalleds.length ?? 0}</Typography></TableCell>)
+}
+
+const FeeCell: React.FC<{
+    func: FunctionRegistered,
+    pool: "subscription" | "locked" | "unlocked",
+    functionsManagerContract: FunctionsManager
+}> = ({func, pool, functionsManagerContract}) => {
+
+    const [bal, setBal] = useState<BigInt>(BigInt(0))
+    useEffect(() => {
+        const fetchBal = async () => {
+            switch (pool) {
+                case "subscription":
+                    setBal(await functionsManagerContract.getSubscriptionBalance(func.functionId))
+                    break
+                case "locked":
+                    const metaLock = await functionsManagerContract.getFunctionExecuteMetadata(func.functionId)
+                    setBal(metaLock.lockedProfitPool)
+                    break
+                case "unlocked":
+                    const metaUnlock = await functionsManagerContract.getFunctionExecuteMetadata(func.functionId)
+                    setBal(metaUnlock.unlockedProfitPool)
+                    break
+            }
+        }
+        const interval = setInterval(() => {
+            fetchBal()
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [])
+    return <TableCell>
+        <Typography>
+            {formatEther(bal.toString())}
+        </Typography>
+    </TableCell>
 }
 const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
                                                                                   owner,
@@ -170,12 +210,16 @@ const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
 
 export const OwnerDashboard: React.FC = () => {
 
-    const {account} = useWeb3React()
+    const {account, chainId} = useWeb3React()
     const [showDetails, setShowDetails] = React.useState(false)
-
+    const [withdrawing, setWithdrawing] = React.useState(false)
+    if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
+        return <Typography>Unsupported network</Typography>
+    }
     if (!account) {
         return <Typography>Connect your wallet to view your dashboard</Typography>
     }
+    const functionsManagerContract = useContract(networkConfig[chainId].functionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager
     const {loading, error, data} = useQuery<Query>(OWNER_DASHBOARD_QUERY, {
         variables: {
             owner: account
@@ -213,20 +257,19 @@ export const OwnerDashboard: React.FC = () => {
                         <TableCell><Typography>Name</Typography></TableCell>
                         <TableCell><Typography>Calls 24h</Typography></TableCell>
                         <TableCell><Typography>Calls 7d</Typography></TableCell>
-                        {/*Hide if showDetail is false*/}
-                        {/*{showDetails && <TableCell>*/}
-                        {/*    <Tooltip*/}
-                        {/*        title={"These funds cover the base fee that must be paid by your subscription when making a call to Chainlink Functions. They will be transferred over to your subscription automatically when it runs low. You can't withdraw these funds manually without deleting your listing."}>*/}
-                        {/*        <Typography>Reserved<HelpOutlineIcon/></Typography>*/}
-                        {/*    </Tooltip>*/}
-                        {/*</TableCell>}*/}
-                        {/*{showDetails && <TableCell>*/}
-                        {/*    <Tooltip*/}
-                        {/*        title={"This number represents the total number of fees contained in in-flight requests. Funds here will be unlocked when "}>*/}
-                        {/*        <Typography>Locked <HelpOutlineIcon/></Typography>*/}
-                        {/*    </Tooltip>*/}
-                        {/*</TableCell>}*/}
-                        {/*<TableCell><Typography>Available</Typography></TableCell>*/}
+                        {showDetails && <TableCell>
+                            <Tooltip
+                                title={"These funds cover the base fee that must be paid by your subscription when making a call to Chainlink Functions. They will be transferred over to your subscription automatically when it runs low. You can't withdraw these funds manually without deleting your listing."}>
+                                <Typography>Reserved<HelpOutlineIcon/></Typography>
+                            </Tooltip>
+                        </TableCell>}
+                        {showDetails && <TableCell>
+                            <Tooltip
+                                title={"This number represents the total number of fees contained in in-flight requests. Funds here will be unlocked when "}>
+                                <Typography>Locked <HelpOutlineIcon/></Typography>
+                            </Tooltip>
+                        </TableCell>}
+                        <TableCell><Typography>Available</Typography></TableCell>
                         <TableCell><Typography>Withdraw</Typography></TableCell>
                     </TableRow>
                 </TableHead>
@@ -237,13 +280,15 @@ export const OwnerDashboard: React.FC = () => {
                                 to={`/buy/${func.id}`}><Typography>{func.metadata_name}</Typography></Link></TableCell>
                             <StatsCell func={func} blockTimestamp={nDaysAgoUTCInSeconds(1).toString()}></StatsCell>
                             <StatsCell func={func} blockTimestamp={nDaysAgoUTCInSeconds(7).toString()}></StatsCell>
-                            {/*{showDetails &&*/}
-                            {/*    <TableCell><TypographyWithLinkIcon>{formatEther(func.metadata_subscriptionPool)}</TypographyWithLinkIcon></TableCell>}*/}
-                            {/*{showDetails &&*/}
-                            {/*    <TableCell><TypographyWithLinkIcon>{formatEther(func.metadata_lockedProfitPool)}</TypographyWithLinkIcon></TableCell>}*/}
-                            {/*<TableCell><TypographyWithLinkIcon>{formatEther(func.metadata_unlockedProfitPool)}</TypographyWithLinkIcon></TableCell>*/}
+                            {showDetails && <FeeCell func={func} pool={"subscription"}
+                                                     functionsManagerContract={functionsManagerContract}/>}
+                            {showDetails && <FeeCell func={func} pool={"locked"}
+                                                     functionsManagerContract={functionsManagerContract}/>}
+                            <FeeCell func={func} pool={"unlocked"} functionsManagerContract={functionsManagerContract}/>
                             <TableCell>
-                                <Button color={"secondary"}>Withdraw</Button>
+                                <Button color={"secondary"} onClick={() => {
+                                    functionsManagerContract.withdrawFunctionProfitToAuthor(func.functionId)
+                                }}>Withdraw</Button>
                             </TableCell>
                         </TableRow>)
                     })}

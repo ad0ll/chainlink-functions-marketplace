@@ -407,12 +407,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         chainlinkFunction.lockedProfitPool = 0;
     }
 
-    function approveTokenSpender(address _spender, uint256 _value) external onlyOwner {
-        // TODO should approve USDC later
-        console.log("approving %s as a spender of LINK with a value of up to %d", _spender, _value);
-        LINK.approve(_spender, _value);
-    }
-
     // Refills the subscription with all funds we have reserved
     function refillSubscription(uint64 _subscriptionId) public {
         //TODO need to find some way to reserve the expense for this transfer out of owner fees

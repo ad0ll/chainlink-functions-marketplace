@@ -33,6 +33,8 @@ import {useContract} from "./contractHooks";
 import {encodeBytes32String, ethers} from "ethers";
 import {toast} from "react-toastify";
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import PublishIcon from '@mui/icons-material/Publish';
+import EditIcon from '@mui/icons-material/Edit';
 
 type FormValues = {
     name: string,
@@ -40,7 +42,7 @@ type FormValues = {
     imageUrl: string,
     category: string,
     fee: number,
-    feeToken: number,
+    feeToken: string,
     source: string,
     secretsPreEncrypted: boolean,
     suggestedGasLimit: number,
@@ -70,6 +72,39 @@ gasLimit is optional, should be uint32
 initial deposit should be number, use ethers.ParseUnits for validation
  */
 
+const getRandomExample = (chainId: typeof MUMBAI_CHAIN_ID | typeof SEPOLIA_CHAIN_ID) => {
+    const examples: FormValues[] = [
+        {
+            name: "Test" + Math.floor(Math.random() * 1000000),
+            description: "This is a test function that I am creating",
+            imageUrl: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png?v=025",
+            fee: 0.05,
+            expectedArgs: [
+                {name: "base", type: "string", comment: "The base currency of the price pair"},
+                {name: "quote", type: "string", comment: "The target currency of the price pair"},
+            ],
+            category: "Price Feed",
+            subscriptionId: "941",
+            source: `const base = args[0];
+const quote = args[1];
+
+const response = await Functions.makeHttpRequest({
+  url: \`https://api.coingecko.com/api/v3/simple/price?ids=\$\{base\}&vs_currencies=\$\{quote\}\`,
+});
+
+const res = response.data[\`\$\{base\}.\$\{quote\}\`];
+
+return Functions.encodeUint256(Math.round(res * 100));`,
+            suggestedGasLimit: 300000,
+            oracle: networkConfig[chainId].functionsOracleProxy,
+            expectedReturnType: 1,
+            feeToken: networkConfig[chainId].linkToken,
+            secretsPreEncrypted: false,
+            initialDeposit: "0",
+        }
+    ]
+    return examples[Math.floor(Math.random() * examples.length)];
+}
 export const Sell: React.FC = () => {
     const {account, chainId, provider} = useWeb3React();
     const [showAdvanced, setShowAdvanced] = React.useState<boolean>(false);
@@ -110,6 +145,9 @@ return Functions.encodeUint256(Math.round(res * 100));`,
             suggestedGasLimit: 300000,
             oracle: networkConfig[chainId].functionsOracleProxy,
             expectedReturnType: 1,
+            feeToken: networkConfig[chainId].linkToken,
+            secretsPreEncrypted: false,
+            initialDeposit: "0",
         }
     });
     const {fields: args, insert, remove} = useFieldArray({
@@ -162,8 +200,6 @@ return Functions.encodeUint256(Math.round(res * 100));`,
                 toast.success("FunctionsManager added as consumer to subscription " + post.subscriptionId);
             }
             console.log("FunctionsManager is authorized consumer of function")
-
-
         }
 
 
@@ -241,6 +277,7 @@ return Functions.encodeUint256(Math.round(res * 100));`,
                            multiline={true} minRows={3}/>
                 <TextField label={"Image URL"}
                            {...register("imageUrl")}
+                           type={"url"}
                            error={!!errors.imageUrl}/>
                 <Autocomplete
                     freeSolo
@@ -389,8 +426,31 @@ return Functions.encodeUint256(Math.round(res * 100));`,
                     <TextField id={"initial-deposit-text"}
                                label={"Initial Deposit"} {...register("initialDeposit")}
                                error={!!errors.initialDeposit}/>}
-                <Button type={"submit"} variant={"contained"} color={"primary"}>Submit</Button>
-
+                <Button startIcon={<EditIcon/>} variant={"outlined"} color={"primary"} onClick={() => {
+                    const example = getRandomExample(chainId)
+                    // startTransition(() => {
+                    //     setValue("name", example.name)
+                    //     setValue("description", example.description)
+                    //     setValue("imageUrl", example.imageUrl)
+                    //     setValue("source", example.source)
+                    //     setValue("category", example.category)
+                    //     setValue("fee", example.fee)
+                    //     setValue("expectedReturnType", example.expectedReturnType)
+                    //     setValue("expectedArgs", example.expectedArgs)
+                    //     setValue("suggestedGasLimit", example.suggestedGasLimit)
+                    //     setValue("subscriptionId", example.subscriptionId)
+                    //     setValue("oracle", example.oracle)
+                    //     setValue("initialDeposit", example.initialDeposit)
+                    //     //
+                    //     // Object.keys(example).forEach((key)  => {
+                    //     //     setValue(key, example[key])
+                    //     // })
+                    // })
+                }}>
+                    Pre-fill Example
+                </Button>
+                <Button type={"submit"} startIcon={<PublishIcon/>} variant={"contained"}
+                        color={"primary"}>Submit</Button>
             </Stack>
             {/* TODO Add secrets */}
         </form>

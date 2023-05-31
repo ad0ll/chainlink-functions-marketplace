@@ -23,22 +23,28 @@ Home page:
 * If I want to learn more about the function, or if I want to tweak the snippet, I can click on the function name to
   view more details. Let's do that now.
 
-
 Drilldown:
 
+* When drilling into a function, you'll have immediate access to all information needed information I need to start
+  using it right away.
+* The "Try it now" function that we saw on the homepage is here, as well as the snippet.
+* When viewing the function in the drilldown, you can fine tune the snippet to optimize for gas, and you'll also see a
+  function that can retrieve data once the callback is complete.
+* Additionally, we can see finer details about the function, and a real time feed of the 10 most recent calls
 * In the drilldown, I can see the function name, the fee, the description, and other details about the function. I can
   also see a real time string of all calls made to this function, (pause), and I can also see the full snippet.
-* Let's say I want to optimize for the lowest gas price possible. I can click on the "Customize" button and adjust the parameters for the snippet
+* Let's say I want to optimize for the lowest gas price possible. I can click on the "Customize" button and adjust the
+  parameters for the snippet
 * I can then copy and paste this into my contract
-
 * If I just want a preview, I can click the "Try it now" button for a one time call in the browser without having to
   deploy a contract.
 
 Owner dashboard:
 
-* Now lets say I want to sell my web2 data on the marketplace. To do that, I'll click on "Sell" to access the new function form.
+* Now lets say I want to sell my web2 data on the marketplace. To do that, I'll click on "Sell" to access the new
+  function form.
 * Here's the new function form. This form has a combination of metadata.
-* By default, we use 
+* By default, we use
 
 By the way, everything shown in the demo is real and running against the Chainlink Functions contracts
 You can access the marketplace at the link in the description (<- Show link in video)

@@ -120,7 +120,9 @@ const GlobalMetrics: React.FC = () => {
                                >
                                    <LinkTokenIcon height={36}
                                                   width={36}
-                                                  style={{marginRight: 8}}/>{ethers.formatEther(totalFeesCollected.toString())} LINK</Typography>
+                                                  style={{marginRight: 8}}/>
+                                   {ethers.formatUnits(totalFeesCollected.valueOf() - (totalFeesCollected.valueOf() % (10n ** 16n)), "ether")}
+                               </Typography>
                                }/>
         </Grid>
     </Grid>
@@ -151,15 +153,11 @@ export const RecentlyAddedTop: React.FC = () => {
 export const Home: React.FC = () => {
 
 
-    return (<Grid container spacing={4}>
+    return (<Stack spacing={4} marginTop={2}>
         <SplashTop/>
         <GlobalMetrics/>
         <RecentlyAddedTop/>
-        <Grid item container xs={12} spacing={2}>
-            <Grid item xs={12}>
-                <Typography variant={"h4"}>Browse</Typography>
-            </Grid>
-            <ListingTable query={LISTING_QUERY} args={{}}/>
-        </Grid>
-    </Grid>)
+        <Typography variant={"h4"}>Browse</Typography>
+        <ListingTable query={LISTING_QUERY} args={{}}/>
+    </Stack>)
 }

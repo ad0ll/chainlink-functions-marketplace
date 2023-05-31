@@ -1,6 +1,6 @@
 //Functions and components that are used to render snippets
 import React, {FC} from "react"
-import {Prism as SyntaxHighlighter, SyntaxHighlighterProps} from "react-syntax-highlighter";
+import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";
 import {vscDarkPlus} from "react-syntax-highlighter/dist/esm/styles/prism";
 import {FunctionRegistered} from "./gql/graphql";
 
@@ -13,31 +13,23 @@ export type FunctionArg = {
 
 
 export const BashSyntaxHighlighter: FC<{ children: string | string[] }> = ({children}) => {
-    return (<BaseSyntaxHighlighter language={"bash"}>
-        {children}
-    </BaseSyntaxHighlighter>)
-}
-
-export const JavascriptSyntaxHighlighter: FC<{ children: string | string[] }> = ({children}) => {
-    return (<BaseSyntaxHighlighter language={"javascript"}>
-        {children}
-    </BaseSyntaxHighlighter>)
-}
-
-export const SoliditySyntaxHighlighter: FC<{ children: string | string[] }> = ({children}) => {
-    // TODO, this doesn't seem to be working, no formatting in ui
-    return (<BaseSyntaxHighlighter language={"solidity"}>
-        {children}
-    </BaseSyntaxHighlighter>)
-}
-
-
-// TODO (low pri) maybe the style below should depend on dark mode or not?
-export const BaseSyntaxHighlighter: FC<SyntaxHighlighterProps> = ({children}, syntaxHighlighterProps) => {
-    return (<SyntaxHighlighter style={vscDarkPlus} showLineNumbers={true} {...syntaxHighlighterProps}>
+    return (<SyntaxHighlighter style={vscDarkPlus} showLineNumbers={true} language={"bash"}>
         {children}
     </SyntaxHighlighter>)
 }
+
+export const JavascriptSyntaxHighlighter: FC<{ children: string | string[] }> = ({children}) => {
+    return (<SyntaxHighlighter style={vscDarkPlus} showLineNumbers={true} language={"javascript"}>
+        {children}
+    </SyntaxHighlighter>)
+}
+
+export const SoliditySyntaxHighlighter: FC<{ children: string | string[] }> = ({children}) => {
+    return (<SyntaxHighlighter style={vscDarkPlus} showLineNumbers={true} language={"solidity"}>
+        {children}
+    </SyntaxHighlighter>)
+}
+
 
 type GenerateSnippetOptions = {
     hardcodeParameters: boolean,

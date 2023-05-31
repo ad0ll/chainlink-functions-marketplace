@@ -1,5 +1,5 @@
 import React, {ReactNode} from "react";
-import {Box, Card, CardActionArea, CardMedia, Typography} from "@mui/material";
+import {Box, Card, CardActionArea, CardMedia, Stack, Typography} from "@mui/material";
 import {fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./utils/util";
 import {Link} from "react-router-dom";
 import {FunctionRegistered} from "./gql/graphql";
@@ -34,30 +34,32 @@ export const RecentlyAddedCard: React.FC<{ func: FunctionRegistered }> = ({func}
             }}
             component={Link} to={`buy/${func.id}`}
         >
-            <Box width={"100%"}>
-                <CardMedia
-                    component={"img"}
-                    sx={{width: 80, margin: "auto"}}
-                    image={func.metadata_imageUrl || jazziconImageString(func.functionId)}
-                    onError={(e) => fallbackToJazzicon(e, func.functionId)}/>
-            </Box>
-            <Box width={"100%"}>
-                <Typography
-                    sx={{
-                        textAlign: "center",
-                        textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"
-                    }}
-                    variant={"h5"} color={"secondary"}>
-                    {func.metadata_name}
-                </Typography>
-            </Box>
-            <Box width={"100%"}>
-                <Typography
-                    sx={{textAlign: "center"}}
-                    variant={"body1"} color={"greyscale40.main"}>
-                    By: <Link to={`/author/${func.owner}`}>{truncateIfAddress(func.owner)}</Link>
-                </Typography>
-            </Box>
+            <Stack spacing={1}>
+                <Box width={"100%"}>
+                    <CardMedia
+                        component={"img"}
+                        sx={{width: 80, margin: "auto"}}
+                        image={func.metadata_imageUrl || jazziconImageString(func.functionId)}
+                        onError={(e) => fallbackToJazzicon(e, func.functionId)}/>
+                </Box>
+                <Box width={"100%"}>
+                    <Typography
+                        sx={{
+                            textAlign: "center",
+                            textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"
+                        }}
+                        variant={"h5"} color={"secondary"}>
+                        {func.metadata_name}
+                    </Typography>
+                </Box>
+                <Box width={"100%"}>
+                    <Typography
+                        sx={{textAlign: "center"}}
+                        variant={"body1"} color={"greyscale40.main"}>
+                        By: <Link to={`/author/${func.owner}`}>{truncateIfAddress(func.owner)}</Link>
+                    </Typography>
+                </Box>
+            </Stack>
         </CardActionArea>
         {/*<CardActions sx={{display: "flex", justifyContent: "flex-end", margin: 0}}>*/}
         {/*    <Button variant={"outlined"}>Copy Snippet</Button>*/}
