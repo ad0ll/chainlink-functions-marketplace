@@ -91,6 +91,7 @@ function App() {
                 <CssBaseline enableColorScheme/>
                 <DevMode/>
                 <Container>
+
                     <BrowserRouter>
                         <NavBar/>
                         <RequireConnection>
@@ -108,6 +109,7 @@ function App() {
                         </RequireConnection>
                     </BrowserRouter>
                 </Container>
+
             </Web3ReactProvider>
         </ThemeProvider>)
 }

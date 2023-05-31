@@ -1,6 +1,7 @@
 import React, {ReactNode, Suspense} from "react";
 import {Box, SvgIcon, Typography, TypographyProps} from "@mui/material";
 import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
+import {Buffer} from 'buffer';
 
 // TODO Fetch the base fee from the FunctionManager contract
 export const BASE_FEE = 200000000000000000n; //0.2 LINK
@@ -10,6 +11,13 @@ export const MATIC_CHAIN_ID = 137
 export const MUMBAI_CHAIN_ID = 80001
 export const SEPOLIA_CHAIN_ID = 11155111
 export const SHORT_POLL_INTERVAL = 2000
+
+export enum ExpectedReturnTypes {
+    Bytes = 0,
+    Uint,
+    Int,
+    String
+}
 
 // This was pulled from the hardhat starter kit's network-config.js file at the repo root
 export const networkConfig = {
@@ -98,3 +106,65 @@ export const nDaysAgoUTCInSeconds = (n: number) => {
     console.log("minus n=", n, "days", now - (n * 24 * 60 * 60))
     return now - (n * 24 * 60 * 60)
 }
+
+export const decodeResponse = (response: string, err: string, returnType: number): string => {
+    if (err !== "0x") {
+        const errorHex = Buffer.from(err.slice(2), "hex").toString()
+        return errorHex;
+    }
+
+    let decodedOutput;
+    switch (returnType) {
+        case ExpectedReturnTypes.Bytes: //Buffer
+            console.log("Received buffer input, attempting to decode to string");
+            decodedOutput = Buffer.from(
+                response.slice(2),
+                "hex"
+            ).toString();
+            break;
+        case ExpectedReturnTypes.Uint: //uint256
+            decodedOutput = BigInt("0x" + response.slice(2).slice(-64)).toString();
+            break;
+        case ExpectedReturnTypes.Int: //int256
+            decodedOutput = signedInt256toBigInt(
+                "0x" + response.slice(2).slice(-64)
+            ).toString();
+            break;
+        case ExpectedReturnTypes.String: //string
+        default:
+            decodedOutput = Buffer.from(
+                response.slice(2),
+                "hex"
+            ).toString();
+    }
+    const decodedOutputLog = `Decoded as a ${returnTypeEnumToString(
+        returnType
+    )}: ${decodedOutput}`;
+
+    return decodedOutput
+
+}
+export const returnTypeEnumToString = (num: number) => {
+    console.log("num", num)
+    switch (num) {
+        case 0:
+            return "buffer";
+        case 1:
+            return "uint256";
+        case 2:
+            return "int256";
+        case 3:
+            return "string";
+        default:
+            return "buffer";
+        // throw new Error("Unknown buffer type");
+    }
+};
+const signedInt256toBigInt = (hex: string) => {
+    const binary = BigInt(hex).toString(2).padStart(256, "0");
+    // if the first bit is 0, number is positive
+    if (binary[0] === "0") {
+        return BigInt(hex);
+    }
+    return -(BigInt(2) ** BigInt(255)) + BigInt(`0b${binary.slice(1)}`);
+};

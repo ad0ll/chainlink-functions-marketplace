@@ -2,11 +2,13 @@
 /* tslint:disable */
 /* eslint-disable */
 import {
-  Signer,
   Contract,
   ContractFactory,
   ContractTransactionResponse,
   Interface,
+} from "ethers";
+import type {
+  Signer,
   AddressLike,
   ContractDeployTransaction,
   ContractRunner,

@@ -2,12 +2,14 @@
 /* tslint:disable */
 /* eslint-disable */
 import {
-  Signer,
   Contract,
   ContractFactory,
-  BigNumberish,
   ContractTransactionResponse,
   Interface,
+} from "ethers";
+import type {
+  Signer,
+  BigNumberish,
   AddressLike,
   ContractDeployTransaction,
   ContractRunner,

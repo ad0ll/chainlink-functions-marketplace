@@ -7,6 +7,7 @@ npx hardhat compile
 # Copy all ABI files to ../frontend/src/generated/abi (all .json but not .dbg.json in all subdirectories of artifacts/contracts)
 echo "Copying ABI files to ../frontend/src/abi"
 find artifacts/contracts -name "*.json" ! -name "*.dbg.json" -exec cp {} ../frontend/src/generated/abi \;
+find artifacts/@chainlink -name "*.json" ! -name "*.dbg.json" -exec cp {} ../frontend/src/generated/abi \;
 
 echo "Copying typechain files for FunctionsManager to ../frontend/src/generated/typechain-types"
 cp ./typechain-types/contracts/EventSpammer.ts ../frontend/src/generated/typechain-types/

@@ -101,3 +101,11 @@ task("get-response", "gets function response")
     )}: ${decodedOutput}`;
     console.log(decodedOutputLog);
   });
+
+
+// Just to provide some context, the issues with the current implementation are:
+// 1. There are no delivery guarantees
+// 2. The current impl is sequential and there's a small risk of missing reports when busy
+// 3. There is no mechanism implemented for it to send missed messages while down (problematic because RDS proxy disconnects under load sometimes)
+// 4. We can't transmit complex messages (so we have to query the database after the websocket server is notified)
+// 5. The websocket server is a bit of a monster. There's a mix of central and self management of connections. It's due for a refactor

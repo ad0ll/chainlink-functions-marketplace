@@ -2,14 +2,12 @@
 /* tslint:disable */
 /* eslint-disable */
 import {
-  Signer,
   Contract,
   ContractFactory,
   ContractTransactionResponse,
   Interface,
-  ContractDeployTransaction,
-  ContractRunner,
 } from "ethers";
+import type { Signer, ContractDeployTransaction, ContractRunner } from "ethers";
 import type { NonPayableOverrides } from "../common";
 import type {
   MockBillingRegistry,

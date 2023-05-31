@@ -2,7 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import { Contract, Interface, ContractRunner } from "ethers";
+import { Contract, Interface, type ContractRunner } from "ethers";
 import type { OCR2Base, OCR2BaseInterface } from "../OCR2Base";
 
 const _abi = [
