@@ -1,8 +1,9 @@
 import React, {ReactNode} from "react";
 import {Box, Card, CardActionArea, CardMedia, Stack, Typography} from "@mui/material";
-import {fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./utils/util";
+import {addressToJazziconSeed, fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./utils/util";
 import {Link} from "react-router-dom";
 import {FunctionRegistered} from "./gql/graphql";
+import Jazzicon from "./Jazzicon";
 
 export const GlobalMetricsCard: React.FC<{ label: string, value: ReactNode | string }> = ({label, value}) => {
     return <Card elevation={4}
@@ -69,3 +70,21 @@ export const RecentlyAddedCard: React.FC<{ func: FunctionRegistered }> = ({func}
         {/*</CardActions>*/}
     </Card>
 }
+
+export const AddressCard: React.FC<{ addr: string }> = ({addr}) => (<Card elevation={2}>
+    <CardActionArea
+        component={Link}
+        to={`/author/${addr}`}
+        style={{
+            display: "flex",
+            alignItems: "center",
+            textDecoration: "none",
+            padding: 8
+        }}>
+        <Jazzicon seed={addressToJazziconSeed(addr)}
+                  style={{height: 20, marginRight: 8}}/>
+        <Typography>
+            {truncateIfAddress(addr)}
+        </Typography>
+    </CardActionArea>
+</Card>)

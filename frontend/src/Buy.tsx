@@ -1,10 +1,13 @@
 // Drilldown page for an individual function
-import React, {useEffect} from "react";
+import React, {ReactNode, useEffect} from "react";
 import {
     Box,
     Button,
     Card,
     CircularProgress,
+    Dialog,
+    DialogContent,
+    DialogTitle,
     Grid,
     List,
     ListItem,
@@ -12,6 +15,11 @@ import {
     Paper,
     Select,
     Stack,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
     Tooltip,
     Typography
 } from "@mui/material";
@@ -23,6 +31,8 @@ import {gql, useQuery} from "@apollo/client";
 import {FunctionRegistered, Query} from "./gql/graphql";
 import {
     BASE_FEE,
+    blockTimestampToDate,
+    decodeResponse,
     MUMBAI_CHAIN_ID,
     networkConfig,
     returnTypeEnumToString,
@@ -41,6 +51,7 @@ import {FunctionsManager} from "./generated/contract-types";
 import {useContract} from "./contractHooks";
 import FunctionsManagerJson from "./generated/abi/FunctionsManager.json";
 import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
+import {AddressCard} from "./Cards";
 
 
 const DRILLDOWN_QUERY = gql`
@@ -63,7 +74,6 @@ const DRILLDOWN_QUERY = gql`
             subId
         }
     }
-
 `
 
 const GridRow: React.FC<{ label: string, children: React.ReactNode }> = ({label, children}) => {
@@ -142,10 +152,10 @@ const MetricsCards: React.FC<{ functionId: string }> = ({functionId}) => {
                     {/*<Typography variant={"h3"} sx={{textAlign: "center"}}>{value}</Typography> : value}*/}
                     {/*<Typography variant={"h5"} sx={{textAlign: "center"}}>{label}</Typography>*/}
                     <Box display={"flex"}>
-                        <Box sx={{backgroundColor: "#31ff87"}}
+                        <Box sx={{backgroundColor: "#31ff87", borderBottomRightRadius: 2, borderTopRightRadius: 2}}
                              width={`${(BigInt(successfulResponseCount) / BigInt(functionsCalledCount)) * 100n}%`}
                              height={25}></Box>
-                        <Box sx={{backgroundColor: "#ff3131"}}
+                        <Box sx={{backgroundColor: "#ff3131", borderBottomLeftRadius: 2, borderTopLeftRadius: 2}}
                              width={`${(BigInt(failedResponseCount) / BigInt(functionsCalledCount)) * 100n}%`}
                              height={25}></Box>
                     </Box>
@@ -176,28 +186,187 @@ const MetricsCards: React.FC<{ functionId: string }> = ({functionId}) => {
                       borderRadius: 2,
                       padding: 2,
                       height: "100%",
-                      verticalAlign: "center",
                       display: "flex",
                       justifyContent: "center",
-                      alignItems: "center",
                       flexDirection: "column"
                   }}
             >
-                <Typography variant={"h4"}>
+                <Typography variant={"h4"} textAlign={"center"}>
                     Lifetime Earnings
                 </Typography>
-                <Typography variant={"h3"}
-
-                            textAlign={"center"}
-                >
-                    <LinkTokenIcon height={36}
-                                   width={36}
-                                   style={{marginRight: 8}}/>
-                    {ethers.formatUnits(BigInt(totalFeesCollected) - (BigInt(totalFeesCollected) % (10n ** 16n)), "ether")}
-                </Typography>
+                <Box sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "80%",
+                }}>
+                    <Typography variant={"h3"}
+                                sx={{marginRight: 3}}>
+                        <LinkTokenIcon height={36}
+                                       width={36}
+                                       style={{marginRight: 8}}/>
+                        {ethers.formatUnits(BigInt(totalFeesCollected) - (BigInt(totalFeesCollected) % (10n ** 16n)), "ether")}
+                    </Typography>
+                </Box>
             </Card>
         </Grid>
     </Grid>)
+}
+const FUNCTION_CALL_HISTORY_QUERY = gql`
+    query FunctionCallHistory($functionId: Bytes!){
+        functionCalleds(
+            first: 10,
+            skip: 0,
+            where: {
+                functionId: $functionId
+            },
+            orderDirection: desc
+            orderBy: blockTimestamp
+        ){
+            requestId
+            caller
+            baseFee
+            fee
+            blockTimestamp
+        }
+    }`
+
+const FUNCTION_OUTCOME_QUERY = gql`
+    query FunctionOutcome($functionId: Bytes!){
+        functionCallCompleteds(
+            where: {requestId: $functionId}
+        ){
+            requestId
+            response
+            err
+        }
+    }`
+
+
+const OutcomeCell: React.FC<{ requestId: string, expectedReturnType: 0 | 1 | 2 | 3 }> = ({
+                                                                                             requestId,
+                                                                                             expectedReturnType
+                                                                                         }) => {
+    const {chainId} = useWeb3React()
+    if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
+        return <>Bad chain</>
+    }
+    const functionsManager = useContract(networkConfig[chainId].functionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager
+    const [functionResponse, setFunctionResponse] = React.useState<FunctionsManager.FunctionResponseStruct>()
+
+    const [showModal, setShowModal] = React.useState(false)
+    useEffect(() => {
+        const fetchData = async () => {
+            if (functionResponse && (functionResponse.err || functionResponse.response)) return //Stop polling when confirmed
+            const outcome = await functionsManager.getFunctionResponse(requestId)
+            setFunctionResponse(outcome)
+        }
+        fetchData()
+        const interval = setInterval(fetchData, 2000);
+        return () => {
+            clearInterval(interval);
+        };
+    }, []);
+
+
+    const Cell: React.FC<{ text: string, color: string }> = ({text, color}) => {
+        return <Typography
+            sx={{
+                border: "1px solid " + color,
+                padding: 0.5,
+                color: color,
+                textAlign: "center",
+                borderRadius: 1.5,
+                maxWidth: 100
+            }}
+            onClick={() => setShowModal(true)}
+        >{text}</Typography>
+    }
+
+    let cell: ReactNode = <Cell color={"grey"} text={"UNKNOWN"}/>;
+    if (!functionResponse) {
+        cell = <Cell color={"grey"} text={"PENDING"}/>
+    } else if (functionResponse.err) {
+        cell = <Cell color={"red"} text={"ERROR"}/>
+    } else if (functionResponse.response) (
+        cell = <Cell color={"green"} text={"SUCCESS"}/>
+    )
+
+    return <>
+        {cell}
+        <Dialog open={showModal} onClose={() => setShowModal(false)}>
+            <DialogTitle>Outcome
+                for {requestId?.slice(0, 6) + "..." + requestId?.slice(requestId.length - 4, requestId.length)}</DialogTitle>
+            <DialogContent>
+                <Stack spacing={2}>
+                    <Grid container>
+                        <Grid item xs={4}>Request ID</Grid>
+                        <Grid item xs={8}>{requestId}</Grid>
+                    </Grid>
+                    <Grid container>
+                        {/*<Grid item xs={8}>{decodeResponse(functionResponse.response, functionResponse.err, expectedReturnType)}</Grid>*/}
+                        <Grid item xs={4}>Response</Grid>
+                        <Grid item xs={8}>
+                            {decodeResponse(functionResponse?.response.toString() || "", functionResponse?.err.toString() || "", expectedReturnType)}</Grid>
+                    </Grid>
+                    <Grid container>
+                        <Grid item xs={4}>Outcome</Grid>
+                        <Grid item xs={8}>{cell}</Grid>
+                    </Grid>
+                </Stack>
+            </DialogContent>
+        </Dialog>
+    </>
+
+}
+
+const ExecutionTable: React.FC<{ functionId: string }> = ({functionId}) => {
+
+    const {loading, error, data} = useQuery(FUNCTION_CALL_HISTORY_QUERY, {
+        variables: {
+            functionId
+        },
+        pollInterval: 1000
+    })
+
+    if (loading) return <Typography><CircularProgress/>Loading...</Typography>;
+    if (error) {
+        console.log(error)
+        return <Typography>Error fetching data</Typography>;
+    }
+    if (!data.functionCalleds || data.functionCalleds.length === 0) return <Typography>No execution history
+        found</Typography>
+
+    return (<Paper sx={{
+        width: "100%",
+        display: "flex",
+        borderColor: "primary.main",
+        border: 1,
+        padding: 1
+    }}>
+        <Table>
+            <TableHead>
+                <TableRow>
+                    <TableCell><Typography>Request ID</Typography></TableCell>
+                    <TableCell><Typography>Caller</Typography></TableCell>
+                    {/*<TableCell><Typography>Fee</Typography></TableCell>*/}
+                    <TableCell><Typography>Outcome</Typography></TableCell>
+                    <TableCell><Typography>Called on</Typography></TableCell>
+                </TableRow>
+            </TableHead>
+            <TableBody>
+                {data.functionCalleds.map((row: any) => {
+                    return <TableRow key={row.requestId}>
+                        <TableCell>{row.requestId?.slice(0, 6) + "..." + row.requestId?.slice(row.requestId.length - 4, row.requestId.length)}</TableCell>
+                        <TableCell><AddressCard addr={row.caller}/></TableCell>
+                        {/*<TableCell>{row.fee}</TableCell>*/}
+                        <TableCell><OutcomeCell requestId={row.requestId} expectedReturnType={3}/></TableCell>
+                        <TableCell><Typography>{blockTimestampToDate(row.blockTimestamp)}</Typography></TableCell>
+                    </TableRow>
+                })}
+            </TableBody>
+        </Table>
+    </Paper>)
 }
 
 
@@ -435,6 +604,7 @@ export const Buy: React.FC = () => {
                     </GridRow>
                 </Grid>
             </Paper>
+            <ExecutionTable functionId={func.functionId}/>
         </Stack>
     </Box>
 }

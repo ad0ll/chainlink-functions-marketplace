@@ -2,8 +2,6 @@
 import React, {useState} from "react";
 import {
     Box,
-    Card,
-    CardActionArea,
     CardMedia,
     CircularProgress,
     Table,
@@ -21,14 +19,7 @@ import {
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {toast} from "react-toastify";
 import {Link} from "react-router-dom";
-import {
-    addressToJazziconSeed,
-    fallbackToJazzicon,
-    jazziconImageString,
-    renderCurrency,
-    truncateIfAddress
-} from "./utils/util";
-import Jazzicon from "./Jazzicon";
+import {fallbackToJazzicon, jazziconImageString, renderCurrency} from "./utils/util";
 import {generateDefaultSnippetString, SoliditySyntaxHighlighter} from "./Snippets";
 import {DocumentNode, useQuery} from "@apollo/client";
 import {Query} from "./gql/graphql";
@@ -43,6 +34,7 @@ import {
 import {Search as SearchIcon} from "@mui/icons-material";
 import {ethers} from "ethers"
 import {useWeb3React} from "@web3-react/core";
+import {AddressCard} from "./Cards";
 
 
 type AvailableListingColumns = "name" | "author" | "category" | "fee" | "created" | "actions";
@@ -132,23 +124,7 @@ const ListingTable: React.FC<{
                             </Link>
                         </TableCell>}
                         {columns.find(f => f === "author") && <TableCell>
-                            <Card elevation={2}>
-                                <CardActionArea
-                                    component={Link}
-                                    to={`/author/${f.owner}`}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        textDecoration: "none",
-                                        padding: 8
-                                    }}>
-                                    <Jazzicon seed={addressToJazziconSeed(f.owner)}
-                                              style={{height: 20, marginRight: 8}}/>
-                                    <Typography>
-                                        {truncateIfAddress(f.owner)}
-                                    </Typography>
-                                </CardActionArea>
-                            </Card>
+                            <AddressCard addr={f.owner}/>
                         </TableCell>}
                         {columns.find(f => f === "category") &&
                             <TableCell>
