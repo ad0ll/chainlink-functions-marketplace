@@ -4,6 +4,7 @@ import { FunctionsManager } from "../typechain-types";
 import { networks } from "../hardhat.config";
 import { keccak256 } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import * as ethCrypto from "eth-crypto";
 
 type DemoConfig = {
   functionId: string;
@@ -54,6 +55,15 @@ task(
       "FunctionsManager",
       taskArgs.functionsmanager
     );
+
+    const encrypt = async (message: string) => {
+      const encrypted = await ethCrypto.default.encryptWithPublicKey(
+        networks[network.name].functionsPublicKey,
+        message
+      );
+      const encryptedStr = ethCrypto.default.cipher.stringify(encrypted);
+      return "0x" + encryptedStr;
+    };
 
     const demos: DemoConfig[] = [
       {
@@ -136,6 +146,7 @@ task(
             ["ethereum", "usd"],
             ["bitcoin", "usd"],
             ["ethereum", "eur"],
+            ["ethereum"],
           ],
           gasLimit: 500_000,
         },
@@ -163,6 +174,69 @@ task(
             ["ETH", "USD"],
             ["BTC", "USD"],
             ["BTC", "ETH"],
+          ],
+          gasLimit: 500_000,
+        },
+      },
+      {
+        functionId: "",
+        owner: user2,
+        register: {
+          fees: ethers.utils.parseEther("0.06"),
+          functionName: "Coinmarketcap Price 4",
+          desc: "Fetches a given price pair from Coinmarketcap",
+          imageUrl: imageUrls.ethLogo,
+          expectedArgs: ["Base", "Quote"],
+          codeLocation: 0,
+          secretsLocation: 1,
+          language: 0,
+          category: ethers.utils.formatBytes32String("Price Feed"),
+          subId: process.env.FUNCTIONS_SUBSCRIPTION_ID,
+          source: fs.readFileSync("./demos/coinmarketcap-price.js").toString(),
+          secrets: encrypt(
+            "https://gist.github.com/amith4m/7a3df0721d771c08d511584a85bc099b/raw"
+          ),
+
+          expectedReturnType: 1, //uint256
+        },
+        execute: {
+          args: [
+            ["1", "USD"],
+            ["1027", "USD"],
+          ],
+          gasLimit: 500_000,
+        },
+      },
+      {
+        functionId: "",
+        owner: user3,
+        register: {
+          fees: ethers.utils.parseEther("0.05"),
+          functionName: "Multi API Aggregator",
+          desc: "Fetches a given asset's price in USD from multiple providers and aggregates the median",
+          imageUrl: imageUrls.ethLogo,
+          expectedArgs: [
+            "Base Coinmarketcap",
+            "Base Coingecko",
+            "Base Coinpaprika",
+            "Base Bad API",
+          ],
+          codeLocation: 0,
+          secretsLocation: 1,
+          language: 0,
+          category: ethers.utils.formatBytes32String("Price Feed"),
+          subId: process.env.FUNCTIONS_SUBSCRIPTION_ID,
+          source: fs.readFileSync("./demos/multi-api-example.js").toString(),
+          secrets: encrypt(
+            "https://gist.github.com/amith4m/7a3df0721d771c08d511584a85bc099b/raw"
+          ),
+          expectedReturnType: 1, //uint256
+        },
+        execute: {
+          args: [
+            ["1", "bitcoin", "btc-bitcoin", "btc"],
+            ["1027", "ethereum", "eth-ethereum", "eth"],
+            ["btc", "btc", "btc", "btc"],
           ],
           gasLimit: 500_000,
         },
@@ -234,7 +308,8 @@ task(
       }
 
       const registerCall = await localFm.registerFunction(demo.register, {
-        gasLimit: 2_500_000,
+        gasLimit: 4_000_000,
+        gasPrice: 30_000_000_000,
       });
       const receipt = await registerCall.wait(1);
       console.log(
@@ -304,7 +379,6 @@ task(
         const tx = await functionManagerWithCaller.executeRequest(
           functionId,
           args,
-          300_000,
           {
             gasLimit: 2_500_000,
           }
