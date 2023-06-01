@@ -14,12 +14,19 @@ import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
 import {ethers} from "ethers";
 
 const LISTING_QUERY = gql`
-    query EventSpammerFunctionRegistered($first: Int!, $skip: Int!) {
+    query EventSpammerFunctionRegistered($first: Int!, $skip: Int!, $searchTerm: String!){
         functionRegistereds(
             orderBy: blockNumber
             orderDirection: desc
             skip: $skip
             first: $first
+            where: {
+                or: [
+                    {metadata_name_contains_nocase: $searchTerm},
+                    {metadata_desc_contains_nocase: $searchTerm},
+                    #                    {metadata_category_contains: $searchTerm}
+                ]
+            }
         ) {
             id
             functionId
@@ -57,7 +64,7 @@ export const SplashTop: React.FC = () => {
     return (<Box
         sx={{width: "100%", display: "flex", alignItems: "center", flexDirection: "column"}}
     >
-        <Stack>
+        <Stack spacing={2}>
             <Logo style={{maxHeight: 80}}/>
             <Typography variant={"h3"}>
                 Functions Marketplace
@@ -151,7 +158,6 @@ export const RecentlyAddedTop: React.FC = () => {
 
 
 export const Home: React.FC = () => {
-
 
     return (<Stack spacing={4} marginTop={2}>
         <SplashTop/>

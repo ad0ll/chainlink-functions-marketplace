@@ -53,7 +53,8 @@ function App() {
         palette: {
             mode: 'dark',
             primary: {
-                main: '#a536e1', //This one is 400
+                // main: '#a536e1', //This one is 400
+                main: '#d7a6f2',
                 //light: "#cb8eed", //200
                 light: '#e0bbf4', //100
                 // light: "#f3e4fa", //50

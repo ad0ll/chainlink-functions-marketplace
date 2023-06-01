@@ -64,11 +64,12 @@ const ListingTable: React.FC<{
     const [sortTerm, setSortTerm] = useState<"name" | "description" | "author A-Z" | "author Z-A" | "fee, lowest first" | "fee, highest first">("name");
     const {account, chainId} = useWeb3React()
     const skip = page * pageSize;
-    const {loading, error, data} = useQuery<Query, { first: number, skip: number }>(query, {
+    const {loading, error, data} = useQuery<Query, { first: number, skip: number, searchTerm: string }>(query, {
         variables: {
             skip,
             first: pageSize,
-            ...args
+            searchTerm: nameDescFilter,
+            ...args,
         },
         pollInterval,
     })

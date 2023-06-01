@@ -10,13 +10,19 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import {useWeb3React} from "@web3-react/core";
 
 const OWNER_LISTING_QUERY = gql`
-    query AuthorFunctionRegistereds($first: Int!, $skip: Int!, $owner: Bytes!) {
+    query AuthorFunctionRegistereds($first: Int!, $skip: Int!, $owner: Bytes!, $searchTerm: String) {
         functionRegistereds(
             orderBy: blockNumber
             orderDirection: desc
             skip: $skip
             first: $first
-            where: {owner: $owner}
+            where: {
+                owner: $owner
+                or: [
+                    {metadata_name_contains_nocase: $searchTerm},
+                    {metadata_desc_contains_nocase: $searchTerm},
+                ]
+            }
         ) {
             id
             functionId
@@ -24,12 +30,12 @@ const OWNER_LISTING_QUERY = gql`
             metadata_name
             metadata_desc
             metadata_imageUrl
-            metadata_category
             fee
             blockTimestamp
         }
     }
 `;
+
 const AuthorAddressCard: React.FC<{ address?: string }> = ({address}) => {
     const {chainId} = useWeb3React();
     if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) return (<></>)

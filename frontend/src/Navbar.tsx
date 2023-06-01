@@ -1,4 +1,4 @@
-import {AppBar, Button, Fab, Toolbar, Tooltip, Typography} from "@mui/material";
+import {AppBar, Button, Fab, Toolbar, Tooltip} from "@mui/material";
 import Logo from "./assets/icons/logo.svg";
 import React, {useEffect} from "react";
 import {useWeb3React} from "@web3-react/core";
@@ -65,20 +65,22 @@ export const NavBar: React.FC = ({}) => {
         <Toolbar>
             <Link to={"/"} style={{display: "flex", alignItems: "center"}}>
                 <Logo style={{height: 40}}/>
-                <Typography variant={"h5"} style={{marginLeft: 8, display: "flex"}}>
+            </Link>
+            <Link to={"/"} style={{display: "flex", alignItems: "center"}}>
+                <Button style={{marginLeft: 8, display: "flex"}}>
                     Lonk
-                </Typography>
+                </Button>
             </Link>
             <Link to={"/sell"}>
-                <Typography variant={"h6"} style={{marginLeft: 16}}>
+                <Button>
                     Sell
-                </Typography>
+                </Button>
             </Link>
 
             <Link to={"/dashboard"}>
-                <Typography variant={"h6"} style={{marginLeft: 16}}>
+                <Button>
                     Dashboard
-                </Typography>
+                </Button>
             </Link>
 
             {cookies.devMode === "true" && <Fab sx={{marginLeft: "auto"}}>Dev mode enabled</Fab>}

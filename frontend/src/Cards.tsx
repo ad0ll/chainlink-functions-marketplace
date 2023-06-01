@@ -8,7 +8,9 @@ export const GlobalMetricsCard: React.FC<{ label: string, value: ReactNode | str
     return <Card elevation={4}
                  sx={{
                      borderRadius: 2,
-                     padding: 2
+                     padding: 2,
+                     height: "100%",
+                     verticalAlign: "center"
                  }}
     >
         {typeof value === "string" ? <Typography variant={"h3"} sx={{textAlign: "center"}}>{value}</Typography> : value}
@@ -30,7 +32,8 @@ export const RecentlyAddedCard: React.FC<{ func: FunctionRegistered }> = ({func}
                 overflow: "hidden",
                 whiteSpace: "nowrap",
                 padding: 2,
-                borderRadius: 2
+                borderRadius: 2,
+                height: "100%"
             }}
             component={Link} to={`buy/${func.id}`}
         >
