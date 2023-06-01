@@ -3,6 +3,8 @@ import React, {FC} from "react"
 import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";
 import {vscDarkPlus} from "react-syntax-highlighter/dist/esm/styles/prism";
 import {FunctionRegistered} from "./gql/graphql";
+import {useWeb3React} from "@web3-react/core";
+import {MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
 
 export type FunctionArg = {
     name: string
@@ -35,7 +37,8 @@ type GenerateSnippetOptions = {
     hardcodeParameters: boolean,
     // TODO callback function is probably not going to be a string, most likely bytes32 or uint256. Unknown until we work on the dynamic callback feature
     callbackFunction: "storeFull" | "storePartial" | "doNothing" | string // presets are for completions in IDEs
-    returnRequestId: boolean
+    returnRequestId: boolean,
+    useInterface: boolean //When true, snippet will use the contract's interface instead of doing a raw call
 }
 
 const generateParameterString = (args: FunctionArg[], renderType: "placeholders" | "paramWithType" | "paramNameOnly"): string => {
@@ -83,38 +86,35 @@ export const splitArgString = (argString: string): FunctionArg => {
     }
 }
 
-const generateCallString = (func: FunctionRegistered, functionManagerContractAddress: string, opts: GenerateSnippetOptions) => {
+export const generateSnippetString = (func: FunctionRegistered, opts: GenerateSnippetOptions) => {
     // TODO hardcoded sendRequest makes me really nervous. Can we replace this by scraping the ABI once the FunctionManager contract is done?
 
     //TODO fix hardcoded network
+    const {chainId} = useWeb3React()
+    if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
+        return "Invalid chain"
+    }
+    const parameterString = opts.hardcodeParameters && func.metadata_expectedArgs?.length > 0 ? "" : generateParameterString(splitArgStrings(func.metadata_expectedArgs), "paramWithType")
     const sendRequestArgs: string = opts.hardcodeParameters ? generateParameterString(splitArgStrings(func.metadata_expectedArgs), "placeholders") : generateParameterString(splitArgStrings(func.metadata_expectedArgs), "paramNameOnly")
 
     /*
     useCall:
     (bool success, bytes result) = contractAddress.call(abi.encodeWithSelector(sig, [PARAMETER_STRING or PLACEHOLDER_STRINGS], CALLBACK_FUNCTION));
      */
-    return `
-            address functionManager = ${functionManagerContractAddress};
-            bytes memory payload = abi.encodeWithSignature("sendRequest(address, string[] calldata, string calldata");
-            (bool success, ${opts.returnRequestId ? "bytes result" : ""}) = functionManager.call(abi.encodeWithSelector(sig, ${func.functionId} [${sendRequestArgs}], "${opts.callbackFunction}"));
-            require(success, "Failed to call sendRequest function.");
-            ${opts.returnRequestId ? "return abi.decode(result, (bytes32))" : ""}
-        `.replace("\t", "").replace("    ", "")
-}
-
-export const generateSnippetString = (func: FunctionRegistered, functionManagerAddress: string, opts: GenerateSnippetOptions) => {
-    const parameterString = opts.hardcodeParameters && func.metadata_expectedArgs?.length > 0 ? "" : generateParameterString(splitArgStrings(func.metadata_expectedArgs), "paramWithType")
-
-    return `function (${parameterString}) public view returns (bytes32) {
-       ${generateCallString(func, functionManagerAddress, opts)}
-    }`
+    return `function sendRequest (${parameterString}) public ${opts.returnRequestId ? "returns (bytes32)" : ""} {
+    address functionManager = ${networkConfig[chainId].functionsManager};
+    (bool success, ${opts.returnRequestId ? "bytes memory result" : ""}) = functionManager.call(abi.encodeWithSignature("executeRequest(address,string[])", ${func.functionId}, [${sendRequestArgs}]));
+    require(success, "Failed to call sendRequest function."); 
+    ${opts.returnRequestId ? "return abi.decode(result, (bytes32));" : ""}
+}`
 }
 
 export const generateDefaultSnippetString = (func: FunctionRegistered, functionManagerAddress: string) => {
-    return generateSnippetString(func, functionManagerAddress, {
+    return generateSnippetString(func, {
         hardcodeParameters: true,
         callbackFunction: "storeFull",
-        returnRequestId: true
+        returnRequestId: true,
+        useInterface: false,
     })
 }
 

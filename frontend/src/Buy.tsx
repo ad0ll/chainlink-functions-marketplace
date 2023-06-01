@@ -1,14 +1,10 @@
 // Drilldown page for an individual function
-import React, {ReactNode, startTransition, useEffect, useState} from "react";
+import React, {useEffect} from "react";
 import {
     Box,
     Button,
+    Card,
     CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
     Grid,
     List,
     ListItem,
@@ -16,7 +12,6 @@ import {
     Paper,
     Select,
     Stack,
-    TextField,
     Tooltip,
     Typography
 } from "@mui/material";
@@ -28,7 +23,6 @@ import {gql, useQuery} from "@apollo/client";
 import {FunctionRegistered, Query} from "./gql/graphql";
 import {
     BASE_FEE,
-    decodeResponse,
     MUMBAI_CHAIN_ID,
     networkConfig,
     returnTypeEnumToString,
@@ -36,18 +30,18 @@ import {
     TypographyWithLinkIcon
 } from "./common";
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import {AbiCoder, decodeBytes32String, formatEther, keccak256, parseEther, toUtf8Bytes} from "ethers";
+import {decodeBytes32String, ethers, formatEther} from "ethers";
 import EditIcon from '@mui/icons-material/Edit';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import {toast} from "react-toastify";
 import {useWeb3React} from "@web3-react/core";
-import {useContract} from "./contractHooks";
-import FunctionsManagerJson from "./generated/abi/FunctionsManager.json"
-import LinkTokenJson from "./generated/abi/LinkTokenInterface.json"
-import {FunctionsManager, LinkTokenInterface} from "./generated/contract-types";
-import {JsonRpcProvider} from "@ethersproject/providers";
-import {useFieldArray, useForm} from "react-hook-form";
 import PublishIcon from '@mui/icons-material/Publish';
+import {TryItNowModal} from "./TryItNowModal";
+import {FunctionsManager} from "./generated/contract-types";
+import {useContract} from "./contractHooks";
+import FunctionsManagerJson from "./generated/abi/FunctionsManager.json";
+import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
+
 
 const DRILLDOWN_QUERY = gql`
     query DrilldownPage($functionId: ID!){
@@ -100,166 +94,110 @@ const GridRowTyp: React.FC<{ label: string, value?: string | number }> = ({label
     </GridRow>
 }
 
-//TODO low pri, add caller
-const TRIAL_CALL_COMPLETE_QUERY = gql`
-    query TrialCallComplete($requestId: Bytes!){
-        #    query TrialCallComplete($caller: Bytes!, $requestId: Bytes!){
-        functionCallCompleteds(first: 1, skip: 0, where: {
-            requestId: $requestId
-        }){
-            requestId
-            response
-            err
-        }
-    }`
+const MetricsCards: React.FC<{ functionId: string }> = ({functionId}) => {
+    const {chainId} = useWeb3React()
 
-type FormValues = {
-    args: {
-        value: string
-    }[]
-}
-const TryItNowModal: React.FC<{
-    func: FunctionRegistered,
-    chainId: typeof MUMBAI_CHAIN_ID | typeof SEPOLIA_CHAIN_ID
-    provider?: JsonRpcProvider,
-    account?: string,
-    open: boolean,
-    setOpen: React.Dispatch<React.SetStateAction<boolean>>
-}> = ({func, chainId, provider, account, open, setOpen}) => {
-    const [args, setArgs] = useState<string[]>([]);
-    const [requestId, setRequestId] = useState<string>("");
-    const [errorMsg, setErrorMsg] = useState<ReactNode>(<div/>);
-    const functionManagerContract = useContract(networkConfig[chainId].functionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager
-    const linkTokenContract = useContract(networkConfig[chainId].linkToken, LinkTokenJson.abi) as unknown as LinkTokenInterface
-    const [waitingForResponse, setWaitingForResponse] = useState(false);
-    const {register, handleSubmit, getValues, setValue, watch, formState, control} = useForm<FormValues>();
-    const {fields, insert, remove} = useFieldArray({
-        name: "args", // Specify the name of the array field
-        control,
-    });
-    const {
-        loading, data, error
-        , startPolling, stopPolling,
-    } = useQuery<Query>(TRIAL_CALL_COMPLETE_QUERY, {
-        variables: {
-            requestId: requestId
-        },
-        skip: !requestId,
-    })
-    console.log(loading, data, error)
-    const onSubmit = handleSubmit(async (data) => {
-        if (!account) {
-            toast.error("You must be connected to Metamask to try out a function");
-            return
-        }
+    if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
+        return <></>
+    }
 
-        setRequestId("")
-        let allowance = await linkTokenContract.allowance(account, networkConfig[chainId].functionsManager)
-        if (allowance < parseEther("1")) {
-            toast.info("Your account is not authorized to transfer LINK to the FunctionsManager. Please authorize this transaction to approve LINK transfers.")
-            let approveTx = await linkTokenContract.approve(networkConfig[chainId].functionsManager, parseEther("1"))
-            let approveReceipt = await provider?.waitForTransaction(approveTx.hash, 1)
-            if (approveReceipt?.status !== 1) {
-                toast.error("Failed to approve LINK transfers, please try again")
-                return
-            }
-            toast.success("Successfully approved LINK transfers")
-        }
-
-        if (!functionManagerContract) return
-        const execTx = await functionManagerContract.executeRequest(func.functionId, args, {gasLimit: 1000000});
-        setWaitingForResponse(true)
-
-        const execReceipt = await provider?.waitForTransaction(execTx.hash, 1);
-        if (execReceipt?.status !== 1) {
-            setErrorMsg(<Typography variant={"body1"} color={"error"}>Transaction failed,
-                <a href={`${networkConfig[chainId].getScannerTxUrl(execTx.hash)}`} target="_blank">
-                    View transaction in scanner for details...
-                </a></Typography>)
-        }
-        const sig = keccak256(toUtf8Bytes("FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96)"))
-        // const sig = keccak256(toUtf8Bytes("executeRequest(bytes32,string[] calldata)"))
-        console.log("execReceipt", execReceipt)
-        console.log("sig", sig)
-
-        const reqIdLoc = execReceipt?.logs?.find((e) => e.topics[0] === sig)
-        if (!reqIdLoc) {
-            toast.error("Failed to get requestId from transaction logs")
-            return
-        }
-
-        const requestId = await AbiCoder.defaultAbiCoder().decode(["bytes32"], reqIdLoc.topics[2])
-
-        startTransition(() => {
-            setRequestId(requestId[0])
-            setErrorMsg("")
-            setWaitingForResponse(true)
-            startPolling(500)
-        })
-    })
-
+    const [meta, setMeta] = React.useState<Partial<FunctionsManager.FunctionExecuteMetadataStruct>>()
+    const functionsManager = useContract(networkConfig[chainId].functionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager
     useEffect(() => {
-        if (data?.functionCallCompleteds && data.functionCallCompleteds.length > 0) {
-            startTransition(() => {
-                setWaitingForResponse(false)
-                stopPolling()
+        const fetchData = async () => {
+            const meta = await functionsManager.getFunctionExecuteMetadata(functionId)
+            setMeta({
+                functionsCalledCount: meta.functionsCalledCount,
+                totalFeesCollected: meta.totalFeesCollected,
+                successfulResponseCount: meta.successfulResponseCount,
+                failedResponseCount: meta.failedResponseCount,
             })
         }
-    }, [data])
 
-    const response: string = data?.functionCallCompleteds?.[0]?.response;
-    const err: string = data?.functionCallCompleteds?.[0]?.err;
+        // Fetch data immediately
+        fetchData();
 
-    console.log("data", data);
+        // Set up the interval to fetch data every 3 seconds
+        const interval = setInterval(fetchData, 3000);
 
-    return (<Dialog open={open} onClose={() => setOpen(false)} sx={{padding: 2}}>
-        <form onSubmit={onSubmit} style={{padding: 16}}>
-
-            <DialogTitle>Try {func.metadata_name}</DialogTitle>
-            <DialogContentText>
-                Please provide the following arguments
-            </DialogContentText>
-
-            <DialogContent>
-                <Stack spacing={2}>
-                    {splitArgStrings(func.metadata_expectedArgs)?.map((arg, i) => {
-                        return <TextField
-                            key={i}
-                            label={arg.type ? `${arg.name} (${arg.type})` : arg.name}
-                            helperText={arg.comment}
-                            type={arg.type.includes("int") ? "number" : "text"}
-                            onChange={(e) => setArgs(
-                                [...args.slice(0, i), e.target.value, ...args.slice(i + 1)]
-                            )}/>
-                    })}
-                </Stack>
-            </DialogContent>
-
-            <DialogContentText>
-                {waitingForResponse &&
-                    <Box display={"flex"} justifyContent={"center"}>
-                        <CircularProgress/>
-                        <Typography variant={"h5"}> Waiting for response...</Typography>
+        // Clean up the interval when the component unmounts or when the dependency array changes
+        return () => {
+            clearInterval(interval);
+        };
+    }, []); // Empty dependency array to run the effect only once
+    const {totalFeesCollected, functionsCalledCount, successfulResponseCount, failedResponseCount} = meta || {}
+    if (totalFeesCollected === undefined || functionsCalledCount === undefined || successfulResponseCount === undefined || failedResponseCount === undefined) {
+        return <>Missing Metadata</>
+    }
+    return (<Grid container spacing={2}>
+        <Grid item xs={6}>
+            <Card elevation={4}
+                  sx={{
+                      borderRadius: 2,
+                      padding: 2
+                  }}
+            >
+                <Stack spacing={1}>
+                    <Typography variant={"h4"} textAlign={"center"}>Lifetime Calls</Typography>
+                    {/*<Typography variant={"h3"} sx={{textAlign: "center"}}>{value}</Typography> : value}*/}
+                    {/*<Typography variant={"h5"} sx={{textAlign: "center"}}>{label}</Typography>*/}
+                    <Box display={"flex"}>
+                        <Box sx={{backgroundColor: "#31ff87"}}
+                             width={`${(BigInt(successfulResponseCount) / BigInt(functionsCalledCount)) * 100n}%`}
+                             height={25}></Box>
+                        <Box sx={{backgroundColor: "#ff3131"}}
+                             width={`${(BigInt(failedResponseCount) / BigInt(functionsCalledCount)) * 100n}%`}
+                             height={25}></Box>
                     </Box>
-                }
-                {data?.functionCallCompleteds && data?.functionCallCompleteds?.length > 0
-                    ?
-                    <Typography>Response: {decodeResponse(response, err, func.metadata_expectedReturnType)}</Typography>
-                    : <div/>
-                }
-                {errorMsg}
-            </DialogContentText>
-            <DialogActions>
-                <Button variant={"contained"}
-                        type={"submit"}
-                        sx={{width: "100%", marginTop: 2}}
-                        onClick={() => {
-                            toast.info("Calling function with args " + args.join(", "))
-                        }}>Submit</Button>
-            </DialogActions>
-        </form>
+                    <Box display={"flex"} justifyContent={"space-between"}>
+                        <Box sx={{color: "#31ff87"}}>
+                            <Typography variant={"h5"}
+                                        sx={{
+                                            textAlign: "center",
+                                        }}>{BigInt(successfulResponseCount).toString()}</Typography>
+                            <Typography variant={"h6"}>
+                                Successful
+                            </Typography>
+                        </Box>
+                        <Box sx={{color: "#ff3131"}}>
+                            <Typography variant={"h5"}
+                                        sx={{textAlign: "center"}}>{BigInt(failedResponseCount).toString()}</Typography>
+                            <Typography variant={"h6"}>
+                                Failed
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Stack>
+            </Card>
+        </Grid>
+        <Grid item xs={6}>
+            <Card elevation={4}
+                  sx={{
+                      borderRadius: 2,
+                      padding: 2,
+                      height: "100%",
+                      verticalAlign: "center",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      flexDirection: "column"
+                  }}
+            >
+                <Typography variant={"h4"}>
+                    Lifetime Earnings
+                </Typography>
+                <Typography variant={"h3"}
 
-    </Dialog>)
+                            textAlign={"center"}
+                >
+                    <LinkTokenIcon height={36}
+                                   width={36}
+                                   style={{marginRight: 8}}/>
+                    {ethers.formatUnits(BigInt(totalFeesCollected) - (BigInt(totalFeesCollected) % (10n ** 16n)), "ether")}
+                </Typography>
+            </Card>
+        </Grid>
+    </Grid>)
 }
 
 
@@ -272,10 +210,12 @@ const InputSnippetGenerator: React.FC<{ func: FunctionRegistered, functionManage
     const [callbackFunction, setCallbackFunction] = React.useState("storeFull");
     const [returnRequestId, setReturnRequestId] = React.useState(true);
     const [customizeVisible, setCustomizeVisible] = React.useState(false);
-    const snippetString = generateSnippetString(func, functionManagerAddress, {
+    const [useInterface, setUseInterface] = React.useState(false);
+    const snippetString = generateSnippetString(func, {
         hardcodeParameters,
         callbackFunction,
-        returnRequestId
+        returnRequestId,
+        useInterface
     })
 
     const stackStyle = customizeVisible
@@ -306,7 +246,15 @@ const InputSnippetGenerator: React.FC<{ func: FunctionRegistered, functionManage
                     <Button variant={!returnRequestId ? "contained" : "outlined"}
                             onClick={() => setReturnRequestId(false)}>No</Button>
                 </GridRow>
+                <GridRow label={"Return requestId"}>
+                    <Button variant={returnRequestId ? "contained" : "outlined"}
+                            onClick={() => setReturnRequestId(true)}>Yes</Button>
+                    <Button variant={!returnRequestId ? "contained" : "outlined"}
+                            onClick={() => setReturnRequestId(false)}>No</Button>
+                </GridRow>
             </Grid>}
+
+        <MetricsCards functionId={func.functionId}/>
 
         <Paper sx={{width: "100%"}}>
             <Stack direction={"row"} spacing={1} width={"100%"} sx={{
@@ -424,7 +372,6 @@ export const Buy: React.FC = () => {
                             </Box>}>
                                 <Typography sx={{overflow: "hidden", textOverflow: "ellipsis"}}
                                             variant={"body1"}>{func.functionId}</Typography>
-
                             </Tooltip>
                         </CopyToClipboard>
                     </GridRow>
