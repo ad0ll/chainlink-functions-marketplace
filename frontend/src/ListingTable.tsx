@@ -1,7 +1,8 @@
 //ListingTable.tsx, used  for the function listing on the homepage.
-import React, {useState} from "react";
+import React, {startTransition, useContext, useState} from "react";
 import {
     Box,
+    Button,
     CardMedia,
     CircularProgress,
     Table,
@@ -16,25 +17,18 @@ import {
     Tooltip,
     Typography
 } from "@mui/material";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {toast} from "react-toastify";
 import {Link} from "react-router-dom";
 import {fallbackToJazzicon, jazziconImageString, renderCurrency} from "./utils/util";
 import {generateDefaultSnippetString, SoliditySyntaxHighlighter} from "./Snippets";
 import {DocumentNode, useQuery} from "@apollo/client";
-import {Query} from "./gql/graphql";
-import {
-    blockTimestampToDate,
-    MUMBAI_CHAIN_ID,
-    networkConfig,
-    SEPOLIA_CHAIN_ID,
-    SHORT_POLL_INTERVAL,
-    TypographyWithLinkIcon
-} from "./common";
+import {FunctionRegistered, Query} from "./gql/graphql";
+import {blockTimestampToDate, networkConfig, SHORT_POLL_INTERVAL, TypographyWithLinkIcon} from "./common";
 import {Search as SearchIcon} from "@mui/icons-material";
 import {ethers} from "ethers"
-import {useWeb3React} from "@web3-react/core";
 import {AddressCard} from "./Cards";
+import {FunctionsManagerContext} from "./FunctionsManagerProvider";
+import {TryItNowModal} from "./TryItNowModal";
 
 
 type AvailableListingColumns = "name" | "author" | "category" | "fee" | "created" | "actions";
@@ -52,9 +46,9 @@ const ListingTable: React.FC<{
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [nameDescFilter, setNameDescFilter] = useState("");
-    const [shouldSearchDesc, setShouldSearchDesc] = useState(false);
-    const [sortTerm, setSortTerm] = useState<"name" | "description" | "author A-Z" | "author Z-A" | "fee, lowest first" | "fee, highest first">("name");
-    const {account, chainId} = useWeb3React()
+    const [functionSelected, setFunctionSelected] = useState<FunctionRegistered>();
+    const [tryDialogOpen, setTryDialogOpen] = useState(false);
+    const {chainId} = useContext(FunctionsManagerContext);
     const skip = page * pageSize;
     const {loading, error, data} = useQuery<Query, { first: number, skip: number, searchTerm: string }>(query, {
         variables: {
@@ -80,12 +74,14 @@ const ListingTable: React.FC<{
         return <Typography>Something went wrong, data is undefined</Typography>
     }
 
-    if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
-        return <Typography>Please switch to either Mumbai or Sepolia in Metamask</Typography>
-    }
 
     return (
         <TableContainer>
+            <TryItNowModal
+                func={functionSelected}
+                open={tryDialogOpen}
+                setOpen={setTryDialogOpen}
+            />
             <Box width={"100%"} display={"flex"} justifyContent={"space-between"} alignItems={"center"}>
                 <TextField onChange={(e) => setNameDescFilter(e.target.value)} placeholder={"Search"} inputProps={{
                     startAdornment: <SearchIcon/>
@@ -139,13 +135,22 @@ const ListingTable: React.FC<{
                             <Typography>{blockTimestampToDate(f.blockTimestamp)}</Typography>
                         </TableCell>}
                         {columns.find(f => f === "actions") && <TableCell>
-                            <Tooltip placement={"bottom-start"} title={<Box sx={{minWidth: 450}}>
-                                <Typography variant={"h6"}>Click to copy contract snippet</Typography>
-                                <SoliditySyntaxHighlighter>
-                                    {generateDefaultSnippetString(f, networkConfig[chainId].functionsManager)}
-                                </SoliditySyntaxHighlighter>
-                            </Box>}>
-                                <ContentCopyIcon onClick={notify}/>
+                            <Button variant={"outlined"} sx={{width: "100%"}}
+                                    onClick={() => {
+                                        startTransition(() => {
+                                            setFunctionSelected(f)
+                                            setTryDialogOpen(true)
+                                        })
+                                    }}>Try</Button>
+                            <Tooltip placement={"bottom-start"}
+                                     title={<Box sx={{minWidth: 450}}>
+                                         <Typography variant={"h6"}>Click to copy contract snippet</Typography>
+                                         <SoliditySyntaxHighlighter>
+                                             {generateDefaultSnippetString(f, networkConfig[chainId].functionsManager)}
+                                         </SoliditySyntaxHighlighter>
+                                     </Box>}>
+                                {/*<ContentCopyIcon onClick={notify}/>*/}
+                                <Button variant={"outlined"} onClick={notify}>Snippet</Button>
                             </Tooltip>
                         </TableCell>}
                     </TableRow>)}

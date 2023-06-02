@@ -19,14 +19,21 @@ export enum ExpectedReturnTypes {
     String
 }
 
+export type NetworkConfig = {
+    functionsManager: string,
+    linkToken: string,
+    linkEthPriceFeed: string,
+    functionsOracleProxy: string,
+    functionsBillingRegistryProxy: string,
+    functionsPublicKey: string,
+    getScannerAddressUrl: (address: string) => string,
+    getScannerTxUrl: (address: string) => string,
+}
+
 // This was pulled from the hardhat starter kit's network-config.js file at the repo root
-export const networkConfig = {
-    mainnet: {
-        linkToken: "0x514910771af9ca656af840dff83e8264ecf986ca",
-    },
-    polygon: {
-        linkToken: "0xb0897686c545045afc77cf20ec7a532e3120e0f1",
-    },
+export const networkConfig: {
+    [key: number]: NetworkConfig
+} = {
     [MUMBAI_CHAIN_ID]: {
         functionsManager: "0x3D5b76E593749A3CD8Dc8B1EE9A4e0725dFD36D6",
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
@@ -107,12 +114,16 @@ export const nDaysAgoUTCInSeconds = (n: number) => {
     return now - (n * 24 * 60 * 60)
 }
 
-export const decodeResponse = (response: string, err: string, returnType: number): string => {
-    if (err !== "0x") {
+export const decodeResponse = (response?: string, err?: string, returnType?: number): string => {
+    if (err && err !== "0x") {
         const errorHex = Buffer.from(err.slice(2), "hex").toString()
         return errorHex;
     }
 
+
+    if (!response) {
+        return ""
+    }
     let decodedOutput;
     switch (returnType) {
         case ExpectedReturnTypes.Bytes: //Buffer
@@ -137,9 +148,7 @@ export const decodeResponse = (response: string, err: string, returnType: number
                 "hex"
             ).toString();
     }
-    const decodedOutputLog = `Decoded as a ${returnTypeEnumToString(
-        returnType
-    )}: ${decodedOutput}`;
+
 
     return decodedOutput
 

@@ -12,6 +12,7 @@ import {Sell} from "./Sell";
 import Author from "./Author";
 import {OwnerDashboard} from "./OwnerDashboard";
 import {DevMode} from "./misc";
+import {FunctionsManagerProvider} from "./FunctionsManagerProvider";
 
 
 declare module '@mui/material/styles' {
@@ -92,21 +93,21 @@ function App() {
                 <CssBaseline enableColorScheme/>
                 <DevMode/>
                 <Container>
-
                     <BrowserRouter>
                         <NavBar/>
                         <RequireConnection>
-                            <Routes>
-
-                                <Route path="/" element={<DefaultSuspense><Home/></DefaultSuspense>}/>
-                                <Route path="/buy/:functionId"
-                                       element={<DefaultSuspense><Buy/></DefaultSuspense>}/>
-                                <Route path="/sell" element={<DefaultSuspense><Sell/></DefaultSuspense>}/>
-                                <Route path="/author/:address"
-                                       element={<DefaultSuspense><Author/></DefaultSuspense>}/>
-                                <Route path="/dashboard"
-                                       element={<DefaultSuspense><OwnerDashboard/></DefaultSuspense>}/>
-                            </Routes>
+                            <FunctionsManagerProvider>
+                                <Routes>
+                                    <Route path="/" element={<DefaultSuspense><Home/></DefaultSuspense>}/>
+                                    <Route path="/buy/:functionId"
+                                           element={<DefaultSuspense><Buy/></DefaultSuspense>}/>
+                                    <Route path="/sell" element={<DefaultSuspense><Sell/></DefaultSuspense>}/>
+                                    <Route path="/author/:address"
+                                           element={<DefaultSuspense><Author/></DefaultSuspense>}/>
+                                    <Route path="/dashboard"
+                                           element={<DefaultSuspense><OwnerDashboard/></DefaultSuspense>}/>
+                                </Routes>
+                            </FunctionsManagerProvider>
                         </RequireConnection>
                     </BrowserRouter>
                 </Container>
