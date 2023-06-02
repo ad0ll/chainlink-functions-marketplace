@@ -98,7 +98,7 @@ task(
         owner: user2,
         register: {
           fees: ethers.utils.parseEther("0.02"),
-          functionName: "Geometric Mean Example",
+          functionName: "Geometric Mean",
           desc: "Calculate a geometric mean",
           imageUrl: imageUrls.calculateApy,
           expectedArgs: ["Varying numeric args"],
@@ -180,10 +180,37 @@ task(
       },
       {
         functionId: "",
+        owner: user1,
+        register: {
+          fees: ethers.utils.parseEther("0.01"),
+          functionName: "Coinpaprika Price",
+          desc: "Fetches a given price pair from Coinpaprika",
+          imageUrl: imageUrls.ethLogo,
+          expectedArgs: ["Base", "Quote"],
+          codeLocation: 0,
+          secretsLocation: 0,
+          language: 0,
+          category: ethers.utils.formatBytes32String("Price Feed"),
+          subId: process.env.FUNCTIONS_SUBSCRIPTION_ID,
+          source: fs.readFileSync("./demos/coinpaprika-price.js").toString(),
+          secrets: [],
+          expectedReturnType: 1, //uint256
+        },
+        execute: {
+          args: [
+            ["eth-ethereum", "USD"],
+            ["btc-bitcoin", "USD"],
+            ["btc-bitcoin", "ETH"],
+          ],
+          gasLimit: 500_000,
+        },
+      },
+      {
+        functionId: "",
         owner: user2,
         register: {
           fees: ethers.utils.parseEther("0.06"),
-          functionName: "Coinmarketcap Price 4",
+          functionName: "Coinmarketcap Price",
           desc: "Fetches a given price pair from Coinmarketcap",
           imageUrl: imageUrls.ethLogo,
           expectedArgs: ["Base", "Quote"],
@@ -238,6 +265,29 @@ task(
             ["1027", "ethereum", "eth-ethereum", "eth"],
             ["btc", "btc", "btc", "btc"],
           ],
+          gasLimit: 500_000,
+        },
+      },
+      {
+        functionId: "",
+        owner: user4,
+        register: {
+          fees: ethers.utils.parseEther("0.05"),
+          functionName: "Weather Forecast",
+          desc: "Fetches short weather forecast for latitude and longitude",
+          imageUrl: imageUrls.ethLogo,
+          expectedArgs: ["latitude", "longitude"],
+          codeLocation: 0,
+          secretsLocation: 0,
+          language: 0,
+          category: ethers.utils.formatBytes32String("Weather Data"),
+          subId: process.env.FUNCTIONS_SUBSCRIPTION_ID,
+          source: fs.readFileSync("./demos/weather-data.js").toString(),
+          secrets: [],
+          expectedReturnType: 3, //string
+        },
+        execute: {
+          args: [["39.7456", "-97.0892"]],
           gasLimit: 500_000,
         },
       },
