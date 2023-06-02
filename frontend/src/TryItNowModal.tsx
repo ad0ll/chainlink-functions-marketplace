@@ -1,13 +1,11 @@
-import React, {ReactNode, startTransition, useEffect, useState} from "react";
-import {FunctionRegistered, Query} from "./gql/graphql";
-import {decodeResponse, MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
-import {JsonRpcProvider} from "@ethersproject/providers";
+import React, {ReactNode, startTransition, useContext, useEffect, useState} from "react";
+import {FunctionRegistered} from "./gql/graphql";
+import {decodeResponse} from "./common";
 import {useContract} from "./contractHooks";
-import FunctionsManagerJson from "./generated/abi/FunctionsManager.json";
 import {FunctionsManager, LinkTokenInterface} from "./generated/contract-types";
 import LinkTokenJson from "./generated/abi/LinkTokenInterface.json";
 import {useFieldArray, useForm} from "react-hook-form";
-import {gql, useQuery} from "@apollo/client";
+import {gql} from "@apollo/client";
 import {toast} from "react-toastify";
 import {AbiCoder, keccak256, parseEther, toUtf8Bytes} from "ethers";
 import {
@@ -24,6 +22,7 @@ import {
     Typography
 } from "@mui/material";
 import {splitArgStrings} from "./Snippets";
+import {FunctionsManagerContext} from "./FunctionsManagerProvider";
 
 //TODO low pri, add caller
 const TRIAL_CALL_COMPLETE_QUERY = gql`
@@ -44,99 +43,102 @@ type FormValues = {
 }
 
 export const TryItNowModal: React.FC<{
-    func: FunctionRegistered,
-    chainId: typeof MUMBAI_CHAIN_ID | typeof SEPOLIA_CHAIN_ID
-    provider?: JsonRpcProvider,
-    account?: string,
+    func?: FunctionRegistered,
     open: boolean,
     setOpen: React.Dispatch<React.SetStateAction<boolean>>
-}> = ({func, chainId, provider, account, open, setOpen}) => {
+}> = ({func, open, setOpen}) => {
+    const {networkConfig, account, provider, functionsManagerContract} = useContext(FunctionsManagerContext);
     const [args, setArgs] = useState<string[]>([]);
     const [requestId, setRequestId] = useState<string>("");
     const [errorMsg, setErrorMsg] = useState<ReactNode>(<div/>);
-    const functionManagerContract = useContract(networkConfig[chainId].functionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager
-    const linkTokenContract = useContract(networkConfig[chainId].linkToken, LinkTokenJson.abi) as unknown as LinkTokenInterface
+    const linkTokenContract = useContract(networkConfig.linkToken, LinkTokenJson.abi) as unknown as LinkTokenInterface
     const [waitingForResponse, setWaitingForResponse] = useState(false);
+    const [functionResponse, setFunctionResponse] = useState<FunctionsManager.FunctionResponseStruct>();
     const {register, handleSubmit, getValues, setValue, watch, formState, control} = useForm<FormValues>();
     const {fields, insert, remove} = useFieldArray({
         name: "args", // Specify the name of the array field
         control,
     });
-    const {
-        loading, data, error
-        , startPolling, stopPolling,
-    } = useQuery<Query>(TRIAL_CALL_COMPLETE_QUERY, {
-        variables: {
-            requestId: requestId
-        },
-        skip: !requestId,
-    })
-    console.log(loading, data, error)
-    const onSubmit = handleSubmit(async (data) => {
-        if (!account) {
-            toast.error("You must be connected to Metamask to try out a function");
-            return
-        }
 
+    const onSubmit = handleSubmit(async (data) => {
+        if (!func) return
         setRequestId("")
-        let allowance = await linkTokenContract.allowance(account, networkConfig[chainId].functionsManager)
+        let allowance = await linkTokenContract.allowance(account, networkConfig.functionsManager)
         if (allowance < parseEther("1")) {
             toast.info("Your account is not authorized to transfer LINK to the FunctionsManager. Please authorize this transaction to approve LINK transfers.")
-            let approveTx = await linkTokenContract.approve(networkConfig[chainId].functionsManager, parseEther("1"))
-            let approveReceipt = await provider?.waitForTransaction(approveTx.hash, 1)
-            if (approveReceipt?.status !== 1) {
-                toast.error("Failed to approve LINK transfers, please try again")
+            try {
+
+
+                let approveTx = await linkTokenContract.approve(networkConfig.functionsManager, parseEther("1"))
+                let approveReceipt = await provider?.waitForTransaction(approveTx.hash, 1)
+                if (approveReceipt?.status !== 1) {
+                    toast.error("Failed to approve LINK transfers, please try again")
+                    return
+                }
+                toast.success("Successfully approved LINK transfers")
+            } catch (e: any) {
+                console.log("encountered error running approve", e)
+            }
+        }
+
+        try {
+            const execTx = await functionsManagerContract.executeRequest(func.functionId, args, {gasLimit: 1000000});
+            setWaitingForResponse(true)
+
+            const execReceipt = await provider?.waitForTransaction(execTx.hash, 1);
+            if (execReceipt?.status !== 1) {
+                setErrorMsg(<Typography variant={"body1"} color={"error"}>Transaction failed,
+                    <a href={`${networkConfig.getScannerTxUrl(execTx.hash)}`} target="_blank">
+                        View transaction in scanner for details...
+                    </a></Typography>)
+            }
+
+            const sig = keccak256(toUtf8Bytes("FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96)"))
+            console.log("execReceipt", execReceipt)
+
+            const reqIdLoc = execReceipt?.logs?.find((e) => e.topics[0] === sig)
+            if (!reqIdLoc) {
+                toast.error("Failed to get requestId from transaction logs")
                 return
             }
-            toast.success("Successfully approved LINK transfers")
+
+            console.log("reqIdLoc", reqIdLoc)
+            const requestId = await AbiCoder.defaultAbiCoder().decode(["bytes32"], reqIdLoc.topics[2])
+            console.log("requestId", requestId)
+
+            startTransition(() => {
+                setRequestId(requestId[0])
+                setErrorMsg("")
+                setWaitingForResponse(true)
+            })
+        } catch (e: any) {
+            console.log("encountered error running executeRequest", e)
         }
-
-        if (!functionManagerContract) return
-        const execTx = await functionManagerContract.executeRequest(func.functionId, args, {gasLimit: 1000000});
-        setWaitingForResponse(true)
-
-        const execReceipt = await provider?.waitForTransaction(execTx.hash, 1);
-        if (execReceipt?.status !== 1) {
-            setErrorMsg(<Typography variant={"body1"} color={"error"}>Transaction failed,
-                <a href={`${networkConfig[chainId].getScannerTxUrl(execTx.hash)}`} target="_blank">
-                    View transaction in scanner for details...
-                </a></Typography>)
-        }
-        const sig = keccak256(toUtf8Bytes("FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96)"))
-        // const sig = keccak256(toUtf8Bytes("executeRequest(bytes32,string[] calldata)"))
-        console.log("execReceipt", execReceipt)
-        console.log("sig", sig)
-
-        const reqIdLoc = execReceipt?.logs?.find((e) => e.topics[0] === sig)
-        if (!reqIdLoc) {
-            toast.error("Failed to get requestId from transaction logs")
-            return
-        }
-
-        const requestId = await AbiCoder.defaultAbiCoder().decode(["bytes32"], reqIdLoc.topics[2])
-
-        startTransition(() => {
-            setRequestId(requestId[0])
-            setErrorMsg("")
-            setWaitingForResponse(true)
-            startPolling(500)
-        })
     })
 
     useEffect(() => {
-        if (data?.functionCallCompleteds && data.functionCallCompleteds.length > 0) {
-            startTransition(() => {
-                setWaitingForResponse(false)
-                stopPolling()
-            })
+        console.log("useEffect requestId", requestId
+            , "waitingForResponse", waitingForResponse)
+        if (!waitingForResponse || !requestId) return
+        const fetchData = async () => {
+            // if (functionResponse && (functionResponse.err || functionResponse.response)) return //Stop polling when confirmed
+            const outcome = await functionsManagerContract.getFunctionResponse(requestId)
+            console.log("outcome", outcome)
+            if (outcome.err || outcome.response) {
+                startTransition(() => {
+                    setFunctionResponse(outcome)
+                    setWaitingForResponse(false)
+                })
+            }
         }
-    }, [data])
+        fetchData()
+        const interval = setInterval(fetchData, 500);
+        return () => {
+            clearInterval(interval);
+        };
+    }, [requestId, waitingForResponse]);
 
-    const response: string = data?.functionCallCompleteds?.[0]?.response;
-    const err: string = data?.functionCallCompleteds?.[0]?.err;
-
-    console.log("data", data);
-
+    if (!func) return <div>Function must be selected</div>
     return (<Dialog open={open} onClose={() => setOpen(false)} sx={{padding: 2}}>
         <form onSubmit={onSubmit} style={{padding: 16}}>
 
@@ -167,9 +169,9 @@ export const TryItNowModal: React.FC<{
                         <Typography variant={"h5"}> Waiting for response...</Typography>
                     </Box>
                 }
-                {data?.functionCallCompleteds && data?.functionCallCompleteds?.length > 0
+                {functionResponse?.response || functionResponse?.err
                     ?
-                    <Typography>Response: {decodeResponse(response, err, func.metadata_expectedReturnType)}</Typography>
+                    <Typography>Response: {decodeResponse(functionResponse?.response.toString() || "", functionResponse?.err.toString() || "", func.metadata_expectedReturnType)}</Typography>
                     : <div/>
                 }
                 {errorMsg}

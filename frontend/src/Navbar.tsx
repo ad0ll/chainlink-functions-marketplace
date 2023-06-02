@@ -1,5 +1,5 @@
 import {AppBar, Button, Fab, Toolbar, Tooltip} from "@mui/material";
-import Logo from "./assets/icons/logo.svg";
+import Logo from "./assets/icons/logo-with-text.svg";
 import React, {useEffect} from "react";
 import {useWeb3React} from "@web3-react/core";
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';

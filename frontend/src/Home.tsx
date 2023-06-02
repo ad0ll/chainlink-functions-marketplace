@@ -32,6 +32,7 @@ const LISTING_QUERY = gql`
             functionId
             owner
             fee
+            metadata_expectedArgs
             metadata_name
             metadata_desc
             metadata_imageUrl
@@ -52,6 +53,7 @@ const RECENTLY_ADDED_QUERY = gql`
             id
             functionId
             owner
+            metadata_expectedArgs
             metadata_name
             metadata_desc
             metadata_imageUrl
