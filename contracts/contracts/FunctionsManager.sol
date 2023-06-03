@@ -39,6 +39,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     uint32 public maxGasLimit = 300_000; //Leave this at 300k, see service limits doc
 
     // TODO Support authorMetadata
+
     enum ReturnTypes {
         Bytes,
         Uint256,
@@ -93,16 +94,11 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         string[] expectedArgs;
     }
 
-    // struct FeePool{
-    //     uint96 subscriptionPool;    // There are only 1e9*1e18 = 1e27 juels in existence, uint96=(2^96 ~ 7e28)
-    //     uint80 unlockedProfitPool; // This is (2^80-1)/10^18, or about 1.2mil link. More than enough.
-    //     uint80 lockedProfitPool; // See ^. Using uint80 to fit everything in the block.
-    // }
-
     struct FunctionResponse {
         bytes32 functionId;
         address caller;
         bytes32 callbackFunction;
+        string[] args;
         bytes response;
         bytes err;
     }
@@ -125,7 +121,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         address owner,
         bytes32 callbackFunction,
         uint96 baseFee,
-        uint96 fee
+        uint96 fee,
+        string[] args
     );
 
     event FunctionCallCompleted(
@@ -240,8 +237,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         uint64 subId = BILLING_REGISTRY.createSubscription();
 
         console.log("created subscription with id %d", subId);
-        console.log("adding %s as consumer", address(this));
+
         // Add FunctionsManager as a consumer of the subscription
+        console.log("adding %s as consumer", address(this)); //TODO do we intend to set msg.sender as a consumer here?
         BILLING_REGISTRY.addConsumer(subId, address(this));
 
         // Maintaining subscription ownership internally to allow ownership transfer later
@@ -305,16 +303,19 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
         console.log("reserved subscription fee %d", subscriptionBalances[subId]);
         subscriptionBalances[subId] += baseFee;
-        functionManagerProfitPool += functionManagerCut;
-        chainlinkFunction.lockedProfitPool += chainlinkFunction.fee - functionManagerCut;
+
+        if (msg.sender != chainlinkFunction.owner) {
+            console.log("caller is not the owner, collecting fees");
+            functionManagerProfitPool += functionManagerCut;
+            chainlinkFunction.lockedProfitPool += chainlinkFunction.fee - functionManagerCut;
+        }
+
         chainlinkFunction.functionsCalledCount++;
         functionsCalledCount++;
 
         functionExecuteMetadatas[functionId] = chainlinkFunction;
 
         console.log("sending functions request");
-        // bytes32 assignedReqID =
-        // keccak256(abi.encodePacked(msg.sender, chainlinkFunction.subId, maxGasLimit, block.timestamp));
         bytes32 assignedReqID = sendRequest(functionRequest, chainlinkFunction.subId, maxGasLimit);
         require(functionResponses[assignedReqID].functionId == bytes32(0), "Request ID already exists");
 
@@ -322,6 +323,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         FunctionResponse memory functionResponse;
         functionResponse.functionId = functionId;
         functionResponse.caller = msg.sender;
+        functionResponse.args = args;
         functionResponses[assignedReqID] = functionResponse;
 
         console.log("emitting FunctionCalled event");
@@ -332,7 +334,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             owner: chainlinkFunction.owner,
             callbackFunction: bytes32(""),
             baseFee: baseFee,
-            fee: chainlinkFunction.fee
+            fee: chainlinkFunction.fee,
+            args: args
         });
 
         return assignedReqID;
@@ -366,11 +369,13 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         FunctionExecuteMetadata memory functionMetadata = functionExecuteMetadatas[functionResponse.functionId];
 
         console.log("Unlocking fees");
-        uint96 unlockAmount = (functionMetadata.fee * (100 - feeManagerCut)) / 100;
-        functionMetadata.lockedProfitPool -= unlockAmount;
-        functionMetadata.unlockedProfitPool += unlockAmount;
-        functionMetadata.totalFeesCollected += unlockAmount;
-        totalFeesCollected += unlockAmount;
+        if (functionExecuteMetadatas[functionResponses[requestId].functionId].owner != functionResponse.caller) {
+            uint96 unlockAmount = (functionMetadata.fee * (100 - feeManagerCut)) / 100;
+            functionMetadata.lockedProfitPool -= unlockAmount;
+            functionMetadata.unlockedProfitPool += unlockAmount;
+            functionMetadata.totalFeesCollected += unlockAmount;
+            totalFeesCollected += unlockAmount;
+        }
 
         // Only err or res will be set, never both, so consider set err as failure
         if (err.length == 0) {
@@ -408,7 +413,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     }
 
     // Refills the subscription with all funds we have reserved
-    function refillSubscription(uint64 _subscriptionId) public {
+    // This function is typically called when we check the sub balance in fulfillRequest, so its private
+    function refillSubscription(uint64 _subscriptionId) private {
         //TODO need to find some way to reserve the expense for this transfer out of owner fees
         // require(LINK.allowance(msg.sender, address(this)), "caller is not approved to spend LINK"); //Only the keeper should be authorized for this
         // TODO, are there any checks we should have here? Like, should we check that the caller is authorized?
@@ -421,6 +427,30 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         subscriptionBalances[_subscriptionId] = 0;
         LINK.transferAndCall(address(BILLING_REGISTRY), amountToTransfer, abi.encode(_subscriptionId));
     }
+    // If the owner wants to refill their subscription on demand, they can call this function
+
+    function refillSubscriptionAsOwner(uint64 _subscriptionId) public {
+        console.log("using existing subscription %d, checking if authorized", _subscriptionId);
+        (, address owner, address[] memory consumers) = BILLING_REGISTRY.getSubscription(_subscriptionId);
+        require(owner == msg.sender, "Only the owner of the subscription can refill it");
+        // If we decide to have shift to letting any authorized consumer refill, comment line above and uncomment below
+        // bool callerIsAuthorized = owner == msg.sender;
+        // if (!callerIsAuthorized) {
+        //     //iterate over consumers to see if any of them are address(this)
+        //     for (uint256 i = 0; i < consumers.length; i++) {
+        //         if (consumers[i] == msg.sender) {
+        //             callerIsAuthorized = true;
+        //             break
+        //         }
+        //     }
+        // }
+        // require(callerIsAuthorized, "Only the owner or an authorized consumer of the subscription can refill it");
+        // require(
+        //     functionsManagerIsAuthorized && callerIsAuthorized,
+        //     "FunctionsManager and/or caller are not authorized consumers of the subscription"
+        // );
+        refillSubscription(_subscriptionId);
+    }
 
     function withdrawFunctionsManagerProfitToOwner() external onlyOwner {
         console.log("Withdrawing all fees to FunctionsManager owner %s", owner());
@@ -431,8 +461,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
     function withdrawFunctionProfitToAuthor(bytes32 functionId) external {
         require(
-            msg.sender == owner() || msg.sender == functionExecuteMetadatas[functionId].owner,
-            "Must be FunctionsManager owner or function owner to withdraw profit to function owner"
+            msg.sender == address(this) || msg.sender == owner()
+                || msg.sender == functionExecuteMetadatas[functionId].owner,
+            "Must be FunctionsManager, FunctionsManager owner, or function owner to withdraw profit to function owner"
         );
         uint96 amountToTransfer = functionExecuteMetadatas[functionId].unlockedProfitPool;
         functionExecuteMetadatas[functionId].unlockedProfitPool = 0;
@@ -473,25 +504,34 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         return functionExecuteMetadatas[_functionId];
     }
 
+    function getAllFunctionMetadata(bytes32 _functionId)
+        external
+        view
+        returns (FunctionMetadata memory, FunctionExecuteMetadata memory)
+    {
+        console.log("getAllFunctionMetadata");
+        return (functionMetadatas[_functionId], functionExecuteMetadatas[_functionId]);
+    }
+
     function getFunctionResponse(bytes32 _requestId) external view returns (FunctionResponse memory) {
         console.log("getFunctionResponse");
         return functionResponses[_requestId];
     }
 
+    // Shortcut function, used so we don't have to fetch the return type in the app.
+    function getFunctionResponseWithReturnType(bytes32 _requestId)
+        external
+        view
+        returns (FunctionResponse memory, ReturnTypes)
+    {
+        console.log("getFunctionResponseWithReturn");
+        FunctionResponse memory res = functionResponses[_requestId];
+        FunctionMetadata memory meta = functionMetadatas[res.functionId];
+        return (res, meta.expectedReturnType);
+    }
+
     function getSubscriptionBalance(uint64 _subscriptionId) external view returns (uint256) {
         console.log("getSubscriptionBalance");
         return subscriptionBalances[_subscriptionId];
-    }
-
-    function calculateFunctionId(string calldata functionName, address owner) external pure returns (bytes32) {
-        return keccak256(abi.encodePacked(functionName, owner));
-    }
-
-    function calculateFunctionIdFromRequest(FunctionsRegisterRequest memory request, address owner)
-        external
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encodePacked(request.functionName, owner));
     }
 }
