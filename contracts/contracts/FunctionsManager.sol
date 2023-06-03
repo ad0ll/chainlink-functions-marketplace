@@ -372,6 +372,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         FunctionExecuteMetadata memory functionMetadata = functionExecuteMetadatas[functionResponse.functionId];
 
         if (functionExecuteMetadatas[functionResponses[requestId].functionId].owner != functionResponse.caller) {
+            if (functionExecuteMetadatas[functionResponses[requestId].functionId].owner != functionResponse.caller) {
             uint96 unlockAmount = (functionMetadata.fee * (100 - feeManagerCut)) / 100;
             functionMetadata.lockedProfitPool -= unlockAmount;
             functionMetadata.unlockedProfitPool += unlockAmount;
@@ -464,7 +465,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     function withdrawFunctionProfitToAuthor(bytes32 functionId) external {
         require(
             msg.sender == address(this) || msg.sender == owner()
-            || msg.sender == functionExecuteMetadatas[functionId].owner,
+                || msg.sender == functionExecuteMetadatas[functionId].owner,
             "Must be FunctionsManager, FunctionsManager owner, or function owner to withdraw profit to function owner"
         );
         uint96 amountToTransfer = functionExecuteMetadatas[functionId].unlockedProfitPool;
