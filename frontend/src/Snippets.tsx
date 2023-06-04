@@ -4,7 +4,13 @@ import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";
 import {vscDarkPlus} from "react-syntax-highlighter/dist/esm/styles/prism";
 import {FunctionRegistered} from "./gql/graphql";
 import {useWeb3React} from "@web3-react/core";
-import {MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
+import {
+    CombinedFunctionMetadata,
+    functionRegisteredToCombinedMetadata,
+    MUMBAI_CHAIN_ID,
+    networkConfig,
+    SEPOLIA_CHAIN_ID
+} from "./common";
 
 export type FunctionArg = {
     name: string
@@ -86,7 +92,7 @@ export const splitArgString = (argString: string): FunctionArg => {
     }
 }
 
-export const generateSnippetString = (func: FunctionRegistered, opts: GenerateSnippetOptions) => {
+export const generateSnippetString = (func: CombinedFunctionMetadata, opts: GenerateSnippetOptions) => {
     // TODO hardcoded sendRequest makes me really nervous. Can we replace this by scraping the ABI once the FunctionManager contract is done?
 
     //TODO fix hardcoded network
@@ -94,8 +100,8 @@ export const generateSnippetString = (func: FunctionRegistered, opts: GenerateSn
     if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
         return "Invalid chain"
     }
-    const parameterString = opts.hardcodeParameters && func.metadata_expectedArgs?.length > 0 ? "" : generateParameterString(splitArgStrings(func.metadata_expectedArgs), "paramWithType")
-    const sendRequestArgs: string = opts.hardcodeParameters ? generateParameterString(splitArgStrings(func.metadata_expectedArgs), "placeholders") : generateParameterString(splitArgStrings(func.metadata_expectedArgs), "paramNameOnly")
+    const parameterString = opts.hardcodeParameters && func.expectedArgs?.length > 0 ? "" : generateParameterString(splitArgStrings(func.expectedArgs), "paramWithType")
+    const sendRequestArgs: string = opts.hardcodeParameters ? generateParameterString(splitArgStrings(func.expectedArgs), "placeholders") : generateParameterString(splitArgStrings(func.expectedArgs), "paramNameOnly")
 
     /*
     useCall:
@@ -110,7 +116,7 @@ export const generateSnippetString = (func: FunctionRegistered, opts: GenerateSn
 }
 
 export const generateDefaultSnippetString = (func: FunctionRegistered, functionManagerAddress: string) => {
-    return generateSnippetString(func, {
+    return generateSnippetString(functionRegisteredToCombinedMetadata(func), {
         hardcodeParameters: true,
         callbackFunction: "storeFull",
         returnRequestId: true,

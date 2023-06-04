@@ -1,6 +1,5 @@
 import React, {ReactNode, startTransition, useContext, useEffect, useState} from "react";
-import {FunctionRegistered} from "./gql/graphql";
-import {decodeResponse} from "./common";
+import {CombinedFunctionMetadata, decodeResponse} from "./common";
 import {useContract} from "./contractHooks";
 import {FunctionsManager, LinkTokenInterface} from "./generated/contract-types";
 import LinkTokenJson from "./generated/abi/LinkTokenInterface.json";
@@ -43,7 +42,7 @@ type FormValues = {
 }
 
 export const TryItNowModal: React.FC<{
-    func?: FunctionRegistered,
+    func?: CombinedFunctionMetadata,
     open: boolean,
     setOpen: React.Dispatch<React.SetStateAction<boolean>>
 }> = ({func, open, setOpen}) => {
@@ -54,6 +53,7 @@ export const TryItNowModal: React.FC<{
     const linkTokenContract = useContract(networkConfig.linkToken, LinkTokenJson.abi) as unknown as LinkTokenInterface
     const [waitingForResponse, setWaitingForResponse] = useState(false);
     const [functionResponse, setFunctionResponse] = useState<FunctionsManager.FunctionResponseStruct>();
+    const [statusText, setStatusText] = useState<string>("");
     const {register, handleSubmit, getValues, setValue, watch, formState, control} = useForm<FormValues>();
     const {fields, insert, remove} = useFieldArray({
         name: "args", // Specify the name of the array field
@@ -82,9 +82,10 @@ export const TryItNowModal: React.FC<{
         }
 
         try {
+            setStatusText("Executing function...")
             const execTx = await functionsManagerContract.executeRequest(func.functionId, args, {gasLimit: 1000000});
             setWaitingForResponse(true)
-
+            setStatusText("Waiting for transaction to be mined...")
             const execReceipt = await provider?.waitForTransaction(execTx.hash, 1);
             if (execReceipt?.status !== 1) {
                 setErrorMsg(<Typography variant={"body1"} color={"error"}>Transaction failed,
@@ -92,12 +93,13 @@ export const TryItNowModal: React.FC<{
                         View transaction in scanner for details...
                     </a></Typography>)
             }
-
-            const sig = keccak256(toUtf8Bytes("FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96)"))
             console.log("execReceipt", execReceipt)
-
+            const sig = keccak256(toUtf8Bytes("FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96,string[])"))
+            setStatusText("Scraping logs for request id...")
             const reqIdLoc = execReceipt?.logs?.find((e) => e.topics[0] === sig)
             if (!reqIdLoc) {
+                setStatusText("")
+                setWaitingForResponse(false)
                 toast.error("Failed to get requestId from transaction logs")
                 return
             }
@@ -106,9 +108,11 @@ export const TryItNowModal: React.FC<{
             const requestId = await AbiCoder.defaultAbiCoder().decode(["bytes32"], reqIdLoc.topics[2])
             console.log("requestId", requestId)
 
+            toast.success("Successfully sent request, waiting for response...")
             startTransition(() => {
                 setRequestId(requestId[0])
                 setErrorMsg("")
+                setStatusText("Waiting for response...")
                 setWaitingForResponse(true)
             })
         } catch (e: any) {
@@ -121,11 +125,12 @@ export const TryItNowModal: React.FC<{
             , "waitingForResponse", waitingForResponse)
         if (!waitingForResponse || !requestId) return
         const fetchData = async () => {
-            // if (functionResponse && (functionResponse.err || functionResponse.response)) return //Stop polling when confirmed
+            if (functionResponse && (functionResponse.err || functionResponse.response)) return //Stop polling when confirmed
             const outcome = await functionsManagerContract.getFunctionResponse(requestId)
             console.log("outcome", outcome)
             if (outcome.err || outcome.response) {
                 startTransition(() => {
+
                     setFunctionResponse(outcome)
                     setWaitingForResponse(false)
                 })
@@ -138,18 +143,22 @@ export const TryItNowModal: React.FC<{
         };
     }, [requestId, waitingForResponse]);
 
-    if (!func) return <div>Function must be selected</div>
+
+    if (!func) return <div/>
+    console.log(
+        "EXPECTED RETURN TYPE", func.expectedReturnType
+    )
+    console.log(functionResponse)
     return (<Dialog open={open} onClose={() => setOpen(false)} sx={{padding: 2}}>
         <form onSubmit={onSubmit} style={{padding: 16}}>
-
-            <DialogTitle>Try {func.metadata_name}</DialogTitle>
+            <DialogTitle>Try {func.name}</DialogTitle>
             <DialogContentText>
                 Please provide the following arguments
             </DialogContentText>
 
             <DialogContent>
                 <Stack spacing={2}>
-                    {splitArgStrings(func.metadata_expectedArgs)?.map((arg, i) => {
+                    {splitArgStrings(func.expectedArgs)?.map((arg, i) => {
                         return <TextField
                             key={i}
                             label={arg.type ? `${arg.name} (${arg.type})` : arg.name}
@@ -166,12 +175,11 @@ export const TryItNowModal: React.FC<{
                 {waitingForResponse &&
                     <Box display={"flex"} justifyContent={"center"}>
                         <CircularProgress/>
-                        <Typography variant={"h5"}> Waiting for response...</Typography>
-                    </Box>
-                }
+                        <Typography variant={"h5"}>{statusText}</Typography>
+                    </Box>}
                 {functionResponse?.response || functionResponse?.err
                     ?
-                    <Typography>Response: {decodeResponse(functionResponse?.response.toString() || "", functionResponse?.err.toString() || "", func.metadata_expectedReturnType)}</Typography>
+                    <Typography>Response: {decodeResponse(functionResponse?.response.toString() || "", functionResponse?.err.toString() || "", 0)}</Typography>
                     : <div/>
                 }
                 {errorMsg}

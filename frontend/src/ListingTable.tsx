@@ -4,14 +4,12 @@ import {
     Box,
     Button,
     CardMedia,
-    CircularProgress,
+    Stack,
     Table,
     TableBody,
     TableCell,
     TableContainer,
-    TableFooter,
     TableHead,
-    TablePagination,
     TableRow,
     TextField,
     Tooltip,
@@ -23,7 +21,13 @@ import {fallbackToJazzicon, jazziconImageString, renderCurrency} from "./utils/u
 import {generateDefaultSnippetString, SoliditySyntaxHighlighter} from "./Snippets";
 import {DocumentNode, useQuery} from "@apollo/client";
 import {FunctionRegistered, Query} from "./gql/graphql";
-import {blockTimestampToDate, networkConfig, SHORT_POLL_INTERVAL, TypographyWithLinkIcon} from "./common";
+import {
+    blockTimestampToDate,
+    functionRegisteredToCombinedMetadata,
+    networkConfig,
+    SHORT_POLL_INTERVAL,
+    TypographyWithLinkIcon
+} from "./common";
 import {Search as SearchIcon} from "@mui/icons-material";
 import {ethers} from "ethers"
 import {AddressCard} from "./Cards";
@@ -44,7 +48,8 @@ const ListingTable: React.FC<{
           columns = ["name", "author", "category", "fee", "created", "actions"]
       }) => {
     const [page, setPage] = useState(0);
-    const [pageSize, setPageSize] = useState(10);
+    const [pageSize, setPageSize] = useState(500);
+    const [stageNameDescFilter, setStageNameDescFilter] = useState("");
     const [nameDescFilter, setNameDescFilter] = useState("");
     const [functionSelected, setFunctionSelected] = useState<FunctionRegistered>();
     const [tryDialogOpen, setTryDialogOpen] = useState(false);
@@ -52,10 +57,20 @@ const ListingTable: React.FC<{
     const skip = page * pageSize;
     const {loading, error, data} = useQuery<Query, { first: number, skip: number, searchTerm: string }>(query, {
         variables: {
+            ...args,
             skip,
             first: pageSize,
             searchTerm: nameDescFilter,
+        },
+        pollInterval,
+    })
+
+    console.log({
+        variables: {
             ...args,
+            skip,
+            first: pageSize,
+            searchTerm: nameDescFilter,
         },
         pollInterval,
     })
@@ -63,9 +78,9 @@ const ListingTable: React.FC<{
     const notify = () => toast.success("Copied snippet to keyboard");
 
     // TODO loading is ugly
-    if (loading) {
-        return <Typography><CircularProgress/>Loading...</Typography>
-    }
+    // if (loading) {
+    //     return <Typography><CircularProgress/>Loading...</Typography>
+    // }
     if (error) {
         console.log(error)
         return <Typography>Something went wrong</Typography>
@@ -78,15 +93,26 @@ const ListingTable: React.FC<{
     return (
         <TableContainer>
             <TryItNowModal
-                func={functionSelected}
+                func={functionRegisteredToCombinedMetadata(functionSelected)}
                 open={tryDialogOpen}
                 setOpen={setTryDialogOpen}
             />
-            <Box width={"100%"} display={"flex"} justifyContent={"space-between"} alignItems={"center"}>
-                <TextField onChange={(e) => setNameDescFilter(e.target.value)} placeholder={"Search"} inputProps={{
-                    startAdornment: <SearchIcon/>
-                }}></TextField>
-            </Box>
+            <Stack direction={"row"} spacing={1}>
+                <TextField onChange={(e) => setStageNameDescFilter(e.target.value)} placeholder={"Search"}
+                           onKeyUp={(e) => {
+                               if (e.key === 'Enter') {
+                                   setNameDescFilter(stageNameDescFilter)
+                               }
+                           }}
+                           sx={{minWidth: 300, maxWidth: 400}}
+                           value={stageNameDescFilter} inputProps={{}}/>
+                <Button
+                    startIcon={<SearchIcon/>}
+                    variant={"contained"}
+                    onClick={() => {
+                        setNameDescFilter(stageNameDescFilter)
+                    }}>Search</Button>
+            </Stack>
             <Table>
                 <TableHead>
                     <TableRow>
@@ -108,7 +134,7 @@ const ListingTable: React.FC<{
                     {data.functionRegistereds.map((f, i) => <TableRow key={i}>
                         {columns.find(f => f === "name") && <TableCell>
                             {/*TODO Fix overflow*/}
-                            <Link to={`/buy/${f.id}`} style={{display: "flex", alignItems: "center"}}>
+                            <Link to={`/buy/${f.functionId}`} style={{display: "flex", alignItems: "center"}}>
                                 <CardMedia
                                     component={"img"}
                                     sx={{width: 32, marginRight: 1}}
@@ -155,25 +181,25 @@ const ListingTable: React.FC<{
                         </TableCell>}
                     </TableRow>)}
                 </TableBody>
-                <TableFooter>
-                    <TableRow>
-                        <TablePagination
-                            rowsPerPageOptions={[5, 10, 25]}
-                            colSpan={3}
-                            count={-1}
-                            rowsPerPage={pageSize}
-                            page={page}
-                            SelectProps={{
-                                inputProps: {
-                                    'aria-label': 'rows per page',
-                                },
-                                native: true,
-                            }}
-                            onPageChange={(e, newPage) => setPage(newPage)}
-                            onRowsPerPageChange={(e) => setPageSize(parseInt(e.target.value))}
-                        />
-                    </TableRow>
-                </TableFooter>
+                {/*<TableFooter>*/}
+                {/*    <TableRow>*/}
+                {/*        <TablePagination*/}
+                {/*            rowsPerPageOptions={[5, 10, 25]}*/}
+                {/*            colSpan={3}*/}
+                {/*            count={-1}*/}
+                {/*            rowsPerPage={pageSize}*/}
+                {/*            page={page}*/}
+                {/*            SelectProps={{*/}
+                {/*                inputProps: {*/}
+                {/*                    'aria-label': 'rows per page',*/}
+                {/*                },*/}
+                {/*                native: true,*/}
+                {/*            }}*/}
+                {/*            onPageChange={(e, newPage) => setPage(newPage)}*/}
+                {/*            onRowsPerPageChange={(e) => setPageSize(parseInt(e.target.value))}*/}
+                {/*        />*/}
+                {/*    </TableRow>*/}
+                {/*</TableFooter>*/}
             </Table>
         </TableContainer>
     )

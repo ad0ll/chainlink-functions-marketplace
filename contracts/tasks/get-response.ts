@@ -11,10 +11,10 @@ const enumToString = (num: number) => {
     case 3:
       return "string";
     default:
-      throw new Error("Unknown buffer type", num);
+      throw new Error("Unknown buffer type: " + num);
   }
 };
-const signedInt256toBigInt = (hex) => {
+const signedInt256toBigInt = (hex: string) => {
   const binary = BigInt(hex).toString(2).padStart(256, "0");
   // if the first bit is 0, number is positive
   if (binary[0] === "0") {

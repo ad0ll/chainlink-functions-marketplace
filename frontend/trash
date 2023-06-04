@@ -13,3 +13,36 @@
             y: getRandomInt(0, 100)
         })
     })
+
+
+
+                        {/*<TableContainer>*/}
+                        {/*    <Table*/}
+                        {/*        sx={{width: "auto"}}>*/}
+                        {/*        <TableHead>*/}
+                        {/*            <TableRow>*/}
+                        {/*                <TableCell>Name</TableCell>*/}
+                        {/*                <TableCell>Type</TableCell>*/}
+                        {/*                <TableCell>Desc</TableCell>*/}
+                        {/*            </TableRow>*/}
+                        {/*        </TableHead>*/}
+                        {/*        <TableRow>*/}
+                        {/*        </TableRow>*/}
+                        {/*        <TableBody>*/}
+                        {/*            {splitArgStrings(func.metadata_expectedArgs).map((arg, i) => {*/}
+                        {/*                return <TableRow key={i}>*/}
+                        {/*                    <TableCell>*/}
+                        {/*                        <Typography variant={"body1"}*/}
+                        {/*                                    sx={{fontWeight: "bold"}}>{arg.name}</Typography>*/}
+                        {/*                    </TableCell>*/}
+                        {/*                    <TableCell>*/}
+                        {/*                        <Typography variant={"body1"}>{arg.type}</Typography>*/}
+                        {/*                    </TableCell>*/}
+                        {/*                    <TableCell>*/}
+                        {/*                        <Typography variant={"body1"}>{arg.comment}</Typography>*/}
+                        {/*                    </TableCell>*/}
+                        {/*                </TableRow>*/}
+                        {/*            })}*/}
+                        {/*        </TableBody>*/}
+                        {/*    </Table>*/}
+                        {/*</TableContainer>*/}
