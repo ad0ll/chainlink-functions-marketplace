@@ -1,0 +1,203 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "FunctionsManagerInterface",
+  "sourceName": "contracts/FunctionsManagerInterface.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "functionId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string[]",
+          "name": "args",
+          "type": "string[]"
+        }
+      ],
+      "name": "executeRequest",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getDONPublicKey",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "requestId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes",
+          "name": "response",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes",
+          "name": "err",
+          "type": "bytes"
+        }
+      ],
+      "name": "handleOracleFulfillment",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_subscriptionId",
+          "type": "uint64"
+        }
+      ],
+      "name": "refillSubscription",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint96",
+              "name": "fees",
+              "type": "uint96"
+            },
+            {
+              "internalType": "string",
+              "name": "functionName",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "desc",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "imageUrl",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "source",
+              "type": "string"
+            },
+            {
+              "internalType": "string[]",
+              "name": "expectedArgs",
+              "type": "string[]"
+            },
+            {
+              "internalType": "enum Functions.Location",
+              "name": "codeLocation",
+              "type": "uint8"
+            },
+            {
+              "internalType": "enum Functions.Location",
+              "name": "secretsLocation",
+              "type": "uint8"
+            },
+            {
+              "internalType": "enum Functions.CodeLanguage",
+              "name": "language",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "category",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "subId",
+              "type": "uint64"
+            },
+            {
+              "internalType": "enum FunctionsManagerInterface.ReturnTypes",
+              "name": "expectedReturnType",
+              "type": "uint8"
+            },
+            {
+              "internalType": "bytes",
+              "name": "secrets",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct FunctionsManagerInterface.FunctionsRegisterRequest",
+          "name": "request",
+          "type": "tuple"
+        }
+      ],
+      "name": "registerFunction",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "functionId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "withdrawFunctionProfitToAuthor",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "withdrawFunctionsManagerProfitToOwner",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32[]",
+          "name": "functionIds",
+          "type": "bytes32[]"
+        }
+      ],
+      "name": "withdrawMultipleFunctionProfitToAuthor",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

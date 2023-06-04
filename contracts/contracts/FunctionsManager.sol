@@ -19,6 +19,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     mapping(bytes32 => Functions.Request) private functionRequests;
     mapping(uint64 => address) private subscriptionOwnerMapping;
     mapping(address => AuthorMetadata) public authorMetadata;
+
     // Balances that can be dumped into a subscription when the subscription balance runs low
     mapping(uint64 => uint96) public subscriptionBalances;
 
@@ -28,7 +29,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     FunctionsOracleInterface private ORACLE_PROXY;
 
     // TODO make sure this isn't hardcoded later
-    uint96 public minimumSubscriptionBalance = 10 ** 18 * 1; // 1 LINK (18 decimals)
+    uint96 public minimumSubscriptionBalance = 1 ether; // 1 LINK (18 decimals)
     uint96 public functionManagerProfitPool; // The fee manager's cut of fees, whole number representing percentage
     uint32 public feeManagerCut;
 
@@ -36,7 +37,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     uint64 public functionsRegisteredCount;
     uint96 public functionsCalledCount;
     uint96 public totalFeesCollected;
-    uint32 public maxGasLimit = 300_000; //Leave this at 300k, see service limits doc
+    uint32 public maxGasLimit; //Leave this at 300k, see service limits doc
 
     // TODO Support authorMetadata
 
@@ -85,9 +86,14 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
     // Functions metadata, used for display and snippet generation in the webapp
     struct FunctionMetadata {
+        bytes32 functionId;
         address owner;
         bytes32 category;
         ReturnTypes expectedReturnType;
+
+        Functions.Location codeLocation;
+        Functions.Location secretsLocation;
+        Functions.CodeLanguage language;
         string name;
         string desc;
         string imageUrl;
@@ -168,6 +174,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
         //Require function doesn't already exist
         FunctionMetadata memory metadata;
+        metadata.functionId = functionId;
         metadata.owner = msg.sender;
         metadata.name = request.functionName;
         metadata.desc = request.desc;
@@ -368,7 +375,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
         FunctionExecuteMetadata memory functionMetadata = functionExecuteMetadatas[functionResponse.functionId];
 
-        console.log("Unlocking fees");
         if (functionExecuteMetadatas[functionResponses[requestId].functionId].owner != functionResponse.caller) {
             uint96 unlockAmount = (functionMetadata.fee * (100 - feeManagerCut)) / 100;
             functionMetadata.lockedProfitPool -= unlockAmount;
@@ -462,7 +468,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     function withdrawFunctionProfitToAuthor(bytes32 functionId) external {
         require(
             msg.sender == address(this) || msg.sender == owner()
-                || msg.sender == functionExecuteMetadatas[functionId].owner,
+            || msg.sender == functionExecuteMetadatas[functionId].owner,
             "Must be FunctionsManager, FunctionsManager owner, or function owner to withdraw profit to function owner"
         );
         uint96 amountToTransfer = functionExecuteMetadatas[functionId].unlockedProfitPool;
@@ -505,9 +511,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     }
 
     function getAllFunctionMetadata(bytes32 _functionId)
-        external
-        view
-        returns (FunctionMetadata memory, FunctionExecuteMetadata memory)
+    external
+    view
+    returns (FunctionMetadata memory, FunctionExecuteMetadata memory)
     {
         console.log("getAllFunctionMetadata");
         return (functionMetadatas[_functionId], functionExecuteMetadatas[_functionId]);
@@ -520,9 +526,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
     // Shortcut function, used so we don't have to fetch the return type in the app.
     function getFunctionResponseWithReturnType(bytes32 _requestId)
-        external
-        view
-        returns (FunctionResponse memory, ReturnTypes)
+    external
+    view
+    returns (FunctionResponse memory, ReturnTypes)
     {
         console.log("getFunctionResponseWithReturn");
         FunctionResponse memory res = functionResponses[_requestId];
