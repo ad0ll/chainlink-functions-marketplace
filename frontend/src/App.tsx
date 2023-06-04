@@ -11,7 +11,6 @@ import Buy from "./Buy";
 import {Sell} from "./Sell";
 import Author from "./Author";
 import {OwnerDashboard} from "./OwnerDashboard";
-import {DevMode} from "./misc";
 import {FunctionsManagerProvider} from "./FunctionsManagerProvider";
 
 
@@ -40,6 +39,8 @@ const RequireConnection: React.FC<{ children: ReactNode }> = ({children}) => {
         return <Typography>Please connect to MetaMask by clicking the connect button</Typography>
     } else if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
         return <Typography>Please change your network to Mumbai or Sepolia</Typography>
+    } else if (!account) {
+        return <Typography>Account not found</Typography>
     }
 
     // TODO check if account is authorized spender
@@ -55,6 +56,7 @@ function App() {
             mode: 'dark',
             primary: {
                 // main: '#a536e1', //This one is 400
+                // main: '#d7a6f2',
                 main: '#d7a6f2',
                 //light: "#cb8eed", //200
                 light: '#e0bbf4', //100
@@ -91,7 +93,6 @@ function App() {
                     autoClose={3000}
                     pauseOnFocusLoss={false}/>
                 <CssBaseline enableColorScheme/>
-                <DevMode/>
                 <Container>
                     <BrowserRouter>
                         <NavBar/>

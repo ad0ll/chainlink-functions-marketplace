@@ -174,7 +174,7 @@ return Functions.encodeUint256(Math.round(res * 100));`,
             fee: ethers.parseUnits(data.fee.toString()),
             expectedReturnType: data.expectedReturnType
         }
-        
+
         console.log("Massaged payload", post)
 
         if (post.subscriptionId !== "NEW") {
@@ -253,19 +253,8 @@ return Functions.encodeUint256(Math.round(res * 100));`,
         } else {
             toast.error("Received unknown status from contract interaction: " + registerReceipt?.status, {toastId: 1})
         }
-
-        // const registerReceipt = await registerTx.wait();
-        //Doing registerTx.wait() returns an error:
-        // console.log("Register receipt: ", registerReceipt);
-        // console.log("Register events: ", events);
-
-        // functionsManagerContract
-        // console.log(functionsManagerContract.interface.decodeEventLog(functionsManagerContract.interface.getEvent("FunctionRegistered"), registerReceipt?.logs?.[0]?.data || "", registerReceipt?.logs?.[0]?.topics))
-        // console.log(functionsManagerContract.interface.decodeEventLog(functionsManagerContract.interface.getEvent("FunctionRegistered"), )
     });
 
-
-    // return (<Paper width={{xs: "100%", sm: "80%", md: "60%", lg: "40%"}} sx={{marginTop: 2}} margin={"auto"}>
     return (<Box width={{xs: "100%", sm: "80%", md: "70%", lg: "50%"}} sx={{marginTop: 2}} margin={"auto"}>
         <Typography variant={"h3"} sx={{padding: 2, textAlign: "center"}}>Create a new
             function</Typography>
@@ -342,7 +331,7 @@ return Functions.encodeUint256(Math.round(res * 100));`,
                                                           comment: ""
                                                       })}>Add</Button>}
                     </Box>
-                    {args.map((arg, i) => (<Grid container xs={12}>
+                    {args.map((arg, i) => (<Grid container>
                         <Grid item xs={7}>
                             <TextField fullWidth id={"arg-" + i + "-text"} label={"Argument " + i}
                                        {...register(`expectedArgs.${i}.name`, {required: "Please provide a name for your variable"})}

@@ -185,7 +185,7 @@ const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
         }
     })
 
-    return <Grid container xs={12} spacing={2}>
+    return <Grid container spacing={2}>
         <Grid item xs={12} sm={6}>
             <Card sx={{paddingTop: 2, display: "flex", flexDirection: "column", alignItems: "center"}} elevation={4}>
                 <Typography variant={"h4"}>Total calls</Typography>
@@ -239,7 +239,7 @@ export const OwnerDashboard: React.FC = () => {
                 }
             } catch (e: any) {
                 toast.error("Encountered an error withdrawing: " + e.message)
-                console.log()
+                console.log(e.message)
             }
         }
         post()
@@ -265,7 +265,7 @@ export const OwnerDashboard: React.FC = () => {
                 }
             } catch (e: any) {
                 toast.error("Encountered an error withdrawing: " + e.message)
-                console.log()
+                console.log(e.message)
             }
         }
         post()
@@ -279,8 +279,6 @@ export const OwnerDashboard: React.FC = () => {
         return <Typography>Something went wrong</Typography>
     }
 
-
-    console.log(data)
 
     const blockTimestamp = nDaysAgoUTCInSeconds(7)
     return <Stack spacing={2}>

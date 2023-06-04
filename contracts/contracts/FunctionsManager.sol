@@ -372,6 +372,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         FunctionExecuteMetadata memory functionMetadata = functionExecuteMetadatas[functionResponse.functionId];
 
         if (functionExecuteMetadatas[functionResponses[requestId].functionId].owner != functionResponse.caller) {
+            if (functionExecuteMetadatas[functionResponses[requestId].functionId].owner != functionResponse.caller) {
             uint96 unlockAmount = (functionMetadata.fee * (100 - feeManagerCut)) / 100;
             functionMetadata.lockedProfitPool -= unlockAmount;
             functionMetadata.unlockedProfitPool += unlockAmount;
