@@ -80,7 +80,7 @@ const GridRow: React.FC<{ label: string, children: React.ReactNode, valueFirst?:
                                                                                                }) => {
 
     const l = <Typography variant={"h6"}>{label}</Typography>
-    return <Grid item container xs={12}>
+    return <Grid item container>
         <Grid item xs={5} sm={4}>
             {valueFirst ? children : l}
         </Grid>
@@ -541,10 +541,6 @@ export const Buy: React.FC = () => {
 
             const ff = await functionsManagerContract.getFunctionMetadata(functionId);
             const fff = await functionsManagerContract.getFunctionExecuteMetadata(functionId);
-            // console.log(" elems: ", f, fe)
-            console.log("ff", ff)
-            console.log("fff", fff)
-            // console.log({...f, ...fe})
             if (!ff) return;
             startTransition(() => {
                 setFunc(mergeFunctionMetadataAndExecMetadata(ff, fff))
@@ -603,7 +599,7 @@ export const Buy: React.FC = () => {
                     display: "flex",
                     borderColor: "primary.main", border: 1, padding: 1
                 }}>
-                    <Grid container xs={12} spacing={1}>
+                    <Grid container spacing={1}>
                         <Grid item xs={12} sx={{borderBottom: 1, borderColor: "white"}}>
                             {/*<Grid item xs={12} sx={{borderBottom: 1, borderColor: "primary.main"}}>*/}
                             <Typography variant={"h6"}>Details</Typography>

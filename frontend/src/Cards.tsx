@@ -21,22 +21,22 @@ export const GlobalMetricsCard: React.FC<{ label: string, value: ReactNode | str
 
 // Used in the "Recently Added" carousel of the homepage
 export const RecentlyAddedCard: React.FC<{ func: FunctionRegistered }> = ({func}) => {
-    // const imageElem = <Jazzicon diameter={80} seed={jsNumberForAddress(func.address)}/>
-    return <Card elevation={4} sx={{borderRadius: 2, height: "100%"}}>
+    const [mouseOver, setMouseOver] = React.useState(false)
+    return <Card elevation={4} sx={{borderRadius: 2, height: "100%"}}
+                 onMouseEnter={() => setMouseOver(true)}
+                 onMouseLeave={() => setMouseOver(false)}
+    >
         <CardActionArea
             sx={{
                 display: "flex",
-                // flexDirection: "column",
-                // alignItems: "center",
                 flexWrap: "wrap",
-                // textOverflow: "ellipsis",
                 overflow: "hidden",
                 whiteSpace: "nowrap",
                 padding: 2,
                 borderRadius: 2,
                 height: "100%"
             }}
-            component={Link} to={`buy/${func.id}`}
+            component={Link} to={`buy/${func.functionId}`}
         >
             <Stack spacing={1}>
                 <Box width={"100%"} height={80} display={"flex"} alignItems={"center"}>
@@ -65,7 +65,7 @@ export const RecentlyAddedCard: React.FC<{ func: FunctionRegistered }> = ({func}
                 </Box>
             </Stack>
         </CardActionArea>
-        {/*<CardActions sx={{display: "flex", justifyContent: "flex-end", margin: 0}}>*/}
+        {/*<CardActions sx={{display: mouseOver ? "flex" : "none", justifyContent: "flex-end", margin: 0}}>*/}
         {/*    <Button variant={"outlined"}>Copy Snippet</Button>*/}
         {/*</CardActions>*/}
     </Card>

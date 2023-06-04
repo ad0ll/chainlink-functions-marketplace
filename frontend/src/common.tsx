@@ -78,8 +78,8 @@ export const TypographyWithLinkIcon: React.FC<{
     typographyStyle?: React.CSSProperties
     typographyProps?: TypographyProps
 } & TypographyProps> = ({
-                            height = "inherit",
-                            width = "inherit",
+                            height = 25,
+                            width = 25,
                             includeSuffix = true,
                             children,
                             typographyStyle,
@@ -112,10 +112,7 @@ export const blockTimestampToDate = (timestamp: number) => {
 //Return the current time in seconds since the epoch minus n days, in UTC
 export const nDaysAgoUTCInSeconds = (n: number) => {
     const now = Math.floor(Date.now() / 1000)
-    console.log(Date.now())
-    console.log(Date.now() / 1000)
-    console.log("now", now)
-    console.log("minus n=", n, "days", now - (n * 24 * 60 * 60))
+
     return now - (n * 24 * 60 * 60)
 }
 
@@ -167,7 +164,6 @@ export const decodeResponse = (response?: string, err?: string, returnType?: num
 
 }
 export const returnTypeEnumToString = (num?: number | bigint | string) => {
-    console.log("num", num)
     if (num === undefined) {
         return "unknown"
     }
@@ -222,7 +218,6 @@ export const functionRegisteredToCombinedMetadata = (func?: FunctionRegistered):
     if (!func) {
         return {} as CombinedFunctionMetadata
     }
-    console.log("Categroy:", func.metadata_category)
     return {
         functionId: func.functionId,
         name: func.metadata_name,

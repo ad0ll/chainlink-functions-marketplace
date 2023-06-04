@@ -24,7 +24,6 @@ import {FunctionRegistered, Query} from "./gql/graphql";
 import {
     blockTimestampToDate,
     functionRegisteredToCombinedMetadata,
-    networkConfig,
     SHORT_POLL_INTERVAL,
     TypographyWithLinkIcon
 } from "./common";
@@ -53,7 +52,7 @@ const ListingTable: React.FC<{
     const [nameDescFilter, setNameDescFilter] = useState("");
     const [functionSelected, setFunctionSelected] = useState<FunctionRegistered>();
     const [tryDialogOpen, setTryDialogOpen] = useState(false);
-    const {chainId} = useContext(FunctionsManagerContext);
+    const {networkConfig} = useContext(FunctionsManagerContext);
     const skip = page * pageSize;
     const {loading, error, data} = useQuery<Query, { first: number, skip: number, searchTerm: string }>(query, {
         variables: {
@@ -65,15 +64,6 @@ const ListingTable: React.FC<{
         pollInterval,
     })
 
-    console.log({
-        variables: {
-            ...args,
-            skip,
-            first: pageSize,
-            searchTerm: nameDescFilter,
-        },
-        pollInterval,
-    })
 
     const notify = () => toast.success("Copied snippet to keyboard");
 
@@ -172,7 +162,7 @@ const ListingTable: React.FC<{
                                      title={<Box sx={{minWidth: 450}}>
                                          <Typography variant={"h6"}>Click to copy contract snippet</Typography>
                                          <SoliditySyntaxHighlighter>
-                                             {generateDefaultSnippetString(f, networkConfig[chainId].functionsManager)}
+                                             {generateDefaultSnippetString(f, networkConfig.functionsManager)}
                                          </SoliditySyntaxHighlighter>
                                      </Box>}>
                                 {/*<ContentCopyIcon onClick={notify}/>*/}

@@ -152,8 +152,8 @@ export const RecentlyAddedTop: React.FC = () => {
         <Grid item xs={12}>
             <Typography variant={"h4"}>Recently added</Typography>
         </Grid>
-        {data?.functionRegistereds.map((func) => {
-            return (<Grid item xs={4}>
+        {data?.functionRegistereds.map((func, i) => {
+            return (<Grid item xs={4} key={i}>
                 <RecentlyAddedCard func={func}/>
             </Grid>)
         })}

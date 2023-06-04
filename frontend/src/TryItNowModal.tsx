@@ -145,10 +145,7 @@ export const TryItNowModal: React.FC<{
 
 
     if (!func) return <div/>
-    console.log(
-        "EXPECTED RETURN TYPE", func.expectedReturnType
-    )
-    console.log(functionResponse)
+    console.log("functionResponse", functionResponse)
     return (<Dialog open={open} onClose={() => setOpen(false)} sx={{padding: 2}}>
         <form onSubmit={onSubmit} style={{padding: 16}}>
             <DialogTitle>Try {func.name}</DialogTitle>
