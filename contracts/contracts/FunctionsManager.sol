@@ -90,10 +90,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         address owner;
         bytes32 category;
         ReturnTypes expectedReturnType;
-
-        Functions.Location codeLocation;
-        Functions.Location secretsLocation;
-        Functions.CodeLanguage language;
         string name;
         string desc;
         string imageUrl;
