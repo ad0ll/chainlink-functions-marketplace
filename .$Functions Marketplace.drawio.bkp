@@ -1,4 +1,4 @@
-<mxfile host="Electron" modified="2023-05-19T03:56:17.262Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.165 Electron/24.2.0 Safari/537.36" etag="mlIqogoT9BmUaacJHv2U" version="21.2.8" type="device" pages="3">
+<mxfile host="Electron" modified="2023-05-25T15:56:12.966Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.165 Electron/24.2.0 Safari/537.36" etag="FT4LHiG5zReKflfF-W4x" version="21.2.8" type="device" pages="4">
   <diagram id="_97RogYsonQwrS61qgb5" name="Overview Diagram (OLD)">
     <mxGraphModel dx="2007" dy="878" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -328,6 +328,32 @@
         </mxCell>
         <mxCell id="PROqfVO22ia28ZN9wxBx-45" value="1. Function Owner calls registerFunction&lt;br&gt;2. registerFunction creates a new subscription&lt;br&gt;3. registerFunction deploys a new FunctionsClient contract" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="920" y="120" width="240" height="250" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="Vpf9t56SKxJCW6vmbXRD" name="Keepers">
+    <mxGraphModel dx="307" dy="902" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="mdY_FATa9YDurj9gB2TR-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="mdY_FATa9YDurj9gB2TR-1" target="mdY_FATa9YDurj9gB2TR-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mdY_FATa9YDurj9gB2TR-1" value="Register function" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="990" y="250" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mdY_FATa9YDurj9gB2TR-2" value="Create upkeep for function" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="250" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mdY_FATa9YDurj9gB2TR-5" value="Check upkeep" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="370" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mdY_FATa9YDurj9gB2TR-6" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="mdY_FATa9YDurj9gB2TR-2" target="mdY_FATa9YDurj9gB2TR-5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1390" y="470" as="sourcePoint" />
+            <mxPoint x="1440" y="420" as="targetPoint" />
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>

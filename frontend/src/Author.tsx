@@ -3,37 +3,62 @@ import React from "react";
 import {Box, Card, Stack, Tooltip, Typography} from "@mui/material";
 import {gql} from "@apollo/client";
 import {Link, useParams} from "react-router-dom";
-import ListingTable from "./ListingTable";
 import {fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./utils/util";
 import {MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import {useWeb3React} from "@web3-react/core";
+import ListingTable from "./ListingTable";
 
 const OWNER_LISTING_QUERY = gql`
-    query AuthorFunctionRegistereds($first: Int!, $skip: Int!, $owner: Bytes!, $searchTerm: String) {
+    query AuthorFunctionRegistereds($first: Int!, $skip: Int!, $searchTerm: String!, $owner: Bytes!){
         functionRegistereds(
             orderBy: blockNumber
             orderDirection: desc
             skip: $skip
             first: $first
             where: {
-                owner: $owner
-                or: [
-                    {metadata_name_contains_nocase: $searchTerm},
-                    {metadata_desc_contains_nocase: $searchTerm},
-                ]
+                owner: $owner,
+                metadata_name_contains_nocase: $searchTerm
             }
         ) {
             id
             functionId
             owner
+            fee
+            metadata_expectedArgs
             metadata_name
             metadata_desc
             metadata_imageUrl
-            fee
+            metadata_category
             blockTimestamp
         }
     }
+    #    query AuthorFunctionRegistereds($first: Int!, $skip: Int!, $owner: Bytes!, $searchTerm: String!) {
+    #        functionRegistereds(
+    #            orderBy: blockNumber
+    #            orderDirection: desc
+    #            skip: $skip
+    #            first: $first
+    #            where: {
+    #                owner: $owner,
+    #                or: [
+    #                    {metadata_name_contains_nocase: $searchTerm},
+    #                    {metadata_desc_contains_nocase: $searchTerm},
+    #                    #                    {metadata_category_contains: $searchTerm}
+    #                ]
+    #            }
+    #        ) {
+    #            id
+    #            functionId
+    #            owner
+    #            metadata_name
+    #            metadata_desc
+    #            metadata_imageUrl
+    #            metadata_category
+    #            fee
+    #            blockTimestamp
+    #        }
+    #    }
 `;
 
 const AuthorAddressCard: React.FC<{ address?: string }> = ({address}) => {
@@ -68,7 +93,9 @@ const AuthorAddressCard: React.FC<{ address?: string }> = ({address}) => {
     </Stack>
 }
 export const Author: React.FC = () => {
+    console.log("Author page...")
     const {address} = useParams<{ address: string }>();
+    console.log("author address: ", address)
 
     return (<Stack spacing={2}>
         <AuthorAddressCard address={address}/>

@@ -1,6 +1,6 @@
-<mxfile host="Electron" modified="2023-05-25T15:56:12.966Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.165 Electron/24.2.0 Safari/537.36" etag="FT4LHiG5zReKflfF-W4x" version="21.2.8" type="device" pages="4">
+<mxfile host="Electron" modified="2023-06-02T00:13:37.157Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.165 Electron/24.2.0 Safari/537.36" etag="UhkcVA2fSt71fA8m620M" version="21.2.8" type="device" pages="5">
   <diagram id="_97RogYsonQwrS61qgb5" name="Overview Diagram (OLD)">
-    <mxGraphModel dx="2007" dy="878" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="2284" dy="1934" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -354,6 +354,26 @@
             <mxPoint x="1390" y="470" as="sourcePoint" />
             <mxPoint x="1440" y="420" as="targetPoint" />
           </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="CLFc9bFfILZRvcSWCqys" name="Page-5">
+    <mxGraphModel dx="1434" dy="1934" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="wrEMYWICn5dAosU0GMxR-2" value="Create subscription" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="140" width="160" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="wrEMYWICn5dAosU0GMxR-3" value="Fund subscription" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="210" width="160" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="wrEMYWICn5dAosU0GMxR-5" value="Deploy FunctionsConsumer contract" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="280" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="wrEMYWICn5dAosU0GMxR-6" value="Register FunctionsConsumer as authorized consumer" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="350" width="220" height="40" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

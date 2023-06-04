@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {startTransition, useContext, useEffect, useState} from "react";
 import {
     Box,
     Button,
@@ -17,17 +17,16 @@ import {
 } from "@mui/material";
 import {Link} from "react-router-dom";
 import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RechartTooltip, XAxis, YAxis} from "recharts";
-import {MUMBAI_CHAIN_ID, nDaysAgoUTCInSeconds, networkConfig, SEPOLIA_CHAIN_ID, SHORT_POLL_INTERVAL} from "./common";
+import {nDaysAgoUTCInSeconds, SHORT_POLL_INTERVAL} from "./common";
 import {gql, useQuery} from "@apollo/client";
 import {FunctionRegistered, Query} from "./gql/graphql";
 import {BigNumberish, ethers, formatEther} from "ethers";
 import ArticleIcon from '@mui/icons-material/Article';
-import {useWeb3React} from "@web3-react/core";
 import PaymentsIcon from '@mui/icons-material/Payments';
-import FunctionsManagerJson from "./generated/abi/FunctionsManager.json";
 import {FunctionsManager} from "./generated/contract-types";
-import {useContract} from "./contractHooks";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import {FunctionsManagerContext} from "./FunctionsManagerProvider";
+import {toast} from "react-toastify";
 
 const OWNER_DASHBOARD_QUERY = gql`
     query EventSpammerOwnerPage($owner: Bytes!){
@@ -210,22 +209,68 @@ const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
 
 export const OwnerDashboard: React.FC = () => {
 
-    const {account, chainId} = useWeb3React()
+    const {account, provider, functionsManagerContract, networkConfig} = useContext(FunctionsManagerContext)
     const [showDetails, setShowDetails] = React.useState(false)
-    const [withdrawing, setWithdrawing] = React.useState(false)
-    if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
-        return <Typography>Unsupported network</Typography>
-    }
-    if (!account) {
-        return <Typography>Connect your wallet to view your dashboard</Typography>
-    }
-    const functionsManagerContract = useContract(networkConfig[chainId].functionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager
+    const [selectedForWithdrawal, setSelectedForWithdrawal] = React.useState("")
+    const [initiateWithdrawSingle, setInitiateWithdrawSingle] = React.useState<boolean>(false)
+    const [initiateWithdrawMulti, setInitiateWithdrawMulti] = React.useState<boolean>(false)
+
     const {loading, error, data} = useQuery<Query>(OWNER_DASHBOARD_QUERY, {
         variables: {
             owner: account
         },
         pollInterval: SHORT_POLL_INTERVAL
     })
+
+    useEffect(() => {
+        if (!initiateWithdrawSingle) return
+        const post = async () => {
+            toast.info("Initiating withdrawl...")
+            try {
+                const withdrawSingleTx = await functionsManagerContract.withdrawFunctionProfitToAuthor(selectedForWithdrawal)
+                const execReceipt = await provider?.waitForTransaction(withdrawSingleTx.hash, 1);
+                if (execReceipt?.status !== 1) {
+                    toast.error(<Typography variant={"body1"} color={"error"}>Transaction failed
+                        <a href={`${networkConfig.getScannerTxUrl(withdrawSingleTx.hash)}`} target="_blank">
+                            View transaction in scanner for details...
+                        </a></Typography>)
+                } else {
+                    toast.success("Successfully completed withdrawl")
+                }
+            } catch (e: any) {
+                toast.error("Encountered an error withdrawing: " + e.message)
+                console.log()
+            }
+        }
+        post()
+        setInitiateWithdrawSingle(false)
+    }, [initiateWithdrawSingle])
+
+
+    useEffect(() => {
+        if (!initiateWithdrawMulti) return
+        const post = async () => {
+            toast.info("Initiating withdrawl...")
+            try {
+                const ids = data?.functionRegistereds.map((f) => f.functionId)
+                const withdrawMultiTx = await functionsManagerContract.withdrawMultipleFunctionProfitToAuthor(ids || [], {gasLimit: 1000000})
+                const execReceipt = await provider?.waitForTransaction(withdrawMultiTx.hash, 1);
+                if (execReceipt?.status !== 1) {
+                    toast.error(<Typography variant={"body1"} color={"error"}>Transaction failed
+                        <a href={`${networkConfig.getScannerTxUrl(withdrawMultiTx.hash)}`} target="_blank">
+                            View transaction in scanner for details...
+                        </a></Typography>)
+                } else {
+                    toast.success("Successfully completed withdrawl")
+                }
+            } catch (e: any) {
+                toast.error("Encountered an error withdrawing: " + e.message)
+                console.log()
+            }
+        }
+        post()
+        setInitiateWithdrawMulti(false)
+    }, [initiateWithdrawMulti])
     if (loading) {
         return <Typography><CircularProgress/>Loading...</Typography>
     }
@@ -233,6 +278,8 @@ export const OwnerDashboard: React.FC = () => {
         console.log(error)
         return <Typography>Something went wrong</Typography>
     }
+
+
     console.log(data)
 
     const blockTimestamp = nDaysAgoUTCInSeconds(7)
@@ -248,7 +295,11 @@ export const OwnerDashboard: React.FC = () => {
                          color={"secondary"}>
                     {showDetails ? "Hide" : "Show"} details
                 </Button>}
-                <Button startIcon={<PaymentsIcon/>} variant={"contained"} color={"secondary"}>Withdraw
+                <Button startIcon={<PaymentsIcon/>} variant={"contained"} color={"secondary"} onClick={() => {
+                    startTransition(() => {
+                        setInitiateWithdrawMulti(true)
+                    })
+                }}>Withdraw
                     All</Button>
             </Box>
             <Table>
@@ -287,7 +338,10 @@ export const OwnerDashboard: React.FC = () => {
                             <FeeCell func={func} pool={"unlocked"} functionsManagerContract={functionsManagerContract}/>
                             <TableCell>
                                 <Button color={"secondary"} onClick={() => {
-                                    functionsManagerContract.withdrawFunctionProfitToAuthor(func.functionId)
+                                    startTransition(() => {
+                                        setSelectedForWithdrawal(func.functionId)
+                                        setInitiateWithdrawSingle(true)
+                                    })
                                 }}>Withdraw</Button>
                             </TableCell>
                         </TableRow>)

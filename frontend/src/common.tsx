@@ -2,6 +2,8 @@ import React, {ReactNode, Suspense} from "react";
 import {Box, SvgIcon, Typography, TypographyProps} from "@mui/material";
 import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
 import {Buffer} from 'buffer';
+import {FunctionsManager} from "./generated/contract-types";
+import {FunctionRegistered} from "./gql/graphql";
 
 // TODO Fetch the base fee from the FunctionManager contract
 export const BASE_FEE = 200000000000000000n; //0.2 LINK
@@ -11,6 +13,9 @@ export const MATIC_CHAIN_ID = 137
 export const MUMBAI_CHAIN_ID = 80001
 export const SEPOLIA_CHAIN_ID = 11155111
 export const SHORT_POLL_INTERVAL = 2000
+export type CombinedFunctionMetadata =
+    FunctionsManager.FunctionMetadataStruct
+    & FunctionsManager.FunctionExecuteMetadataStruct
 
 export enum ExpectedReturnTypes {
     Bytes = 0,
@@ -20,7 +25,7 @@ export enum ExpectedReturnTypes {
 }
 
 export type NetworkConfig = {
-    functionsManager: string,
+    functionsManager: "0xac427515A3897E1321F4d50e15e267c4B7120e00",
     linkToken: string,
     linkEthPriceFeed: string,
     functionsOracleProxy: string,
@@ -35,7 +40,7 @@ export const networkConfig: {
     [key: number]: NetworkConfig
 } = {
     [MUMBAI_CHAIN_ID]: {
-        functionsManager: "0x3D5b76E593749A3CD8Dc8B1EE9A4e0725dFD36D6",
+        functionsManager: "0xac427515A3897E1321F4d50e15e267c4B7120e00",
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
         linkEthPriceFeed: "0x12162c3E810393dEC01362aBf156D7ecf6159528",
         functionsOracleProxy: "0xeA6721aC65BCeD841B8ec3fc5fEdeA6141a0aDE4",
@@ -46,7 +51,7 @@ export const networkConfig: {
         getScannerTxUrl: (address: string) => `https://mumbai.polygonscan.com/tx/${address}`,
     },
     [SEPOLIA_CHAIN_ID]: {
-        functionsManager: "0x3D5b76E593749A3CD8Dc8B1EE9A4e0725dFD36D6",
+        functionsManager: "0xac427515A3897E1321F4d50e15e267c4B7120e00",
         linkToken: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
         linkEthPriceFeed: "0x42585eD362B3f1BCa95c640FdFf35Ef899212734",
         functionsOracleProxy: "0x649a2C205BE7A3d5e99206CEEFF30c794f0E31EC",
@@ -114,7 +119,7 @@ export const nDaysAgoUTCInSeconds = (n: number) => {
     return now - (n * 24 * 60 * 60)
 }
 
-export const decodeResponse = (response?: string, err?: string, returnType?: number): string => {
+export const decodeResponse = (response?: string, err?: string, returnType?: number | string | bigint): string => {
     if (err && err !== "0x") {
         const errorHex = Buffer.from(err.slice(2), "hex").toString()
         return errorHex;
@@ -126,22 +131,30 @@ export const decodeResponse = (response?: string, err?: string, returnType?: num
     }
     let decodedOutput;
     switch (returnType) {
-        case ExpectedReturnTypes.Bytes: //Buffer
+        case 0: //Buffer
+        case 0n:
+        case "0":
             console.log("Received buffer input, attempting to decode to string");
             decodedOutput = Buffer.from(
                 response.slice(2),
                 "hex"
             ).toString();
             break;
-        case ExpectedReturnTypes.Uint: //uint256
+        case 1: //uint256
+        case 1n:
+        case "1":
             decodedOutput = BigInt("0x" + response.slice(2).slice(-64)).toString();
             break;
-        case ExpectedReturnTypes.Int: //int256
+        case 2: //int256
+        case 2n:
+        case "2":
             decodedOutput = signedInt256toBigInt(
                 "0x" + response.slice(2).slice(-64)
             ).toString();
             break;
-        case ExpectedReturnTypes.String: //string
+        case 3:
+        case 3n:
+        case "3":
         default:
             decodedOutput = Buffer.from(
                 response.slice(2),
@@ -153,8 +166,27 @@ export const decodeResponse = (response?: string, err?: string, returnType?: num
     return decodedOutput
 
 }
-export const returnTypeEnumToString = (num: number) => {
+export const returnTypeEnumToString = (num?: number | bigint | string) => {
     console.log("num", num)
+    if (num === undefined) {
+        return "unknown"
+    }
+    if (typeof num === "string") {
+        switch (num) {
+            case "0":
+                return "buffer";
+            case "1":
+                return "uint256";
+            case "2":
+                return "int256";
+            case "3":
+                return "string";
+            default:
+                return "buffer";
+            // throw new Error("Unknown buffer type");
+        }
+    }
+
     switch (num) {
         case 0:
             return "buffer";
@@ -163,6 +195,14 @@ export const returnTypeEnumToString = (num: number) => {
         case 2:
             return "int256";
         case 3:
+            return "string";
+        case 0n:
+            return "buffer";
+        case 1n:
+            return "uint256";
+        case 2n:
+            return "int256";
+        case 3n:
             return "string";
         default:
             return "buffer";
@@ -177,3 +217,74 @@ const signedInt256toBigInt = (hex: string) => {
     }
     return -(BigInt(2) ** BigInt(255)) + BigInt(`0b${binary.slice(1)}`);
 };
+
+export const functionRegisteredToCombinedMetadata = (func?: FunctionRegistered): CombinedFunctionMetadata => {
+    if (!func) {
+        return {} as CombinedFunctionMetadata
+    }
+    console.log("Categroy:", func.metadata_category)
+    return {
+        functionId: func.functionId,
+        name: func.metadata_name,
+        desc: func.metadata_desc,
+        imageUrl: func.metadata_imageUrl,
+        expectedArgs: func.metadata_expectedArgs,
+        category: func.metadata_category,
+        subId: func.subId,
+        expectedReturnType: func.metadata_expectedReturnType,
+        owner: func.owner,
+        fee: func.fee,
+        unlockedProfitPool: 0,
+        functionsCalledCount: 0,
+        lockedProfitPool: 0,
+        failedResponseCount: 0,
+        successfulResponseCount: 0,
+        totalFeesCollected: 0,
+    }
+}
+
+export const mergeFunctionMetadataAndExecMetadata = (metadata: FunctionsManager.FunctionMetadataStruct, execMetadata: FunctionsManager.FunctionExecuteMetadataStruct): CombinedFunctionMetadata => {
+    return {
+        functionId: metadata.functionId,
+        name: metadata.name,
+        desc: metadata.desc,
+        imageUrl: metadata.imageUrl,
+        expectedArgs: metadata.expectedArgs,
+        category: metadata.category,
+        expectedReturnType: metadata.expectedReturnType,
+        owner: metadata.owner,
+        fee: execMetadata.fee,
+        subId: execMetadata.subId,
+        unlockedProfitPool: execMetadata.unlockedProfitPool,
+        functionsCalledCount: execMetadata.functionsCalledCount,
+        lockedProfitPool: execMetadata.lockedProfitPool,
+        failedResponseCount: execMetadata.failedResponseCount,
+        successfulResponseCount: execMetadata.successfulResponseCount,
+        totalFeesCollected: execMetadata.totalFeesCollected,
+    }
+}
+const OutcomeCellText: React.FC<{ text: string, color: string }> = ({text, color}) => {
+    return <Typography
+        sx={{
+            // border: "1px solid " + color,
+            // padding: 0.5,
+            color: color,
+            textAlign: "center",
+            // borderRadius: 1.5,
+            // maxWidth: 100
+        }}
+    >{text}</Typography>
+}
+
+export const OutcomeCell: React.FC<{
+    functionResponse?: FunctionsManager.FunctionResponseStruct
+}> = ({functionResponse}) => {
+    if (!functionResponse) {
+        return <OutcomeCellText color={"grey"} text={"PENDING"}/>
+    } else if (functionResponse.err && functionResponse.err !== "0x") {
+        return <OutcomeCellText color={"#ff3131"} text={"ERROR"}/>
+    } else if (functionResponse.response && functionResponse.response !== "0x") {
+        return <OutcomeCellText color={"#31ff87"} text={"SUCCESS"}/>
+    }
+    return <OutcomeCellText color={"grey"} text={"UNKNOWN"}/>;
+}

@@ -22,7 +22,7 @@ export const GlobalMetricsCard: React.FC<{ label: string, value: ReactNode | str
 // Used in the "Recently Added" carousel of the homepage
 export const RecentlyAddedCard: React.FC<{ func: FunctionRegistered }> = ({func}) => {
     // const imageElem = <Jazzicon diameter={80} seed={jsNumberForAddress(func.address)}/>
-    return <Card elevation={4} sx={{borderRadius: 2}}>
+    return <Card elevation={4} sx={{borderRadius: 2, height: "100%"}}>
         <CardActionArea
             sx={{
                 display: "flex",
@@ -39,7 +39,7 @@ export const RecentlyAddedCard: React.FC<{ func: FunctionRegistered }> = ({func}
             component={Link} to={`buy/${func.id}`}
         >
             <Stack spacing={1}>
-                <Box width={"100%"}>
+                <Box width={"100%"} height={80} display={"flex"} alignItems={"center"}>
                     <CardMedia
                         component={"img"}
                         sx={{width: 80, margin: "auto"}}

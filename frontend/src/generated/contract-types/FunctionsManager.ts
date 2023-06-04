@@ -25,6 +25,7 @@ import type {
 
 export declare namespace FunctionsManager {
   export type FunctionMetadataStruct = {
+    functionId: BytesLike;
     owner: AddressLike;
     category: BytesLike;
     expectedReturnType: BigNumberish;
@@ -35,6 +36,7 @@ export declare namespace FunctionsManager {
   };
 
   export type FunctionMetadataStructOutput = [
+    functionId: string,
     owner: string,
     category: string,
     expectedReturnType: bigint,
@@ -43,6 +45,7 @@ export declare namespace FunctionsManager {
     imageUrl: string,
     expectedArgs: string[]
   ] & {
+    functionId: string;
     owner: string;
     category: string;
     expectedReturnType: bigint;
@@ -50,6 +53,65 @@ export declare namespace FunctionsManager {
     desc: string;
     imageUrl: string;
     expectedArgs: string[];
+  };
+
+  export type FunctionExecuteMetadataStruct = {
+    owner: AddressLike;
+    subId: BigNumberish;
+    fee: BigNumberish;
+    unlockedProfitPool: BigNumberish;
+    functionsCalledCount: BigNumberish;
+    lockedProfitPool: BigNumberish;
+    totalFeesCollected: BigNumberish;
+    successfulResponseCount: BigNumberish;
+    failedResponseCount: BigNumberish;
+  };
+
+  export type FunctionExecuteMetadataStructOutput = [
+    owner: string,
+    subId: bigint,
+    fee: bigint,
+    unlockedProfitPool: bigint,
+    functionsCalledCount: bigint,
+    lockedProfitPool: bigint,
+    totalFeesCollected: bigint,
+    successfulResponseCount: bigint,
+    failedResponseCount: bigint
+  ] & {
+    owner: string;
+    subId: bigint;
+    fee: bigint;
+    unlockedProfitPool: bigint;
+    functionsCalledCount: bigint;
+    lockedProfitPool: bigint;
+    totalFeesCollected: bigint;
+    successfulResponseCount: bigint;
+    failedResponseCount: bigint;
+  };
+
+  export type FunctionResponseStruct = {
+    functionId: BytesLike;
+    caller: AddressLike;
+    callbackFunction: BytesLike;
+    args: string[];
+    response: BytesLike;
+    err: BytesLike;
+  };
+
+  export type FunctionResponseStructOutput = [
+    functionId: string,
+    caller: string,
+    callbackFunction: string,
+    args: string[],
+    response: string,
+    err: string
+  ] & {
+    functionId: string;
+    caller: string;
+    callbackFunction: string;
+    args: string[];
+    response: string;
+    err: string;
   };
 
   export type FunctionsRegisterRequestStruct = {
@@ -97,62 +159,6 @@ export declare namespace FunctionsManager {
     expectedReturnType: bigint;
     secrets: string;
   };
-
-  export type FunctionExecuteMetadataStruct = {
-    owner: AddressLike;
-    subId: BigNumberish;
-    fee: BigNumberish;
-    unlockedProfitPool: BigNumberish;
-    functionsCalledCount: BigNumberish;
-    lockedProfitPool: BigNumberish;
-    totalFeesCollected: BigNumberish;
-    successfulResponseCount: BigNumberish;
-    failedResponseCount: BigNumberish;
-  };
-
-  export type FunctionExecuteMetadataStructOutput = [
-    owner: string,
-    subId: bigint,
-    fee: bigint,
-    unlockedProfitPool: bigint,
-    functionsCalledCount: bigint,
-    lockedProfitPool: bigint,
-    totalFeesCollected: bigint,
-    successfulResponseCount: bigint,
-    failedResponseCount: bigint
-  ] & {
-    owner: string;
-    subId: bigint;
-    fee: bigint;
-    unlockedProfitPool: bigint;
-    functionsCalledCount: bigint;
-    lockedProfitPool: bigint;
-    totalFeesCollected: bigint;
-    successfulResponseCount: bigint;
-    failedResponseCount: bigint;
-  };
-
-  export type FunctionResponseStruct = {
-    functionId: BytesLike;
-    caller: AddressLike;
-    callbackFunction: BytesLike;
-    response: BytesLike;
-    err: BytesLike;
-  };
-
-  export type FunctionResponseStructOutput = [
-    functionId: string,
-    caller: string,
-    callbackFunction: string,
-    response: string,
-    err: string
-  ] & {
-    functionId: string;
-    caller: string;
-    callbackFunction: string;
-    response: string;
-    err: string;
-  };
 }
 
 export declare namespace Functions {
@@ -186,10 +192,7 @@ export interface FunctionsManagerInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "acceptOwnership"
-      | "approveTokenSpender"
       | "authorMetadata"
-      | "calculateFunctionId"
-      | "calculateFunctionIdFromRequest"
       | "estimateCost"
       | "executeRequest"
       | "feeManagerCut"
@@ -200,16 +203,18 @@ export interface FunctionsManagerInterface extends Interface {
       | "functionResponses"
       | "functionsCalledCount"
       | "functionsRegisteredCount"
+      | "getAllFunctionMetadata"
       | "getDONPublicKey"
       | "getFunctionExecuteMetadata"
       | "getFunctionMetadata"
       | "getFunctionResponse"
+      | "getFunctionResponseWithReturnType"
       | "getSubscriptionBalance"
       | "handleOracleFulfillment"
       | "maxGasLimit"
       | "minimumSubscriptionBalance"
       | "owner"
-      | "refillSubscription"
+      | "refillSubscriptionAsOwner"
       | "registerFunction"
       | "setFeeManagerCut"
       | "setMaxGasLimit"
@@ -242,20 +247,8 @@ export interface FunctionsManagerInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "approveTokenSpender",
-    values: [AddressLike, BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "authorMetadata",
     values: [AddressLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "calculateFunctionId",
-    values: [string, AddressLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "calculateFunctionIdFromRequest",
-    values: [FunctionsManager.FunctionsRegisterRequestStruct, AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "estimateCost",
@@ -298,6 +291,10 @@ export interface FunctionsManagerInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "getAllFunctionMetadata",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "getDONPublicKey",
     values?: undefined
   ): string;
@@ -311,6 +308,10 @@ export interface FunctionsManagerInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "getFunctionResponse",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getFunctionResponseWithReturnType",
     values: [BytesLike]
   ): string;
   encodeFunctionData(
@@ -331,7 +332,7 @@ export interface FunctionsManagerInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "refillSubscription",
+    functionFragment: "refillSubscriptionAsOwner",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -380,19 +381,7 @@ export interface FunctionsManagerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "approveTokenSpender",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "authorMetadata",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "calculateFunctionId",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "calculateFunctionIdFromRequest",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -436,6 +425,10 @@ export interface FunctionsManagerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "getAllFunctionMetadata",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "getDONPublicKey",
     data: BytesLike
   ): Result;
@@ -449,6 +442,10 @@ export interface FunctionsManagerInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getFunctionResponse",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getFunctionResponseWithReturnType",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -469,7 +466,7 @@ export interface FunctionsManagerInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "refillSubscription",
+    functionFragment: "refillSubscriptionAsOwner",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -586,7 +583,8 @@ export namespace FunctionCalledEvent {
     owner: AddressLike,
     callbackFunction: BytesLike,
     baseFee: BigNumberish,
-    fee: BigNumberish
+    fee: BigNumberish,
+    args: string[]
   ];
   export type OutputTuple = [
     functionId: string,
@@ -595,7 +593,8 @@ export namespace FunctionCalledEvent {
     owner: string,
     callbackFunction: string,
     baseFee: bigint,
-    fee: bigint
+    fee: bigint,
+    args: string[]
   ];
   export interface OutputObject {
     functionId: string;
@@ -605,6 +604,7 @@ export namespace FunctionCalledEvent {
     callbackFunction: string;
     baseFee: bigint;
     fee: bigint;
+    args: string[];
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -763,12 +763,6 @@ export interface FunctionsManager extends BaseContract {
 
   acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
-  approveTokenSpender: TypedContractMethod<
-    [_spender: AddressLike, _value: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
-
   authorMetadata: TypedContractMethod<
     [arg0: AddressLike],
     [
@@ -778,21 +772,6 @@ export interface FunctionsManager extends BaseContract {
         websiteUrl: string;
       }
     ],
-    "view"
-  >;
-
-  calculateFunctionId: TypedContractMethod<
-    [functionName: string, owner: AddressLike],
-    [string],
-    "view"
-  >;
-
-  calculateFunctionIdFromRequest: TypedContractMethod<
-    [
-      request: FunctionsManager.FunctionsRegisterRequestStruct,
-      owner: AddressLike
-    ],
-    [string],
     "view"
   >;
 
@@ -854,7 +833,8 @@ export interface FunctionsManager extends BaseContract {
   functionMetadatas: TypedContractMethod<
     [arg0: BytesLike],
     [
-      [string, string, bigint, string, string, string] & {
+      [string, string, string, bigint, string, string, string] & {
+        functionId: string;
         owner: string;
         category: string;
         expectedReturnType: bigint;
@@ -884,6 +864,17 @@ export interface FunctionsManager extends BaseContract {
 
   functionsRegisteredCount: TypedContractMethod<[], [bigint], "view">;
 
+  getAllFunctionMetadata: TypedContractMethod<
+    [_functionId: BytesLike],
+    [
+      [
+        FunctionsManager.FunctionMetadataStructOutput,
+        FunctionsManager.FunctionExecuteMetadataStructOutput
+      ]
+    ],
+    "view"
+  >;
+
   getDONPublicKey: TypedContractMethod<[], [string], "view">;
 
   getFunctionExecuteMetadata: TypedContractMethod<
@@ -901,6 +892,12 @@ export interface FunctionsManager extends BaseContract {
   getFunctionResponse: TypedContractMethod<
     [_requestId: BytesLike],
     [FunctionsManager.FunctionResponseStructOutput],
+    "view"
+  >;
+
+  getFunctionResponseWithReturnType: TypedContractMethod<
+    [_requestId: BytesLike],
+    [[FunctionsManager.FunctionResponseStructOutput, bigint]],
     "view"
   >;
 
@@ -922,7 +919,7 @@ export interface FunctionsManager extends BaseContract {
 
   owner: TypedContractMethod<[], [string], "view">;
 
-  refillSubscription: TypedContractMethod<
+  refillSubscriptionAsOwner: TypedContractMethod<
     [_subscriptionId: BigNumberish],
     [void],
     "nonpayable"
@@ -992,13 +989,6 @@ export interface FunctionsManager extends BaseContract {
     nameOrSignature: "acceptOwnership"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "approveTokenSpender"
-  ): TypedContractMethod<
-    [_spender: AddressLike, _value: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
     nameOrSignature: "authorMetadata"
   ): TypedContractMethod<
     [arg0: AddressLike],
@@ -1009,23 +999,6 @@ export interface FunctionsManager extends BaseContract {
         websiteUrl: string;
       }
     ],
-    "view"
-  >;
-  getFunction(
-    nameOrSignature: "calculateFunctionId"
-  ): TypedContractMethod<
-    [functionName: string, owner: AddressLike],
-    [string],
-    "view"
-  >;
-  getFunction(
-    nameOrSignature: "calculateFunctionIdFromRequest"
-  ): TypedContractMethod<
-    [
-      request: FunctionsManager.FunctionsRegisterRequestStruct,
-      owner: AddressLike
-    ],
-    [string],
     "view"
   >;
   getFunction(
@@ -1090,7 +1063,8 @@ export interface FunctionsManager extends BaseContract {
   ): TypedContractMethod<
     [arg0: BytesLike],
     [
-      [string, string, bigint, string, string, string] & {
+      [string, string, string, bigint, string, string, string] & {
+        functionId: string;
         owner: string;
         category: string;
         expectedReturnType: bigint;
@@ -1123,6 +1097,18 @@ export interface FunctionsManager extends BaseContract {
     nameOrSignature: "functionsRegisteredCount"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
+    nameOrSignature: "getAllFunctionMetadata"
+  ): TypedContractMethod<
+    [_functionId: BytesLike],
+    [
+      [
+        FunctionsManager.FunctionMetadataStructOutput,
+        FunctionsManager.FunctionExecuteMetadataStructOutput
+      ]
+    ],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "getDONPublicKey"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
@@ -1147,6 +1133,13 @@ export interface FunctionsManager extends BaseContract {
     "view"
   >;
   getFunction(
+    nameOrSignature: "getFunctionResponseWithReturnType"
+  ): TypedContractMethod<
+    [_requestId: BytesLike],
+    [[FunctionsManager.FunctionResponseStructOutput, bigint]],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "getSubscriptionBalance"
   ): TypedContractMethod<[_subscriptionId: BigNumberish], [bigint], "view">;
   getFunction(
@@ -1166,7 +1159,7 @@ export interface FunctionsManager extends BaseContract {
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "refillSubscription"
+    nameOrSignature: "refillSubscriptionAsOwner"
   ): TypedContractMethod<[_subscriptionId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "registerFunction"
@@ -1319,7 +1312,7 @@ export interface FunctionsManager extends BaseContract {
       FunctionCallCompletedEvent.OutputObject
     >;
 
-    "FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96)": TypedContractEvent<
+    "FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96,string[])": TypedContractEvent<
       FunctionCalledEvent.InputTuple,
       FunctionCalledEvent.OutputTuple,
       FunctionCalledEvent.OutputObject

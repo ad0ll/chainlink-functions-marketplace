@@ -164,6 +164,7 @@ return Functions.encodeUint256(Math.round(res * 100));`,
 
 
     const onSubmit = handleSubmit(async (data) => {
+        console.log("Raw form values", data)
         const post = {
             ...data,
             expectedArgs: data.expectedArgs.map(t => {
@@ -171,8 +172,10 @@ return Functions.encodeUint256(Math.round(res * 100));`,
             }),
             category: encodeBytes32String(data.category),
             fee: ethers.parseUnits(data.fee.toString()),
-
+            expectedReturnType: data.expectedReturnType
         }
+        
+        console.log("Massaged payload", post)
 
         if (post.subscriptionId !== "NEW") {
             const [balance, owner, consumers] = await functionsBillingRegistry.getSubscription(post.subscriptionId);
@@ -307,7 +310,7 @@ return Functions.encodeUint256(Math.round(res * 100));`,
                         </MenuItem>
 
                         {/*TODO get some USDC coin here. Use AAVE's faucet if you want*/}
-                        <MenuItem value={"have no clue"}>
+                        <MenuItem value={"have no clue"} disabled>
                             <Box style={{"display": "flex", "alignItems": "center"}}>
                                 <SvgIcon component={UsdcIcon} viewBox="0 0 2000 2000"
                                          style={{marginRight: 4, height: 20}}/>

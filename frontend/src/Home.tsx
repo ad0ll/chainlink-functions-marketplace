@@ -1,7 +1,7 @@
 import {Box, CircularProgress, Grid, Stack, Typography} from "@mui/material";
 import {GlobalMetricsCard, RecentlyAddedCard} from "./Cards";
 import React, {useEffect} from "react";
-import Logo from "./assets/icons/logo.svg";
+import Logo from "./assets/icons/logo-with-text-hd.svg";
 import ListingTable from "./ListingTable";
 import {gql, useQuery} from "@apollo/client";
 import {Query} from "./gql/graphql";
@@ -12,6 +12,7 @@ import {FunctionsManager} from "./generated/contract-types";
 import {useWeb3React} from "@web3-react/core";
 import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
 import {ethers} from "ethers";
+// import LogoPng from "./assets/icons/logo-with-text.png"
 
 const LISTING_QUERY = gql`
     query EventSpammerFunctionRegistered($first: Int!, $skip: Int!, $searchTerm: String!){
@@ -66,12 +67,13 @@ export const SplashTop: React.FC = () => {
     return (<Box
         sx={{width: "100%", display: "flex", alignItems: "center", flexDirection: "column"}}
     >
-        <Stack spacing={2}>
-            <Logo style={{maxHeight: 80}}/>
-            <Typography variant={"h3"}>
-                Functions Marketplace
-            </Typography>
-        </Stack>
+        {/*<Stack spacing={2}>*/}
+        <Logo style={{maxHeight: 150}}/>
+        {/*<Typography variant={"h3"}>*/}
+        {/*    Functions Marketplace*/}
+        {/*</Typography>*/}
+        {/*</Stack>*/}
+
     </Box>)
 }
 
