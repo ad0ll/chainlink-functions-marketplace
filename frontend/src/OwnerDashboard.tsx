@@ -3,8 +3,15 @@ import {
     Box,
     Button,
     Card,
+    CardMedia,
     CircularProgress,
+    Dialog,
+    DialogContent,
+    DialogTitle,
     Grid,
+    List,
+    ListItem,
+    Paper,
     Stack,
     Table,
     TableBody,
@@ -17,7 +24,7 @@ import {
 } from "@mui/material";
 import {Link} from "react-router-dom";
 import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RechartTooltip, XAxis, YAxis} from "recharts";
-import {nDaysAgoUTCInSeconds, SHORT_POLL_INTERVAL} from "./common";
+import {etherUnitsToFixed, nDaysAgoUTCInSeconds, SHORT_POLL_INTERVAL, TypographyWithLinkIcon} from "./common";
 import {gql, useQuery} from "@apollo/client";
 import {FunctionRegistered, Query} from "./gql/graphql";
 import {BigNumberish, ethers, formatEther} from "ethers";
@@ -27,6 +34,15 @@ import {FunctionsManager} from "./generated/contract-types";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {FunctionsManagerContext} from "./FunctionsManagerProvider";
 import {toast} from "react-toastify";
+import {AddressCard} from "./Cards";
+import {fallbackToJazzicon, jazziconImageString} from "./utils/util";
+
+type SubscriptionRecord = {
+    owner: string,
+    balance: bigint,
+    consumers: string[],
+    reserved: bigint
+}
 
 const OWNER_DASHBOARD_QUERY = gql`
     query EventSpammerOwnerPage($owner: Bytes!){
@@ -45,9 +61,6 @@ const OWNER_DASHBOARD_QUERY = gql`
             subId
             metadata_name
             metadata_imageUrl
-            #            metadata_subscriptionPool
-            #            metadata_lockedProfitPool
-            #            metadata_unlockedProfitPool
         }
     }`
 
@@ -110,9 +123,10 @@ const FeeCell: React.FC<{
     const [bal, setBal] = useState<BigInt>(BigInt(0))
     useEffect(() => {
         const fetchBal = async () => {
+
             switch (pool) {
                 case "subscription":
-                    setBal(await functionsManagerContract.getSubscriptionBalance(func.functionId))
+                    setBal(await functionsManagerContract.getSubscriptionBalance(func.subId))
                     break
                 case "locked":
                     const metaLock = await functionsManagerContract.getFunctionExecuteMetadata(func.functionId)
@@ -124,16 +138,17 @@ const FeeCell: React.FC<{
                     break
             }
         }
+        fetchBal()
         const interval = setInterval(() => {
             fetchBal()
         }, 1000);
         return () => clearInterval(interval);
     }, [])
-    return <TableCell>
-        <Typography>
-            {formatEther(bal.toString())}
-        </Typography>
-    </TableCell>
+    return (<TableCell>
+        <TypographyWithLinkIcon includeSuffix={false}>
+            {etherUnitsToFixed(bal.valueOf())}
+        </TypographyWithLinkIcon>
+    </TableCell>)
 }
 const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
                                                                                   owner,
@@ -156,8 +171,6 @@ const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
         return <Typography>Something went wrong</Typography>
     }
 
-    // TODO could do this in the subgraph mapping instead of here
-    // TODO below organization of data is miserable
     const callDataRaw: { [key: string]: number } = {}
     const feeDataRaw: { [key: string]: bigint } = {}
 
@@ -177,24 +190,28 @@ const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
             date,
             calls
         }
+    }).sort((a, b) => {
+        return a.date > b.date ? 1 : -1
     })
     const feeData: { date: string, fees: string }[] = Object.entries(feeDataRaw).map(([date, fees]) => {
         return {
             date,
             fees: formatEther(fees)
         }
+    }).sort((a, b) => {
+        return a.date > b.date ? 1 : -1
     })
 
     return <Grid container spacing={2}>
         <Grid item xs={12} sm={6}>
-            <Card sx={{paddingTop: 2, display: "flex", flexDirection: "column", alignItems: "center"}} elevation={4}>
+            <Card sx={{paddingTop: 2, display: "flex", flexDirection: "column", alignItems: "center"}}>
                 <Typography variant={"h4"}>Total calls</Typography>
                 <RechartsLineChart data={callData} dataKey={"calls"} xKey={"date"} yKey={"calls"}
                                    stroke={"#8884d8"} fill={"#8884d8"}/>
             </Card>
         </Grid>
         <Grid item xs={12} sm={6}>
-            <Card sx={{paddingTop: 2, display: "flex", flexDirection: "column", alignItems: "center"}} elevation={4}>
+            <Card sx={{paddingTop: 2, display: "flex", flexDirection: "column", alignItems: "center"}}>
                 <Typography variant={"h4"}>Earnings</Typography>
                 <Typography>
                     <RechartsLineChart data={feeData} dataKey={"fees"} xKey={"date"}
@@ -206,10 +223,104 @@ const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
     </Grid>
 }
 
+const SubscriptionsTable: React.FC<{ subscriptions: BigNumberish[] }> = ({subscriptions}) => {
+    const {functionsBillingRegistry, functionsManager} = useContext(FunctionsManagerContext)
+    const [subBalances, setSubBalances] = useState<{
+        [key: string]: SubscriptionRecord
+    }>({})
+    const [selectedSub, setSelectedSub] = useState<string>("")
+    const [consumersDialogOpen, setConsumersDialogOpen] = useState<boolean>(false)
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const balances: { [key: string]: SubscriptionRecord } = {}
+                for (const sub of subscriptions) {
+                    const onChainSub = await functionsBillingRegistry.getSubscription(sub)
+                    const functionsManagerBalance = await functionsManager.getSubscriptionBalance(sub)
+                    balances[sub.toString()] = {
+                        owner: onChainSub.owner,
+                        balance: onChainSub.balance,
+                        consumers: onChainSub.consumers,
+                        reserved: functionsManagerBalance
+                    }
+                }
+                setSubBalances(balances)
+
+            } catch (e: any) {
+                console.error("SubscriptionTable", e)
+                return
+            }
+        }
+        fetchData()
+        const interval = setInterval(() => {
+            fetchData()
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [subscriptions])
+    return <TableContainer component={Paper} sx={{padding: 2}}>
+        <Typography variant={"h4"}>My Subscriptions</Typography>
+
+        <Dialog open={consumersDialogOpen} onClose={() => setConsumersDialogOpen(false)}>
+            <DialogTitle>
+                Consumers for {selectedSub}
+            </DialogTitle>
+            <DialogContent>
+                <List>
+                    {subBalances[selectedSub]?.consumers.map((consumer) => {
+                        return <ListItem>{consumer}</ListItem>
+                    })}
+                </List>
+            </DialogContent>
+        </Dialog>
+        <Table>
+            <TableHead>
+                <TableRow>
+
+                    <TableCell><Typography>ID</Typography></TableCell>
+                    <TableCell><Typography>Owner</Typography></TableCell>
+                    <TableCell><Typography>Consumers</Typography></TableCell>
+                    <TableCell><Typography>Reserved</Typography></TableCell>
+                    <TableCell><Typography>Balance</Typography></TableCell>
+                </TableRow>
+            </TableHead>
+            <TableBody>
+                {Object.entries(subBalances).map(([id, sub]) => {
+                    return <TableRow key={id}>
+                        <TableCell><Typography>{id}</Typography></TableCell>
+                        <TableCell><AddressCard truncate={false} addr={sub.owner}/></TableCell>
+                        <TableCell>
+                            <a onClick={() => {
+                                startTransition(() => {
+                                    setSelectedSub(id)
+                                    setConsumersDialogOpen(true)
+                                })
+                            }}>
+                                <Typography color={"primary.main"}
+                                            sx={{textDecoration: "underline"}}
+                                >{sub.consumers.length}</Typography>
+                            </a>
+                        </TableCell>
+                        <TableCell>
+                            <TypographyWithLinkIcon includeSuffix={false}>
+                                {etherUnitsToFixed(sub.reserved.valueOf())}
+                            </TypographyWithLinkIcon>
+                        </TableCell>
+                        <TableCell>
+                            <TypographyWithLinkIcon includeSuffix={false}>
+                                {etherUnitsToFixed(sub.balance.valueOf())}
+                            </TypographyWithLinkIcon>
+                        </TableCell>
+                    </TableRow>
+                })}
+            </TableBody>
+        </Table>
+    </TableContainer>
+}
+
 
 export const OwnerDashboard: React.FC = () => {
 
-    const {account, provider, functionsManagerContract, networkConfig} = useContext(FunctionsManagerContext)
+    const {account, provider, functionsManager, networkConfig} = useContext(FunctionsManagerContext)
     const [showDetails, setShowDetails] = React.useState(false)
     const [selectedForWithdrawal, setSelectedForWithdrawal] = React.useState("")
     const [initiateWithdrawSingle, setInitiateWithdrawSingle] = React.useState<boolean>(false)
@@ -227,7 +338,7 @@ export const OwnerDashboard: React.FC = () => {
         const post = async () => {
             toast.info("Initiating withdrawl...")
             try {
-                const withdrawSingleTx = await functionsManagerContract.withdrawFunctionProfitToAuthor(selectedForWithdrawal)
+                const withdrawSingleTx = await functionsManager.withdrawFunctionProfitToAuthor(selectedForWithdrawal)
                 const execReceipt = await provider?.waitForTransaction(withdrawSingleTx.hash, 1);
                 if (execReceipt?.status !== 1) {
                     toast.error(<Typography variant={"body1"} color={"error"}>Transaction failed
@@ -253,7 +364,7 @@ export const OwnerDashboard: React.FC = () => {
             toast.info("Initiating withdrawl...")
             try {
                 const ids = data?.functionRegistereds.map((f) => f.functionId)
-                const withdrawMultiTx = await functionsManagerContract.withdrawMultipleFunctionProfitToAuthor(ids || [], {gasLimit: 1000000})
+                const withdrawMultiTx = await functionsManager.withdrawMultipleFunctionProfitToAuthor(ids || [], {gasLimit: 1000000})
                 const execReceipt = await provider?.waitForTransaction(withdrawMultiTx.hash, 1);
                 if (execReceipt?.status !== 1) {
                     toast.error(<Typography variant={"body1"} color={"error"}>Transaction failed
@@ -279,74 +390,104 @@ export const OwnerDashboard: React.FC = () => {
         return <Typography>Something went wrong</Typography>
     }
 
+    console.log("Subs", (data?.functionRegistereds || []).map((f) => f.subId))
 
     const blockTimestamp = nDaysAgoUTCInSeconds(7)
     return <Stack spacing={2}>
         <Typography variant={"h3"} sx={{padding: 2, textAlign: "center"}}>Owner dashboard</Typography>
         <StatCards owner={account} blockTimestamp={blockTimestamp}/>
 
-        <TableContainer sx={{border: "1px solid white", padding: 2}}>
-            <Box sx={{border: "1px solid primary.main", display: "flex"}}>
-                <Typography variant={"h4"}>My Functions</Typography>
-                {<Button startIcon={<ArticleIcon/>} sx={{maxWidth: 300, marginLeft: "auto", marginRight: 1}}
-                         variant={showDetails ? "contained" : "outlined"} onClick={() => setShowDetails(!showDetails)}
-                         color={"secondary"}>
-                    {showDetails ? "Hide" : "Show"} details
-                </Button>}
-                <Button startIcon={<PaymentsIcon/>} variant={"contained"} color={"secondary"} onClick={() => {
-                    startTransition(() => {
-                        setInitiateWithdrawMulti(true)
-                    })
-                }}>Withdraw
-                    All</Button>
-            </Box>
-            <Table>
-                <TableHead>
-                    <TableRow>
-                        <TableCell><Typography>Name</Typography></TableCell>
-                        <TableCell><Typography>Calls 24h</Typography></TableCell>
-                        <TableCell><Typography>Calls 7d</Typography></TableCell>
-                        {showDetails && <TableCell>
-                            <Tooltip
-                                title={"These funds cover the base fee that must be paid by your subscription when making a call to Chainlink Functions. They will be transferred over to your subscription automatically when it runs low. You can't withdraw these funds manually without deleting your listing."}>
-                                <Typography>Reserved<HelpOutlineIcon/></Typography>
-                            </Tooltip>
-                        </TableCell>}
-                        {showDetails && <TableCell>
-                            <Tooltip
-                                title={"This number represents the total number of fees contained in in-flight requests. Funds here will be unlocked when "}>
-                                <Typography>Locked <HelpOutlineIcon/></Typography>
-                            </Tooltip>
-                        </TableCell>}
-                        <TableCell><Typography>Available</Typography></TableCell>
-                        <TableCell><Typography>Withdraw</Typography></TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {data?.functionRegistereds.map((func, i) => {
-                        return (<TableRow key={i}>
-                            <TableCell><Link
-                                to={`/buy/${func.id}`}><Typography>{func.metadata_name}</Typography></Link></TableCell>
-                            <StatsCell func={func} blockTimestamp={nDaysAgoUTCInSeconds(1).toString()}></StatsCell>
-                            <StatsCell func={func} blockTimestamp={nDaysAgoUTCInSeconds(7).toString()}></StatsCell>
-                            {showDetails && <FeeCell func={func} pool={"subscription"}
-                                                     functionsManagerContract={functionsManagerContract}/>}
-                            {showDetails && <FeeCell func={func} pool={"locked"}
-                                                     functionsManagerContract={functionsManagerContract}/>}
-                            <FeeCell func={func} pool={"unlocked"} functionsManagerContract={functionsManagerContract}/>
-                            <TableCell>
-                                <Button color={"secondary"} onClick={() => {
-                                    startTransition(() => {
-                                        setSelectedForWithdrawal(func.functionId)
-                                        setInitiateWithdrawSingle(true)
-                                    })
-                                }}>Withdraw</Button>
-                            </TableCell>
-                        </TableRow>)
-                    })}
-                </TableBody>
-            </Table>
-        </TableContainer>
+        <Grid container spacing={2}>
+            <Grid item xs={12}>
+                <TableContainer
+                    component={Paper}
+                    sx={{padding: 2}}
+                >
+                    <Box sx={{border: "1px solid primary.main", display: "flex"}}>
+                        <Typography variant={"h4"}>My Functions</Typography>
+                        {<Button startIcon={<ArticleIcon/>} sx={{maxWidth: 300, marginLeft: "auto", marginRight: 1}}
+                                 variant={showDetails ? "contained" : "outlined"}
+                                 onClick={() => setShowDetails(!showDetails)}
+                                 color={"secondary"}>
+                            {showDetails ? "Hide" : "Show"} details
+                        </Button>}
+                        <Button startIcon={<PaymentsIcon/>} variant={"contained"} color={"secondary"} onClick={() => {
+                            startTransition(() => {
+                                setInitiateWithdrawMulti(true)
+                            })
+                        }}>Withdraw
+                            All</Button>
+                    </Box>
+
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell><Typography>Name</Typography></TableCell>
+                                <TableCell><Typography>Calls 24h</Typography></TableCell>
+                                <TableCell><Typography>Calls 7d</Typography></TableCell>
+                                {showDetails && <TableCell>
+                                    <Tooltip
+                                        title={"These funds cover the base fee that must be paid by your subscription when making a call to Chainlink Functions. They will be transferred over to your subscription automatically when it runs low. You can't withdraw these funds manually without deleting your listing."}>
+                                        <Typography>Reserved<HelpOutlineIcon/></Typography>
+                                    </Tooltip>
+                                </TableCell>}
+                                {showDetails && <TableCell>
+                                    <Tooltip
+                                        title={"This number represents the total number of fees contained in in-flight requests. Funds here will be unlocked when "}>
+                                        <Typography>Locked <HelpOutlineIcon/></Typography>
+                                    </Tooltip>
+                                </TableCell>}
+                                <TableCell><Typography>Available</Typography></TableCell>
+                                <TableCell><Typography>Withdraw</Typography></TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {data?.functionRegistereds.map((func, i) => {
+                                return (<TableRow key={i}>
+                                    <TableCell>
+                                        <Link to={`/buy/${func.functionId}`}
+                                              style={{display: "flex", alignItems: "center"}}>
+                                            <CardMedia
+                                                component={"img"}
+                                                sx={{width: 32, marginRight: 1}}
+                                                image={func.metadata_imageUrl || jazziconImageString(func.functionId)}
+                                                onError={(e) => fallbackToJazzicon(e, func.functionId)}/>
+                                            <Typography>
+                                                {func.metadata_name}
+                                            </Typography>
+                                        </Link>
+                                    </TableCell>
+                                    <StatsCell func={func}
+                                               blockTimestamp={nDaysAgoUTCInSeconds(1).toString()}></StatsCell>
+                                    <StatsCell func={func}
+                                               blockTimestamp={nDaysAgoUTCInSeconds(7).toString()}></StatsCell>
+                                    {showDetails && <FeeCell func={func} pool={"subscription"}
+                                                             functionsManagerContract={functionsManager}/>}
+                                    {showDetails && <FeeCell func={func} pool={"locked"}
+                                                             functionsManagerContract={functionsManager}/>}
+                                    <FeeCell func={func} pool={"unlocked"} functionsManagerContract={functionsManager}/>
+                                    <TableCell>
+                                        <Button color={"secondary"} onClick={() => {
+                                            startTransition(() => {
+                                                setSelectedForWithdrawal(func.functionId)
+                                                setInitiateWithdrawSingle(true)
+                                            })
+                                        }}>Withdraw</Button>
+                                    </TableCell>
+                                </TableRow>)
+                            })}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Grid>
+        </Grid>
+
+        <Grid container xs={12} spacing={2}>
+            <Grid item xs={12}>
+                <SubscriptionsTable
+                    subscriptions={(data?.functionRegistereds || []).map((f) => f.subId)}></SubscriptionsTable>
+            </Grid>
+        </Grid>
     </Stack>
 }
 

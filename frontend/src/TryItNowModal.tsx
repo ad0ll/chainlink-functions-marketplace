@@ -46,7 +46,7 @@ export const TryItNowModal: React.FC<{
     open: boolean,
     setOpen: React.Dispatch<React.SetStateAction<boolean>>
 }> = ({func, open, setOpen}) => {
-    const {networkConfig, account, provider, functionsManagerContract} = useContext(FunctionsManagerContext);
+    const {networkConfig, account, provider, functionsManager} = useContext(FunctionsManagerContext);
     const [args, setArgs] = useState<string[]>([]);
     const [requestId, setRequestId] = useState<string>("");
     const [errorMsg, setErrorMsg] = useState<ReactNode>(<div/>);
@@ -67,23 +67,30 @@ export const TryItNowModal: React.FC<{
         if (allowance < parseEther("1")) {
             toast.info("Your account is not authorized to transfer LINK to the FunctionsManager. Please authorize this transaction to approve LINK transfers.")
             try {
-
-
+                setStatusText("Approving LINK transfers...")
+                setWaitingForResponse(true)
                 let approveTx = await linkTokenContract.approve(networkConfig.functionsManager, parseEther("1"))
+
+                setStatusText("Approving LINK transfers...")
+
                 let approveReceipt = await provider?.waitForTransaction(approveTx.hash, 1)
                 if (approveReceipt?.status !== 1) {
                     toast.error("Failed to approve LINK transfers, please try again")
                     return
                 }
                 toast.success("Successfully approved LINK transfers")
+                setWaitingForResponse(false)
             } catch (e: any) {
-                console.log("encountered error running approve", e)
+                console.log("encountered error running approve", e);
+                setWaitingForResponse(false);
+                setErrorMsg("Failed to approve LINK transfers, please try again");
+                return
             }
         }
 
         try {
             setStatusText("Executing function...")
-            const execTx = await functionsManagerContract.executeRequest(func.functionId, args, {gasLimit: 1000000});
+            const execTx = await functionsManager.executeRequest(func.functionId, args, {gasLimit: 1000000});
             setWaitingForResponse(true)
             setStatusText("Waiting for transaction to be mined...")
             const execReceipt = await provider?.waitForTransaction(execTx.hash, 1);
@@ -125,15 +132,19 @@ export const TryItNowModal: React.FC<{
             , "waitingForResponse", waitingForResponse)
         if (!waitingForResponse || !requestId) return
         const fetchData = async () => {
-            if (functionResponse && (functionResponse.err || functionResponse.response)) return //Stop polling when confirmed
-            const outcome = await functionsManagerContract.getFunctionResponse(requestId)
-            console.log("outcome", outcome)
-            if (outcome.err || outcome.response) {
-                startTransition(() => {
-
-                    setFunctionResponse(outcome)
-                    setWaitingForResponse(false)
-                })
+            try {
+                if (functionResponse && ((functionResponse.err && functionResponse.err !== "0x") || (functionResponse.response && functionResponse.response !== "0x"))) return //Stop polling when confirmed
+                const outcome = await functionsManager.getFunctionResponse(requestId)
+                console.log("outcome", outcome)
+                if (outcome.err || outcome.response) {
+                    startTransition(() => {
+                        setFunctionResponse(outcome)
+                        setWaitingForResponse(false)
+                    })
+                }
+            } catch (e: any) {
+                console.log("getFunctinResponse", e.message)
+                return
             }
         }
         fetchData()

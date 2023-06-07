@@ -4,7 +4,8 @@ import {useWeb3React} from "@web3-react/core";
 import {Typography} from "@mui/material";
 import {useContract} from "./contractHooks";
 import FunctionsManagerJson from "./generated/abi/FunctionsManager.json";
-import {FunctionsManager} from "./generated/contract-types";
+import FunctionsBillingRegistryJson from "./generated/abi/FunctionsBillingRegistry.json";
+import {FunctionsBillingRegistry, FunctionsManager} from "./generated/contract-types";
 import {JsonRpcProvider} from "@ethersproject/providers";
 
 
@@ -12,13 +13,15 @@ export const FunctionsManagerContext = React.createContext<{
     chainId: typeof MUMBAI_CHAIN_ID | typeof SEPOLIA_CHAIN_ID,
     account: string,
     provider: JsonRpcProvider,
-    functionsManagerContract: FunctionsManager
+    functionsManager: FunctionsManager,
+    functionsBillingRegistry: FunctionsBillingRegistry,
     networkConfig: any
 }>({
     chainId: MUMBAI_CHAIN_ID,
     account: "",
     provider: new JsonRpcProvider(""),
-    functionsManagerContract: {} as FunctionsManager,
+    functionsManager: {} as FunctionsManager,
+    functionsBillingRegistry: {} as FunctionsBillingRegistry,
     networkConfig: {}
 })
 
@@ -34,12 +37,14 @@ export const FunctionsManagerProvider: React.FC<{ children: React.ReactNode }> =
         return <Typography>Provider not found</Typography>
     }
 
-    const functionsManagerContract = useContract(networkConfig[chainId].functionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager;
+    const functionsManager = useContract(networkConfig[chainId].functionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager;
+    const functionsBillingRegistry = useContract(networkConfig[chainId].functionsBillingRegistryProxy, FunctionsBillingRegistryJson.abi) as unknown as FunctionsBillingRegistry;
     return <FunctionsManagerContext.Provider value={{
         chainId,
         account,
         provider,
-        functionsManagerContract,
+        functionsManager,
+        functionsBillingRegistry,
         networkConfig: networkConfig[chainId]
     }}>
         {children}

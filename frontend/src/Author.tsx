@@ -1,6 +1,6 @@
 // Code for the user drilldown page
 import React from "react";
-import {Box, Card, Stack, Tooltip, Typography} from "@mui/material";
+import {Card, Stack, Tooltip, Typography} from "@mui/material";
 import {gql} from "@apollo/client";
 import {Link, useParams} from "react-router-dom";
 import {fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./utils/util";
@@ -80,10 +80,14 @@ const AuthorAddressCard: React.FC<{ address?: string }> = ({address}) => {
             paddingLeft: 2,
             paddingRight: 2
         }} elevation={2}>
+            {/*<Tooltip title={"Click to copy to clipboard"}>*/}
+            {/*<CopyToClipboard text={address || ""}>*/}
             <Typography variant={"h5"} color={"secondary"}
                         sx={{
                             marginRight: 1,
                         }}>{truncateIfAddress(address || "")}</Typography>
+            {/*</CopyToClipboard>*/}
+            {/*</Tooltip>*/}
             <Tooltip title={"Open in scanner"}>
                 <Link to={networkConfig[chainId].getScannerAddressUrl(address || "")}>
                     {<OpenInNewIcon/>}
@@ -99,12 +103,8 @@ export const Author: React.FC = () => {
 
     return (<Stack spacing={2}>
         <AuthorAddressCard address={address}/>
-        <Box border={"1px solid white"}>
-            <Typography variant={"h4"}>
-                Placeholder for author metadata + call history
-            </Typography>
-        </Box>
-        <Typography variant={"h4"}>Functions by {truncateIfAddress(address || "")}</Typography>
+
+        <Typography variant={"h4"}>Functions by {address}</Typography>
         <ListingTable query={OWNER_LISTING_QUERY} args={{owner: address}}
                       columns={["name", "category", "fee", "created", "actions"]}/>
     </Stack>)

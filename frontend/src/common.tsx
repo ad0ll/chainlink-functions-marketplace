@@ -4,6 +4,7 @@ import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
 import {Buffer} from 'buffer';
 import {FunctionsManager} from "./generated/contract-types";
 import {FunctionRegistered} from "./gql/graphql";
+import {ethers} from "ethers";
 
 // TODO Fetch the base fee from the FunctionManager contract
 export const BASE_FEE = 200000000000000000n; //0.2 LINK
@@ -282,4 +283,8 @@ export const OutcomeCell: React.FC<{
         return <OutcomeCellText color={"#31ff87"} text={"SUCCESS"}/>
     }
     return <OutcomeCellText color={"grey"} text={"UNKNOWN"}/>;
+}
+
+export const etherUnitsToFixed = (val: bigint, decimals: bigint = 2n) => {
+    return ethers.formatUnits(val - (val % (10n ** (18n - decimals))), "ether")
 }

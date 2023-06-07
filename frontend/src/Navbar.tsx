@@ -67,10 +67,10 @@ export const NavBar: React.FC = ({}) => {
                     Dashboard
                 </Button>
             </Link>
-
-            <img style={{maxWidth: 40, marginLeft: "auto"}}
-                 src={jazziconImageString(account)}
-                 onError={(e) => fallbackToJazzicon(e, account || "")}/>
+            {account &&
+                <img style={{maxWidth: 40, marginLeft: "auto"}}
+                     src={jazziconImageString(account)}
+                     onError={(e) => fallbackToJazzicon(e, account || "")}/>}
             <Tooltip title={tooltipText} placement={"bottom"} disableHoverListener={tooltipText === ""}>
                 {isActive ?
                     <Button variant={"contained"} color={"secondary"}

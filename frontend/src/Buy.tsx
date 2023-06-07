@@ -51,28 +51,6 @@ import {fallbackToJazzicon, jazziconImageString} from "./utils/util";
 import {TryItNowModal} from "./TryItNowModal";
 
 
-const DRILLDOWN_QUERY = gql`
-    query DrilldownPage($functionId: ID!){
-        functionRegistered(
-
-            id: $functionId
-        ){
-            id
-            functionId
-            owner
-            metadata_owner
-            metadata_name
-            metadata_desc
-            metadata_imageUrl
-            metadata_expectedArgs
-            metadata_expectedReturnType
-            metadata_category
-            fee
-            subId
-        }
-    }
-`
-
 const GridRow: React.FC<{ label: string, children: React.ReactNode, valueFirst?: boolean }> = ({
                                                                                                    label,
                                                                                                    children,
@@ -97,13 +75,13 @@ const GridRowTyp: React.FC<{ label: string, value?: string | number }> = ({label
 }
 
 const MetricsCards: React.FC<{ functionId: string }> = ({functionId}) => {
-    const {functionsManagerContract} = useContext(FunctionsManagerContext)
+    const {functionsManager} = useContext(FunctionsManagerContext)
 
     const [meta, setMeta] = React.useState<Partial<FunctionsManager.FunctionExecuteMetadataStruct>>()
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const meta = await functionsManagerContract.getFunctionExecuteMetadata(functionId)
+                const meta = await functionsManager.getFunctionExecuteMetadata(functionId)
                 setMeta({
                     functionsCalledCount: meta.functionsCalledCount,
                     totalFeesCollected: meta.totalFeesCollected,
@@ -112,6 +90,7 @@ const MetricsCards: React.FC<{ functionId: string }> = ({functionId}) => {
                 })
             } catch (e: any) {
                 console.log("Enconteered error fetching execution metadata", e)
+                return
             }
 
         }
@@ -127,12 +106,11 @@ const MetricsCards: React.FC<{ functionId: string }> = ({functionId}) => {
         return <>Missing Metadata</>
     }
     const failurePercent = BigInt(functionsCalledCount) > 0n
-        ? (BigInt(failedResponseCount) / BigInt(functionsCalledCount)) * 100n
+        ? ((BigInt(failedResponseCount) * 100n) / BigInt(functionsCalledCount))
         : 0n
     const successPercent = BigInt(functionsCalledCount) > 0n
-        ? (BigInt(successfulResponseCount) / BigInt(functionsCalledCount)) * 100n
+        ? ((BigInt(successfulResponseCount) * 100n) / BigInt(functionsCalledCount))
         : 0n
-
     return (<Grid container spacing={2}>
         <Grid item xs={6}>
             <Card elevation={4}
@@ -166,7 +144,7 @@ const MetricsCards: React.FC<{ functionId: string }> = ({functionId}) => {
                                             textAlign: "center",
                                         }}>{BigInt(successfulResponseCount).toString()}</Typography>
                             <Typography variant={"h6"}>
-                                Successful
+                                Success
                             </Typography>
                         </Box>
                         <Box sx={{color: "#ff3131"}}>
@@ -234,14 +212,14 @@ const FUNCTION_CALL_HISTORY_QUERY = gql`
 const OutcomeCellFetch: React.FC<{ requestId: string }> = ({
                                                                requestId,
                                                            }) => {
-    const {functionsManagerContract} = useContext(FunctionsManagerContext)
+    const {functionsManager} = useContext(FunctionsManagerContext)
     const [functionResponse, setFunctionResponse] = React.useState<FunctionsManager.FunctionResponseStruct>()
 
     useEffect(() => {
         const fetchData = async () => {
             if (functionResponse && (functionResponse.err || functionResponse.response)) return //Stop polling when confirmed
             try {
-                const outcome = await functionsManagerContract.getFunctionResponse(requestId)
+                const outcome = await functionsManager.getFunctionResponse(requestId)
                 setFunctionResponse(outcome)
             } catch (e: any) {
                 console.log("Encountered error fetching function response", e)
@@ -272,7 +250,7 @@ const DetailsDialog: React.FC<{
           expectedReturnType,
           transactionHash
       }) => {
-    const {functionsManagerContract, networkConfig} = useContext(FunctionsManagerContext)
+    const {functionsManager, networkConfig} = useContext(FunctionsManagerContext)
     const [functionResponse, setFunctionResponse] = React.useState<FunctionsManager.FunctionResponseStruct>()
     useEffect(() => {
         if (!open) return
@@ -281,7 +259,7 @@ const DetailsDialog: React.FC<{
             // if (functionResponse && (functionResponse.err || functionResponse.response)) return//Stop polling when confirmed
             console.log("Fetching data", requestId)
             try {
-                const outcome = await functionsManagerContract.getFunctionResponse(requestId)
+                const outcome = await functionsManager.getFunctionResponse(requestId)
                 console.log("outcome", outcome)
                 setFunctionResponse(outcome)
             } catch (e: any) {
@@ -328,13 +306,15 @@ const DetailsDialog: React.FC<{
                 <Grid container>
                     <Grid item xs={4}>Transaction Hash</Grid>
                     <Grid item xs={8}>
-                        {/*<Tooltip title={"Click to copy"}>*/}
-                        {/*            <CopyToClipboard text={transactionHash}>*/}
-                        <Typography sx={{overflow: "hidden", textOverflow: "ellipsis"}}>
-                            {transactionHash}
-                        </Typography>
-                        {/*            </CopyToClipboard>*/}
-                        {/*</Tooltip>*/}
+                        <Tooltip title={"View in scanner"}>
+                            {/*            <CopyToClipboard text={transactionHash}>*/}
+                            <a href={networkConfig?.getScannerUrlForTx(transactionHash)} target={"_blank"}>
+                                <Typography sx={{overflow: "hidden", textOverflow: "ellipsis"}}>
+                                    {transactionHash}
+                                </Typography>
+                            </a>
+                            {/*            </CopyToClipboard>*/}
+                        </Tooltip>
                     </Grid>
                 </Grid>
                 <Grid container>
@@ -528,7 +508,7 @@ const InputSnippetGenerator: React.FC<{
 }
 
 export const Buy: React.FC = () => {
-    const {networkConfig, functionsManagerContract} = useContext(FunctionsManagerContext)
+    const {networkConfig, functionsManager} = useContext(FunctionsManagerContext)
     const {functionId} = useParams<{ functionId: string }>();
     if (!functionId) return <Typography>Function not found</Typography>
     const [tryDialogOpen, setTryDialogOpen] = React.useState(false);
@@ -539,8 +519,8 @@ export const Buy: React.FC = () => {
         const fetchData = async () => {
             // const [f, fe] = await functionsManagerContract.getAllFunctionMetadata(functionId);
 
-            const ff = await functionsManagerContract.getFunctionMetadata(functionId);
-            const fff = await functionsManagerContract.getFunctionExecuteMetadata(functionId);
+            const ff = await functionsManager.getFunctionMetadata(functionId);
+            const fff = await functionsManager.getFunctionExecuteMetadata(functionId);
             if (!ff) return;
             startTransition(() => {
                 setFunc(mergeFunctionMetadataAndExecMetadata(ff, fff))
@@ -628,8 +608,15 @@ export const Buy: React.FC = () => {
                             </Box>
                         </GridRow>
 
+
+                        <GridRow label={"Return type"}>
+                            <Typography variant={"body1"}>
+                                {returnTypeEnumToString(func?.expectedReturnType.valueOf())} (Raw
+                                value: {func.expectedReturnType.toString()})
+                            </Typography>
+                        </GridRow>
                         <GridRow label={"Arguments"}>
-                            <List sx={{border: "1px solid white"}}>
+                            <List>
                                 {splitArgStrings(func?.expectedArgs).map((arg, i) => {
                                     return <ListItem key={i}>
                                         <Stack direction={"row"} spacing={2} padding={0}>
@@ -640,12 +627,6 @@ export const Buy: React.FC = () => {
                                     </ListItem>
                                 })}
                             </List>
-                        </GridRow>
-                        <GridRow label={"Return type"}>
-                            <Typography variant={"body1"}>
-                                {returnTypeEnumToString(func?.expectedReturnType.valueOf())} (Raw
-                                value: {func.expectedReturnType.toString()})
-                            </Typography>
                         </GridRow>
                     </Grid>
                 </Paper>

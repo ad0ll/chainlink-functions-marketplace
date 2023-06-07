@@ -1,17 +1,13 @@
 import {Box, CircularProgress, Grid, Stack, Typography} from "@mui/material";
 import {GlobalMetricsCard, RecentlyAddedCard} from "./Cards";
-import React, {useEffect} from "react";
+import React, {useContext, useEffect} from "react";
 import Logo from "./assets/icons/logo-with-text-hd.svg";
 import ListingTable from "./ListingTable";
 import {gql, useQuery} from "@apollo/client";
 import {Query} from "./gql/graphql";
-import {useContract} from "./contractHooks";
-import {MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
-import FunctionsManagerJson from "./generated/abi/FunctionsManager.json";
-import {FunctionsManager} from "./generated/contract-types";
-import {useWeb3React} from "@web3-react/core";
 import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
 import {ethers} from "ethers";
+import {FunctionsManagerContext} from "./FunctionsManagerProvider";
 // import LogoPng from "./assets/icons/logo-with-text.png"
 
 const LISTING_QUERY = gql`
@@ -63,46 +59,30 @@ const RECENTLY_ADDED_QUERY = gql`
     }
 `
 
-export const SplashTop: React.FC = () => {
-    return (<Box
-        sx={{width: "100%", display: "flex", alignItems: "center", flexDirection: "column"}}
-    >
-        {/*<Stack spacing={2}>*/}
-        <Logo style={{maxHeight: 150}}/>
-        {/*<Typography variant={"h3"}>*/}
-        {/*    Functions Marketplace*/}
-        {/*</Typography>*/}
-        {/*</Stack>*/}
-
-    </Box>)
-}
 
 const GlobalMetrics: React.FC = () => {
-    const {account, chainId, provider} = useWeb3React();
 
-    if (!chainId) {
-        return <Typography>Could not get chain id from the connected wallet</Typography>
-    } else if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
-        return <Typography>Wrong chain id. Please connect to Mumbai or Sepolia</Typography>
-    }
-
-
-    const functionsManagerContract = useContract(networkConfig[chainId].functionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager;
+    const {functionsManager} = useContext(FunctionsManagerContext)
     const [functionsRegisteredCount, setFunctionsRegisteredCount] = React.useState<BigInt>(0n);
     const [functionsCalledCount, setFunctionsCalledCount] = React.useState<BigInt>(0n);
     const [totalFeesCollected, setTotalFeesCollected] = React.useState<BigInt>(0n);
     useEffect(() => {
         const fetchData = async () => {
-            setFunctionsRegisteredCount(await functionsManagerContract.functionsRegisteredCount())
-            setFunctionsCalledCount(await functionsManagerContract.functionsCalledCount())
-            setTotalFeesCollected(await functionsManagerContract.totalFeesCollected())
+            try {
+                setFunctionsRegisteredCount(await functionsManager.functionsRegisteredCount())
+                setFunctionsCalledCount(await functionsManager.functionsCalledCount())
+                setTotalFeesCollected(await functionsManager.totalFeesCollected())
+            } catch (e: any) {
+                console.log("Error in GlobalMetrics", e);
+                return
+            }
         };
 
         // Fetch data immediately
         fetchData();
 
         // Set up the interval to fetch data every 3 seconds
-        const interval = setInterval(fetchData, 3000);
+        const interval = setInterval(fetchData, 500);
 
         // Clean up the interval when the component unmounts or when the dependency array changes
         return () => {
@@ -111,32 +91,32 @@ const GlobalMetrics: React.FC = () => {
     }, []); // Empty dependency array to run the effect only once
 
 
-    return <Grid item container xs={12} spacing={2}>
-        <Grid item xs={12}>
-            <Typography variant={"h4"}>Global metrics</Typography>
+    return <Stack spacing={2}>
+        <Typography variant={"h4"}>Global metrics</Typography>
+        <Grid container spacing={2}>
+            <Grid item xs={4}>
+                <GlobalMetricsCard label={"Registered functions"}
+                                   value={functionsRegisteredCount.toString()}/>
+            </Grid>
+            <Grid item xs={4}>
+                <GlobalMetricsCard label={"Function calls completed"}
+                                   value={functionsCalledCount.toString()}/>
+            </Grid>
+            <Grid item xs={4}>
+                <GlobalMetricsCard label={"Paid to function creators"}
+                                   value={<Typography variant={"h3"}
+                                                      style={{marginRight: 4}}
+                                                      textAlign={"center"}
+                                   >
+                                       <LinkTokenIcon height={36}
+                                                      width={36}
+                                                      style={{marginRight: 8}}/>
+                                       {ethers.formatUnits(totalFeesCollected.valueOf() - (totalFeesCollected.valueOf() % (10n ** 16n)), "ether")}
+                                   </Typography>
+                                   }/>
+            </Grid>
         </Grid>
-        <Grid item xs={4}>
-            <GlobalMetricsCard label={"Registered functions"}
-                               value={functionsRegisteredCount.toString()}/>
-        </Grid>
-        <Grid item xs={4}>
-            <GlobalMetricsCard label={"Function calls completed"}
-                               value={functionsCalledCount.toString()}/>
-        </Grid>
-        <Grid item xs={4}>
-            <GlobalMetricsCard label={"Paid to function creators"}
-                               value={<Typography variant={"h3"}
-                                                  style={{marginRight: 4}}
-                                                  textAlign={"center"}
-                               >
-                                   <LinkTokenIcon height={36}
-                                                  width={36}
-                                                  style={{marginRight: 8}}/>
-                                   {ethers.formatUnits(totalFeesCollected.valueOf() - (totalFeesCollected.valueOf() % (10n ** 16n)), "ether")}
-                               </Typography>
-                               }/>
-        </Grid>
-    </Grid>
+    </Stack>
 }
 export const RecentlyAddedTop: React.FC = () => {
     const {loading, error, data} = useQuery<Query>(RECENTLY_ADDED_QUERY)
@@ -147,27 +127,34 @@ export const RecentlyAddedTop: React.FC = () => {
         console.log(error)
         return <Typography>Something went wrong</Typography>
     }
-    return (<Grid item container xs={12} spacing={2}>
+    return (<Stack spacing={2}>
 
-        <Grid item xs={12}>
-            <Typography variant={"h4"}>Recently added</Typography>
+        <Typography variant={"h4"}>Recently added</Typography>
+        <Grid container spacing={2}>
+            {data?.functionRegistereds.map((func, i) => {
+                return (<Grid item xs={4} key={i}>
+                    <RecentlyAddedCard func={func}/>
+                </Grid>)
+            })}
         </Grid>
-        {data?.functionRegistereds.map((func, i) => {
-            return (<Grid item xs={4} key={i}>
-                <RecentlyAddedCard func={func}/>
-            </Grid>)
-        })}
-    </Grid>)
+    </Stack>)
 }
 
 
 export const Home: React.FC = () => {
 
-    return (<Stack spacing={4} marginTop={2}>
-        <SplashTop/>
+    return (<Stack spacing={2} marginTop={2}>
+        <Box
+            sx={{width: "100%", display: "flex", alignItems: "center", flexDirection: "column"}}>
+            <Logo style={{maxHeight: 150}}/>
+        </Box>
         <GlobalMetrics/>
         <RecentlyAddedTop/>
         <Typography variant={"h4"}>Browse</Typography>
-        <ListingTable query={LISTING_QUERY} args={{}}/>
+        <Grid container spacing={2}>
+            <Grid item xs={12}>
+                <ListingTable query={LISTING_QUERY} args={{}}/>
+            </Grid>
+        </Grid>
     </Stack>)
 }
