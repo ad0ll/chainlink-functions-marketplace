@@ -253,4 +253,12 @@ contract MockBillingRegistry {
     {
         return keccak256(abi.encode(don, client, subscriptionId, nonce));
     }
+
+    function getRequiredFee(bytes calldata data, FunctionsBillingRegistryInterface.RequestBilling calldata billing)
+        external
+        view
+        returns (uint96)
+    {
+        return BASE_FEE;
+    }
 }

@@ -48,7 +48,6 @@ describe("FunctionsManager", function () {
       linkToken.address,
       billingRegistry.address,
       functionsOracle.address,
-      ethers.utils.parseEther("0.2"),
       5,
       ethers.utils.parseEther("3"),
       300_000
@@ -83,6 +82,7 @@ describe("FunctionsManager", function () {
     source: fs.readFileSync("./calculation-example.js").toString(),
     secrets: [],
     category: ethers.utils.formatBytes32String("calculations"),
+    expectedReturnType: 3 /* string */,
   };
   const executeDemoRequest = async (
     functionsManager: any,
@@ -90,12 +90,12 @@ describe("FunctionsManager", function () {
   ) => {
     console.log("Calling executeRequest with functionId", functionId);
 
-    const tx = await functionsManager.executeRequest(
-      functionId,
-      ["10000", "450"],
-      30000
-    );
+    const tx = await functionsManager.executeRequest(functionId, [
+      "10000",
+      "450",
+    ]);
 
+    console.log(tx);
     const receipt = await tx.wait();
     console.log("Finished calling executeRequest");
     const executeRequestEvent = receipt.events?.find(
@@ -288,6 +288,7 @@ describe("FunctionsManager", function () {
         functionsManagerOwner,
         dropRequestId
       );
+      
       const s2 = await functionsManager.getSubscriptionBalance(
         fExPreExecute?.subId
       );

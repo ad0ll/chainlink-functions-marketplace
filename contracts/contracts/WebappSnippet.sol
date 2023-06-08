@@ -25,7 +25,7 @@ contract WebappSnippet {
         );
         (bool success, bytes memory result) = functionManager.call(
             abi.encodeWithSignature(
-                "executeRequest(address,string[])",
+                "executeRequest(bytes32,string[])",
                 0x50c53bc7a6a672aaf4a4c1a30474014ccdafdeb54de024197b664cf2b1564ed8,
                 ["ethereum", "usd"]
             )
