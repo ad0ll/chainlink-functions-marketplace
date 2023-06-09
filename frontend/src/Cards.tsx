@@ -71,16 +71,18 @@ export const RecentlyAddedCard: React.FC<{ func: FunctionRegistered }> = ({func}
     </Card>
 }
 
-export const AddressCard: React.FC<{ addr: string, truncate?: boolean }> = ({addr, truncate = true}) => (
+export const AddressCard: React.FC<{ addr: string, truncate?: boolean }> = ({
+                                                                                addr,
+                                                                                truncate = true,
+                                                                            }) => (
     <Card elevation={2}>
         <CardActionArea
             component={Link}
             to={`/author/${addr}`}
-            style={{
+            sx={{
                 display: "flex",
-                alignItems: "center",
                 textDecoration: "none",
-                padding: 8
+                padding: 1
             }}>
             <Jazzicon seed={addressToJazziconSeed(addr)}
                       style={{height: 20, marginRight: 8}}/>

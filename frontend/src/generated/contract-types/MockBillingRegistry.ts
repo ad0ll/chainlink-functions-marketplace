@@ -53,6 +53,7 @@ export interface MockBillingRegistryInterface extends Interface {
       | "createSubscription"
       | "forceBalance"
       | "fulfillAndBill"
+      | "getRequiredFee"
       | "getSubscription"
       | "setFunctionsManager"
       | "startBilling"
@@ -92,6 +93,10 @@ export interface MockBillingRegistryInterface extends Interface {
     values: [BytesLike, BytesLike, BytesLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "getRequiredFee",
+    values: [BytesLike, FunctionsBillingRegistryInterface.RequestBillingStruct]
+  ): string;
+  encodeFunctionData(
     functionFragment: "getSubscription",
     values: [BigNumberish]
   ): string;
@@ -123,6 +128,10 @@ export interface MockBillingRegistryInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "fulfillAndBill",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getRequiredFee",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -360,6 +369,15 @@ export interface MockBillingRegistry extends BaseContract {
     "nonpayable"
   >;
 
+  getRequiredFee: TypedContractMethod<
+    [
+      data: BytesLike,
+      billing: FunctionsBillingRegistryInterface.RequestBillingStruct
+    ],
+    [bigint],
+    "view"
+  >;
+
   getSubscription: TypedContractMethod<
     [subscriptionId: BigNumberish],
     [
@@ -420,6 +438,16 @@ export interface MockBillingRegistry extends BaseContract {
     [requestId: BytesLike, response: BytesLike, err: BytesLike],
     [boolean],
     "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "getRequiredFee"
+  ): TypedContractMethod<
+    [
+      data: BytesLike,
+      billing: FunctionsBillingRegistryInterface.RequestBillingStruct
+    ],
+    [bigint],
+    "view"
   >;
   getFunction(
     nameOrSignature: "getSubscription"

@@ -90,7 +90,7 @@ export const TryItNowModal: React.FC<{
 
         try {
             setStatusText("Executing function...")
-            const execTx = await functionsManager.executeRequest(func.functionId, args, {gasLimit: 1000000});
+            const execTx = await functionsManager.executeRequest(func.functionId, args, {gasLimit: 1_500_000});
             setWaitingForResponse(true)
             setStatusText("Waiting for transaction to be mined...")
             const execReceipt = await provider?.waitForTransaction(execTx.hash, 1);
@@ -136,7 +136,7 @@ export const TryItNowModal: React.FC<{
                 if (functionResponse && ((functionResponse.err && functionResponse.err !== "0x") || (functionResponse.response && functionResponse.response !== "0x"))) return //Stop polling when confirmed
                 const outcome = await functionsManager.getFunctionResponse(requestId)
                 console.log("outcome", outcome)
-                if (outcome.err || outcome.response) {
+                if ((outcome.err && outcome.err !== "0x") || (outcome.response && outcome.response !== "0x")) {
                     startTransition(() => {
                         setFunctionResponse(outcome)
                         setWaitingForResponse(false)
@@ -158,7 +158,7 @@ export const TryItNowModal: React.FC<{
     if (!func) return <div/>
     console.log("functionResponse", functionResponse)
     return (<Dialog open={open} onClose={() => setOpen(false)} sx={{padding: 2}}>
-        <form onSubmit={onSubmit} style={{padding: 16}}>
+        <form onSubmit={onSubmit} style={{padding: 16, minWidth: 500}}>
             <DialogTitle>Try {func.name}</DialogTitle>
             <DialogContentText>
                 Please provide the following arguments
@@ -180,14 +180,19 @@ export const TryItNowModal: React.FC<{
             </DialogContent>
 
             <DialogContentText>
-                {waitingForResponse &&
-                    <Box display={"flex"} justifyContent={"center"}>
-                        <CircularProgress/>
-                        <Typography variant={"h5"}>{statusText}</Typography>
-                    </Box>}
-                {functionResponse?.response || functionResponse?.err
-                    ?
-                    <Typography>Response: {decodeResponse(functionResponse?.response.toString() || "", functionResponse?.err.toString() || "", 0)}</Typography>
+                {waitingForResponse ?
+                    <Box display={"flex"} justifyContent={"center"} alignItems={"center"}>
+                        <CircularProgress sx={{marginRight: 1}}/>
+                        <Typography variant={"h5"}>
+                            {statusText}</Typography>
+                    </Box>
+                    : <div/>
+                }
+                {(functionResponse?.response && functionResponse.response !== "0x") || (functionResponse?.err && functionResponse.err !== "0x")
+                    ? <Box display={"flex"} justifyContent={"center"} alignItems={"center"}>
+                        <Typography
+                            variant={"h5"}>Response: {decodeResponse(functionResponse?.response.toString() || "", functionResponse?.err.toString() || "", 1)}</Typography>
+                    </Box>
                     : <div/>
                 }
                 {errorMsg}

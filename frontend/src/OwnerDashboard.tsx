@@ -257,7 +257,7 @@ const SubscriptionsTable: React.FC<{ subscriptions: BigNumberish[] }> = ({subscr
         }, 1000);
         return () => clearInterval(interval);
     }, [subscriptions])
-    return <TableContainer component={Paper} sx={{padding: 2}}>
+    return <TableContainer component={Paper} sx={{padding: 2, width: "100%"}}>
         <Typography variant={"h4"}>My Subscriptions</Typography>
 
         <Dialog open={consumersDialogOpen} onClose={() => setConsumersDialogOpen(false)}>
@@ -403,7 +403,7 @@ export const OwnerDashboard: React.FC = () => {
                     component={Paper}
                     sx={{padding: 2}}
                 >
-                    <Box sx={{border: "1px solid primary.main", display: "flex"}}>
+                    <Box sx={{display: "flex"}}>
                         <Typography variant={"h4"}>My Functions</Typography>
                         {<Button startIcon={<ArticleIcon/>} sx={{maxWidth: 300, marginLeft: "auto", marginRight: 1}}
                                  variant={showDetails ? "contained" : "outlined"}

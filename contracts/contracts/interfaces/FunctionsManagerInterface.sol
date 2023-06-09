@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import {FunctionsClientInterface} from "./functions/interfaces/FunctionsClientInterface.sol";
-import {Functions} from "./functions/Functions.sol";
-import {FunctionsBillingRegistry} from "./functions/FunctionsBillingRegistry.sol";
-import {FunctionsBillingRegistryInterface} from "./functions/interfaces/FunctionsBillingRegistryInterface.sol";
-import {FunctionsOracleInterface} from "./functions/interfaces/FunctionsOracleInterface.sol";
-import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
-import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
+import {FunctionsClientInterface} from "../functions/interfaces/FunctionsClientInterface.sol";
+import {Functions} from "../functions/Functions.sol";
 import "hardhat/console.sol";
 
 interface FunctionsManagerInterface is FunctionsClientInterface {

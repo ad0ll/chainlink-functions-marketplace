@@ -160,13 +160,13 @@ const ListingTable: React.FC<{
                                     }}>Try</Button>
                             <Tooltip placement={"bottom-start"}
                                      title={<Box sx={{minWidth: 450}}>
-                                         <Typography variant={"h6"}>Click to copy contract snippet</Typography>
+                                         <Typography variant={"h6"}>Click to copy example contract</Typography>
                                          <SoliditySyntaxHighlighter>
-                                             {generateDefaultSnippetString(f, networkConfig.functionsManager)}
+                                             {generateDefaultSnippetString(f)}
                                          </SoliditySyntaxHighlighter>
                                      </Box>}>
                                 {/*<ContentCopyIcon onClick={notify}/>*/}
-                                <Button variant={"outlined"} onClick={notify}>Snippet</Button>
+                                <Button variant={"outlined"} onClick={notify}>Example</Button>
                             </Tooltip>
                         </TableCell>}
                     </TableRow>)}

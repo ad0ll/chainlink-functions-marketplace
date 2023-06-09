@@ -12,7 +12,7 @@ import {RetryLink} from "@apollo/client/link/retry";
 const httpLink = new HttpLink({
     // PLEASE DO NOT SHARE THIS URL OUTSIDE OF THE TEAM (the query key 563... is private).
     // This URL will be disabled and replaced w/ a public one when we launch.
-    uri: "https://subgraph.satsuma-prod.com/5636b4e4f174/2f2cac0b14bf2592543789045a02fa2ea9f0a91ab1f6e23e8859e8e618e6d1a7/real-functions-manager2/api",
+    uri: "https://subgraph.satsuma-prod.com/5636b4e4f174/2f2cac0b14bf2592543789045a02fa2ea9f0a91ab1f6e23e8859e8e618e6d1a7/real-functions-manager3/api",
 });
 const retryLink = new RetryLink({
     delay: {

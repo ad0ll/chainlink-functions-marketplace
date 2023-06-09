@@ -1,5 +1,5 @@
 // Drilldown page for an individual function
-import React, {startTransition, useContext, useEffect} from "react";
+import React, {startTransition, useContext, useEffect, useState} from "react";
 import {
     Box,
     Button,
@@ -9,15 +9,12 @@ import {
     DialogContent,
     DialogTitle,
     Grid,
-    List,
-    ListItem,
-    MenuItem,
     Paper,
-    Select,
     Stack,
     Table,
     TableBody,
     TableCell,
+    TableContainer,
     TableHead,
     TableRow,
     Tooltip,
@@ -28,8 +25,9 @@ import {generateSnippetString, SoliditySyntaxHighlighter, splitArgStrings} from 
 import {CopyToClipboard} from "react-copy-to-clipboard";
 import {gql, useQuery} from "@apollo/client";
 import {
-    BASE_FEE,
     blockTimestampToDate,
+    codeLanguageToStrong,
+    codeLocationToString,
     CombinedFunctionMetadata,
     decodeResponse,
     mergeFunctionMetadataAndExecMetadata,
@@ -38,17 +36,18 @@ import {
     TypographyWithLinkIcon
 } from "./common";
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import {BigNumberish, decodeBytes32String, ethers, formatEther} from "ethers";
+import {BigNumberish, decodeBytes32String, ethers, formatEther, parseUnits} from "ethers";
 import EditIcon from '@mui/icons-material/Edit';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import {toast} from "react-toastify";
 import PublishIcon from '@mui/icons-material/Publish';
-import {FunctionsManager} from "./generated/contract-types";
+import {FunctionsBillingRegistryInterface, FunctionsManager} from "./generated/contract-types";
 import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
 import {AddressCard} from "./Cards";
 import {FunctionsManagerContext} from "./FunctionsManagerProvider";
-import {fallbackToJazzicon, jazziconImageString} from "./utils/util";
+import {addressToJazziconSeed, fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./utils/util";
 import {TryItNowModal} from "./TryItNowModal";
+import Jazzicon from "./Jazzicon";
 
 
 const GridRow: React.FC<{ label: string, children: React.ReactNode, valueFirst?: boolean }> = ({
@@ -111,6 +110,8 @@ const MetricsCards: React.FC<{ functionId: string }> = ({functionId}) => {
     const successPercent = BigInt(functionsCalledCount) > 0n
         ? ((BigInt(successfulResponseCount) * 100n) / BigInt(functionsCalledCount))
         : 0n
+    console.log(meta)
+    console.log("functionsCalledCount", functionsCalledCount, "successfulResponseCount", successfulResponseCount, "failedResponseCount", failedResponseCount, "successPercent", successPercent, "failurePercent", failurePercent)
     return (<Grid container spacing={2}>
         <Grid item xs={6}>
             <Card elevation={4}
@@ -308,7 +309,7 @@ const DetailsDialog: React.FC<{
                     <Grid item xs={8}>
                         <Tooltip title={"View in scanner"}>
                             {/*            <CopyToClipboard text={transactionHash}>*/}
-                            <a href={networkConfig?.getScannerUrlForTx(transactionHash)} target={"_blank"}>
+                            <a href={networkConfig?.getScannerTxUrl(transactionHash)} target={"_blank"}>
                                 <Typography sx={{overflow: "hidden", textOverflow: "ellipsis"}}>
                                     {transactionHash}
                                 </Typography>
@@ -373,13 +374,13 @@ const ExecutionTable: React.FC<{ functionId: string, expectedReturnType: BigNumb
         </Paper>
     }
 
-    return (<Paper sx={{
-        width: "100%",
-        display: "flex",
+    return (<TableContainer component={Paper} sx={{
         borderColor: "primary.main",
         border: 1,
-        padding: 1
     }}>
+        <Typography width={"100%"} sx={{borderBottom: 1, borderColor: "white", padding: 1}} variant={"h6"}>Execution
+            history</Typography>
+
         <Table>
             <TableHead>
                 <TableRow>
@@ -417,7 +418,7 @@ const ExecutionTable: React.FC<{ functionId: string, expectedReturnType: BigNumb
             transactionHash={selectedTransactionHash}
             setOpen={setOutcomeDialogOpen}
             expectedReturnType={expectedReturnType}/>
-    </Paper>)
+    </TableContainer>)
 }
 
 
@@ -428,15 +429,17 @@ const InputSnippetGenerator: React.FC<{
           func,
       }) => {
     const [hardcodeParameters, setHardcodeParameters] = React.useState(true);
-    const [callbackFunction, setCallbackFunction] = React.useState("storeFull");
-    const [returnRequestId, setReturnRequestId] = React.useState(true);
+    const [inlineInterfaces, setInlineInterfaces] = React.useState(true);
+    const [hardcodeAddresses, setHardcodeAddresses] = React.useState(true);
+    const [makeGeneric, setMakeGeneric] = React.useState(false);
+    const [allowDeposit, setAllowDeposit] = React.useState(false);
     const [customizeVisible, setCustomizeVisible] = React.useState(false);
-    const [useInterface, setUseInterface] = React.useState(false);
     const snippetString = generateSnippetString(func, {
         hardcodeParameters,
-        callbackFunction,
-        returnRequestId,
-        useInterface
+        inlineInterfaces,
+        hardcodeAddresses,
+        makeGeneric,
+        allowDeposit
     })
 
     const stackStyle = customizeVisible
@@ -447,41 +450,45 @@ const InputSnippetGenerator: React.FC<{
                    sx={stackStyle}>
         {customizeVisible &&
             <Grid container xs={12} spacing={2}>
+                <GridRow label={"Use inline interfaces"} valueFirst={true}>
+                    <Button variant={inlineInterfaces ? "contained" : "outlined"}
+                            onClick={() => setInlineInterfaces(true)}>Yes</Button>
+                    <Button variant={!inlineInterfaces ? "contained" : "outlined"}
+                            onClick={() => setInlineInterfaces(false)}>No</Button>
+                </GridRow>
                 <GridRow label={"Hard-code parameters"} valueFirst={true}>
                     <Button variant={hardcodeParameters ? "contained" : "outlined"}
                             onClick={() => setHardcodeParameters(true)}>Yes</Button>
                     <Button variant={!hardcodeParameters ? "contained" : "outlined"}
                             onClick={() => setHardcodeParameters(false)}>No</Button>
                 </GridRow>
-                <GridRow label={"Specify callback"} valueFirst={true}>
-                    <Select value={callbackFunction} onChange={(e) => setCallbackFunction(e.target.value)}>
-                        <MenuItem value={"storeFull"}>Store response</MenuItem>
-                        <MenuItem value={"doNothing"}>Do nothing</MenuItem>
-                        <MenuItem value={"custom"}>Custom</MenuItem>
-                    </Select>
+                <GridRow label={"Hard-code addresses"} valueFirst={true}>
+                    <Button variant={hardcodeAddresses ? "contained" : "outlined"}
+                            onClick={() => setHardcodeAddresses(true)}>Yes</Button>
+                    <Button variant={!hardcodeAddresses ? "contained" : "outlined"}
+                            onClick={() => setHardcodeAddresses(false)}>No</Button>
                 </GridRow>
-                <GridRow label={"Return requestId"} valueFirst={true}>
-                    <Button variant={returnRequestId ? "contained" : "outlined"}
-                            onClick={() => setReturnRequestId(true)}>Yes</Button>
-                    <Button variant={!returnRequestId ? "contained" : "outlined"}
-                            onClick={() => setReturnRequestId(false)}>No</Button>
+                <GridRow label={"Allow deposits"} valueFirst={true}>
+                    <Button variant={allowDeposit ? "contained" : "outlined"}
+                            onClick={() => setAllowDeposit(true)}>Yes</Button>
+                    <Button variant={!allowDeposit ? "contained" : "outlined"}
+                            onClick={() => setAllowDeposit(false)}>No</Button>
                 </GridRow>
-                <GridRow label={"Use FunctionsManager interface"} valueFirst={true}>
-                    <Button variant={useInterface ? "contained" : "outlined"}
-                            onClick={() => setUseInterface(true)}>Yes</Button>
-                    <Button variant={!useInterface ? "contained" : "outlined"}
-                            onClick={() => setUseInterface(false)}>No</Button>
+                <GridRow label={"Make contract generic"} valueFirst={true}>
+                    <Button variant={makeGeneric ? "contained" : "outlined"}
+                            onClick={() => setMakeGeneric(true)}>Yes</Button>
+                    <Button variant={!makeGeneric ? "contained" : "outlined"}
+                            onClick={() => setMakeGeneric(false)}>No</Button>
                 </GridRow>
             </Grid>}
 
-        <MetricsCards functionId={func.functionId.toString()}/>
 
         <Paper sx={{width: "100%"}}>
             <Stack direction={"row"} spacing={1} width={"100%"} sx={{
                 display: "flex",
                 borderColor: "primary.main", border: 1, padding: 1
             }}>
-                <Typography variant={"h6"}>Snippet</Typography>
+                <Typography variant={"h6"}>Example Contract</Typography>
                 <Button style={{marginLeft: "auto"}}
                         variant={customizeVisible ? "contained" : "outlined"}
                         color={"secondary"}
@@ -508,25 +515,41 @@ const InputSnippetGenerator: React.FC<{
 }
 
 export const Buy: React.FC = () => {
-    const {networkConfig, functionsManager} = useContext(FunctionsManagerContext)
+    const {networkConfig, functionsManager, functionsBillingRegistry} = useContext(FunctionsManagerContext)
     const {functionId} = useParams<{ functionId: string }>();
     if (!functionId) return <Typography>Function not found</Typography>
     const [tryDialogOpen, setTryDialogOpen] = React.useState(false);
     const [func, setFunc] = React.useState<CombinedFunctionMetadata | null>(null);
     const [loading, setLoading] = React.useState(true);
+    const [baseFee, setBaseFee] = useState<bigint>(0n)
+
     useEffect(() => {
         if (!functionId) return;
         const fetchData = async () => {
-            // const [f, fe] = await functionsManagerContract.getAllFunctionMetadata(functionId);
+            try {
+                // const [f, fe] = await functionsManagerContract.getAllFunctionMetadata(functionId);
 
-            const ff = await functionsManager.getFunctionMetadata(functionId);
-            const fff = await functionsManager.getFunctionExecuteMetadata(functionId);
-            if (!ff) return;
-            startTransition(() => {
-                setFunc(mergeFunctionMetadataAndExecMetadata(ff, fff))
+                console.log("FunctionId", functionId)
+                const presentationMeta = await functionsManager.getFunctionMetadata(functionId);
+                const executionMeta = await functionsManager.getFunctionExecuteMetadata(functionId);
+                if (!presentationMeta) return;
+                const requestBilling: FunctionsBillingRegistryInterface.RequestBillingStruct = {
+                    subscriptionId: executionMeta.subId,
+                    client: presentationMeta.owner,
+                    gasLimit: 300_000,
+                    gasPrice: parseUnits("30", "gwei")
+                }
 
-                setLoading(false)
-            })
+                const baseFee = await functionsBillingRegistry.getRequiredFee("0x", requestBilling)
+
+                startTransition(() => {
+                    setFunc(mergeFunctionMetadataAndExecMetadata(presentationMeta, executionMeta))
+                    setBaseFee(baseFee)
+                    setLoading(false)
+                })
+            } catch (e: any) {
+                console.error("Drilldown fetchData", e)
+            }
         }
         fetchData();
     }, [functionId]);
@@ -547,12 +570,12 @@ export const Buy: React.FC = () => {
                         By:
                     </Typography>
                     <Typography variant={"h6"}>
-                        <Link to={`/author/${func.owner}`}>CoinGecko
+                        <Link to={`/author/${func.owner}`}>{truncateIfAddress(func.owner.toString())}
                         </Link>
                     </Typography>
                     {/*Link to scanner for mumbai */}
                     <Tooltip title={"Open in scanner"}>
-                        <Link to={networkConfig.getScannerAddressUrl(func?.owner)}>
+                        <Link to={networkConfig.getScannerAddressUrl(func?.owner.toString())}>
                             <Typography variant={"h6"}>{<OpenInNewIcon/>}</Typography>
                         </Link>
                     </Tooltip>
@@ -572,6 +595,7 @@ export const Buy: React.FC = () => {
                     setOpen={setTryDialogOpen}
                 />
 
+                <MetricsCards functionId={func.functionId.toString()}/>
                 <InputSnippetGenerator func={func}
                                        functionManagerAddress={networkConfig.functionsManager}/>
                 <Paper sx={{
@@ -597,40 +621,45 @@ export const Buy: React.FC = () => {
                                 </Tooltip>
                             </CopyToClipboard>
                         </GridRow>
+                        <GridRow label={"Owner"}>
+                            <Box sx={{display: "flex", alignItems: "center"}}>
+                                <Jazzicon seed={addressToJazziconSeed(func.owner.toString())}
+                                          style={{height: 20, marginRight: 8}}/>
+                                <Link to={`/author/${func.owner}`}>
+                                    <Typography>
+                                        {func.owner.toString()}
+                                    </Typography>
+                                </Link>
+                            </Box>
+                        </GridRow>
                         <GridRowTyp label={"Name"} value={func.name}/>
                         <GridRowTyp label={"Description"} value={func.desc}/>
                         <GridRowTyp label={"Category"} value={decodeBytes32String(func.category)}/>
                         <GridRow label={"Fee"}>
                             <Box display={"flex"} flexDirection={"row"}>
                                 <TypographyWithLinkIcon
-                                    variant={"body1"}>{formatEther(BigInt(func.fee) + BASE_FEE)}</TypographyWithLinkIcon>
-                                <Typography>({formatEther(BASE_FEE)} base, {formatEther(func.fee)} premium)</Typography>
+                                    variant={"body1"}>{formatEther(BigInt(func.fee) + baseFee)}</TypographyWithLinkIcon>
+                                <Typography>({formatEther(baseFee)} base, {formatEther(func.fee)} premium)</Typography>
                             </Box>
                         </GridRow>
-
-
+                        <GridRowTyp label={"Code Location"} value={codeLocationToString(func.codeLocation)}/>
+                        <GridRowTyp label={"Code Language"} value={codeLanguageToStrong(func.language)}/>
                         <GridRow label={"Return type"}>
                             <Typography variant={"body1"}>
-                                {returnTypeEnumToString(func?.expectedReturnType.valueOf())} (Raw
-                                value: {func.expectedReturnType.toString()})
+                                {returnTypeEnumToString(1)} (Raw
+                                value: {1})
                             </Typography>
                         </GridRow>
                         <GridRow label={"Arguments"}>
-                            <List>
+                            <Typography>
                                 {splitArgStrings(func?.expectedArgs).map((arg, i) => {
-                                    return <ListItem key={i}>
-                                        <Stack direction={"row"} spacing={2} padding={0}>
-                                            <Typography variant={"body1"}
-                                                        sx={{fontWeight: "bold"}}>{arg.name}</Typography>
-                                            <Typography variant={"body1"}>{arg.type}</Typography>
-                                        </Stack>
-                                    </ListItem>
-                                })}
-                            </List>
+                                    return `${arg.name} (${arg.type})`
+                                }).join(", ")}
+                            </Typography>
                         </GridRow>
                     </Grid>
                 </Paper>
-                <ExecutionTable functionId={func.functionId.toString()} expectedReturnType={func.expectedReturnType}/>
+                <ExecutionTable functionId={func.functionId.toString()} expectedReturnType={1}/>
             </Stack>
         </Box>
     )

@@ -4,10 +4,8 @@ import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
 import {Buffer} from 'buffer';
 import {FunctionsManager} from "./generated/contract-types";
 import {FunctionRegistered} from "./gql/graphql";
-import {ethers} from "ethers";
+import {BigNumberish, ethers} from "ethers";
 
-// TODO Fetch the base fee from the FunctionManager contract
-export const BASE_FEE = 200000000000000000n; //0.2 LINK
 export const MAINNET_CHAIN_ID = 1
 export const GOERLI_CHAIN_ID = 5
 export const MATIC_CHAIN_ID = 137
@@ -26,7 +24,8 @@ export enum ExpectedReturnTypes {
 }
 
 export type NetworkConfig = {
-    functionsManager: "0xac427515A3897E1321F4d50e15e267c4B7120e00",
+    functionsManager: "0x3744551b069e845B3E1A2832a17F7175Fcf2CB96",
+    // functionsManager: "0x3744551b069e845B3E1A2832a17F7175Fcf2CB96",
     linkToken: string,
     linkEthPriceFeed: string,
     functionsOracleProxy: string,
@@ -41,7 +40,8 @@ export const networkConfig: {
     [key: number]: NetworkConfig
 } = {
     [MUMBAI_CHAIN_ID]: {
-        functionsManager: "0xac427515A3897E1321F4d50e15e267c4B7120e00",
+        // functionsManager: "0x83e0b5C849bf97122c4DB18c0B6d1e31Fb1E54DE",
+        functionsManager: "0x3744551b069e845B3E1A2832a17F7175Fcf2CB96",
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
         linkEthPriceFeed: "0x12162c3E810393dEC01362aBf156D7ecf6159528",
         functionsOracleProxy: "0xeA6721aC65BCeD841B8ec3fc5fEdeA6141a0aDE4",
@@ -52,7 +52,7 @@ export const networkConfig: {
         getScannerTxUrl: (address: string) => `https://mumbai.polygonscan.com/tx/${address}`,
     },
     [SEPOLIA_CHAIN_ID]: {
-        functionsManager: "0xac427515A3897E1321F4d50e15e267c4B7120e00",
+        functionsManager: "0x3744551b069e845B3E1A2832a17F7175Fcf2CB96",
         linkToken: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
         linkEthPriceFeed: "0x42585eD362B3f1BCa95c640FdFf35Ef899212734",
         functionsOracleProxy: "0x649a2C205BE7A3d5e99206CEEFF30c794f0E31EC",
@@ -236,6 +236,9 @@ export const functionRegisteredToCombinedMetadata = (func?: FunctionRegistered):
         failedResponseCount: 0,
         successfulResponseCount: 0,
         totalFeesCollected: 0,
+        codeLocation: 0,
+        language: 0,
+        secretsLocation: 0,
     }
 }
 
@@ -249,6 +252,9 @@ export const mergeFunctionMetadataAndExecMetadata = (metadata: FunctionsManager.
         category: metadata.category,
         expectedReturnType: metadata.expectedReturnType,
         owner: metadata.owner,
+        codeLocation: metadata.codeLocation,
+        language: metadata.language,
+        secretsLocation: metadata.secretsLocation,
         fee: execMetadata.fee,
         subId: execMetadata.subId,
         unlockedProfitPool: execMetadata.unlockedProfitPool,
@@ -257,6 +263,7 @@ export const mergeFunctionMetadataAndExecMetadata = (metadata: FunctionsManager.
         failedResponseCount: execMetadata.failedResponseCount,
         successfulResponseCount: execMetadata.successfulResponseCount,
         totalFeesCollected: execMetadata.totalFeesCollected,
+
     }
 }
 const OutcomeCellText: React.FC<{ text: string, color: string }> = ({text, color}) => {
@@ -287,4 +294,30 @@ export const OutcomeCell: React.FC<{
 
 export const etherUnitsToFixed = (val: bigint, decimals: bigint = 2n) => {
     return ethers.formatUnits(val - (val % (10n ** (18n - decimals))), "ether")
+}
+
+export const codeLocationToString = (codeLocation: BigNumberish) => {
+    switch (codeLocation) {
+        case 0:
+        case 0n:
+        case "0":
+            return "Inline"
+        case 1:
+        case 1n:
+        case "1":
+            return "Remote"
+        default:
+            return "Unknown"
+    }
+}
+
+export const codeLanguageToStrong = (codeLanguage: BigNumberish) => {
+    switch (codeLanguage) {
+        case 0:
+        case 0n:
+        case "0":
+            return "JavaScript"
+        default:
+            return "Unknown"
+    }
 }

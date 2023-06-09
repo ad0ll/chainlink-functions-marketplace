@@ -1,5 +1,5 @@
 import React from "react";
-import {MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
+import {MUMBAI_CHAIN_ID, NetworkConfig, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
 import {useWeb3React} from "@web3-react/core";
 import {Typography} from "@mui/material";
 import {useContract} from "./contractHooks";
@@ -15,14 +15,14 @@ export const FunctionsManagerContext = React.createContext<{
     provider: JsonRpcProvider,
     functionsManager: FunctionsManager,
     functionsBillingRegistry: FunctionsBillingRegistry,
-    networkConfig: any
+    networkConfig: NetworkConfig
 }>({
     chainId: MUMBAI_CHAIN_ID,
     account: "",
     provider: new JsonRpcProvider(""),
     functionsManager: {} as FunctionsManager,
     functionsBillingRegistry: {} as FunctionsBillingRegistry,
-    networkConfig: {}
+    networkConfig: {} as NetworkConfig,
 })
 
 export const FunctionsManagerProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
@@ -39,6 +39,7 @@ export const FunctionsManagerProvider: React.FC<{ children: React.ReactNode }> =
 
     const functionsManager = useContract(networkConfig[chainId].functionsManager, FunctionsManagerJson.abi) as unknown as FunctionsManager;
     const functionsBillingRegistry = useContract(networkConfig[chainId].functionsBillingRegistryProxy, FunctionsBillingRegistryJson.abi) as unknown as FunctionsBillingRegistry;
+
     return <FunctionsManagerContext.Provider value={{
         chainId,
         account,

@@ -123,9 +123,9 @@ export const Sell: React.FC = () => {
             // oracle: networkConfig[chainId].functionsOracleProxy,
             // initialDeposit: "3", //Whole LINK units, conversion happens later
 
-            name: "Test" + Math.floor(Math.random() * 1000000),
-            description: "This is a test function that I am creating",
-            imageUrl: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png?v=025",
+            name: "CoinGecko Price (Demo)" + Math.floor(Math.random() * 1000000),
+            description: "Fetches the price for a given currency pair from CoinGecko",
+            imageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg",
             fee: 0.05,
             expectedArgs: [
                 {name: "base", type: "string", comment: "The base currency of the price pair"},
@@ -133,14 +133,14 @@ export const Sell: React.FC = () => {
             ],
             category: "Price Feed",
             subscriptionId: "941",
-            source: `const base = args[0];
-const quote = args[1];
+            source: `const base = args[0].toLowerCase();
+const quote = args[1].toLowerCase();
 
 const response = await Functions.makeHttpRequest({
-  url: \`https://api.coingecko.com/api/v3/simple/price?ids=\$\{base\}&vs_currencies=\$\{quote\}\`,
+    url: \`https://api.coingecko.com/api/v3/simple/price?ids=\${base}&vs_currencies=\${quote}\`,
 });
 
-const res = response.data[\`\$\{base\}.\$\{quote\}\`];
+const res = response.data[base][quote];
 
 return Functions.encodeUint256(Math.round(res * 100));`,
             suggestedGasLimit: 300000,
@@ -181,10 +181,15 @@ return Functions.encodeUint256(Math.round(res * 100));`,
                 toast.error("Subscription does not exist or balance is Zero");
                 return;
             }
-            if (owner !== account) {
-                toast.error("Can't use a subscription unless you are the owner");
+            // if (owner !== account) {
+            //     return;
+            // }
+            let authorized = owner === account || consumers.find(c => c.toLowerCase() === account.toLowerCase()) !== undefined;
+            if (!authorized) {
+                toast.error("Can't use a subscription unless you are the owner or an authorized consumer");
                 return;
             }
+
             const functionsManagerExists = consumers.find(c => c.toLowerCase() === networkConfig.functionsManager.toLowerCase())
             if (!functionsManagerExists) {
                 toast.info("FunctionsManager not authorized to consume subscription, adding it now...");

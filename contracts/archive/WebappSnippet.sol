@@ -17,17 +17,19 @@ contract WebappSnippet {
     }
 
     function sendRequest() public returns (bytes32) {
-        LINK.transferFrom(msg.sender, address(this), 0.5 ether);
         address functionManager = address(functionsManager);
         require(
             LINK.allowance(msg.sender, address(this)) >= 1 ether,
             "User is not approved to transfer LINK to functions manager"
         );
+        string[] memory args = new string[](2);
+        args[0] = "ethereum";
+        args[1] = "usd";
         (bool success, bytes memory result) = functionManager.call(
             abi.encodeWithSignature(
                 "executeRequest(bytes32,string[])",
-                0x50c53bc7a6a672aaf4a4c1a30474014ccdafdeb54de024197b664cf2b1564ed8,
-                ["ethereum", "usd"]
+                0x4384ec9b548391dcd7fc8a9fdcaa6b1a196aca144fc9b515500aac41964f02ea,
+                args
             )
         );
 
