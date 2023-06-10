@@ -41,6 +41,7 @@ export { OCR2Base__factory } from "./OCR2Base__factory";
 export { OCR2BaseUpgradeable__factory } from "./OCR2BaseUpgradeable__factory";
 export { OwnableInterface__factory } from "./OwnableInterface__factory";
 export { Pausable__factory } from "./Pausable__factory";
+export { Snippet__factory } from "./Snippet__factory";
 export { StandardToken__factory } from "./StandardToken__factory";
 export { TypeAndVersionInterface__factory } from "./TypeAndVersionInterface__factory";
 export { WebappSnippet__factory } from "./WebappSnippet__factory";

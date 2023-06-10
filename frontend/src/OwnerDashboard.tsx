@@ -224,12 +224,44 @@ const StatCards: React.FC<{ owner: string, blockTimestamp: BigNumberish }> = ({
 }
 
 const SubscriptionsTable: React.FC<{ subscriptions: BigNumberish[] }> = ({subscriptions}) => {
-    const {functionsBillingRegistry, functionsManager} = useContext(FunctionsManagerContext)
+    const {functionsBillingRegistry, functionsManager, networkConfig, provider} = useContext(FunctionsManagerContext)
     const [subBalances, setSubBalances] = useState<{
         [key: string]: SubscriptionRecord
     }>({})
     const [selectedSub, setSelectedSub] = useState<string>("")
     const [consumersDialogOpen, setConsumersDialogOpen] = useState<boolean>(false)
+
+    const [selectedForRefill, setSelectedForRefill] = React.useState(0n)
+    const [initiateRefill, setInitiateRefill] = React.useState<boolean>(false)
+
+
+    useEffect(() => {
+        if (!initiateRefill) return
+        const post = async () => {
+            toast.info("Initiating refill...")
+            try {
+                const withdrawSingleTx = await functionsManager.refillSubscription(selectedForRefill, {
+                    gasLimit: 1_000_000,
+                })
+                toast.info("Sent request, waiting for confirmation...")
+                const execReceipt = await provider?.waitForTransaction(withdrawSingleTx.hash, 1);
+                if (execReceipt?.status !== 1) {
+                    toast.error(<Typography variant={"body1"} color={"error"}>Transaction failed
+                        <a href={`${networkConfig.getScannerTxUrl(withdrawSingleTx.hash)}`} target="_blank">
+                            View transaction in scanner for details...
+                        </a></Typography>)
+                } else {
+                    toast.success("Successfully completed refill")
+                }
+            } catch (e: any) {
+                toast.error("Encountered an error withdrawing: " + e.message)
+                console.log(e.message)
+            }
+        }
+        post()
+        setInitiateRefill(false)
+    }, [initiateRefill])
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -281,6 +313,7 @@ const SubscriptionsTable: React.FC<{ subscriptions: BigNumberish[] }> = ({subscr
                     <TableCell><Typography>Consumers</Typography></TableCell>
                     <TableCell><Typography>Reserved</Typography></TableCell>
                     <TableCell><Typography>Balance</Typography></TableCell>
+                    <TableCell><Typography>Refill</Typography></TableCell>
                 </TableRow>
             </TableHead>
             <TableBody>
@@ -309,6 +342,14 @@ const SubscriptionsTable: React.FC<{ subscriptions: BigNumberish[] }> = ({subscr
                             <TypographyWithLinkIcon includeSuffix={false}>
                                 {etherUnitsToFixed(sub.balance.valueOf())}
                             </TypographyWithLinkIcon>
+                        </TableCell>
+                        <TableCell>
+                            <Button color={"secondary"} onClick={() => {
+                                startTransition(() => {
+                                    setSelectedForRefill(BigInt(id))
+                                    setInitiateRefill(true)
+                                })
+                            }}>Refill</Button>
                         </TableCell>
                     </TableRow>
                 })}

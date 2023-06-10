@@ -1,12 +1,16 @@
 //Functions and components that are used to render snippets
-import React, {FC, useContext, useEffect, useState} from "react"
+import React, {FC, useContext} from "react"
 import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";
 import {vscDarkPlus} from "react-syntax-highlighter/dist/esm/styles/prism";
 import {FunctionRegistered} from "./gql/graphql";
-import {CombinedFunctionMetadata, functionRegisteredToCombinedMetadata, returnTypeEnumToString} from "./common";
-import {formatEther, parseUnits} from "ethers";
+import {
+    BASE_FEE,
+    CombinedFunctionMetadata,
+    functionRegisteredToCombinedMetadata,
+    returnTypeEnumToString
+} from "./common";
+import {formatEther} from "ethers";
 import {FunctionsManagerContext} from "./FunctionsManagerProvider";
-import {FunctionsBillingRegistryInterface} from "./generated/contract-types";
 
 export type FunctionArg = {
     name: string
@@ -68,7 +72,7 @@ export const splitArgStrings = (argStrings?: string[]): FunctionArg[] => {
     return argStrings?.map(splitArgString)
 }
 export const splitArgString = (argString: string): FunctionArg => {
-    const split = argString.split(":")
+    const split = argString.split(/;/)
     if (split.length === 1) {
         return {
             name: split[0],
@@ -92,21 +96,21 @@ export const splitArgString = (argString: string): FunctionArg => {
 export const generateSnippetString = (func: CombinedFunctionMetadata, opts: GenerateSnippetOptions) => {
 
     const {networkConfig, functionsBillingRegistry, chainId} = useContext(FunctionsManagerContext)
-    const [baseFee, setBaseFee] = useState<bigint>(0n)
+    // const [baseFee, setBaseFee] = useState<bigint>(10n ** 16n * 2n)
     // This useEffect is really gross, is this going to be a double load on init?
-    useEffect(() => {
-        const fetchData = async () => {
-            const requestBilling: FunctionsBillingRegistryInterface.RequestBillingStruct = {
-                subscriptionId: func.subId,
-                client: func.owner,
-                gasLimit: 300_000,
-                gasPrice: parseUnits("30", "gwei")
-            }
-            setBaseFee(await functionsBillingRegistry.getRequiredFee("0x", requestBilling))
-        }
-        fetchData()
-
-    }, [func])
+    // useEffect(() => {
+    //     const fetchData = async () => {
+    //         const requestBilling: FunctionsBillingRegistryInterface.RequestBillingStruct = {
+    //             subscriptionId: func.subId,
+    //             client: func.owner,
+    //             gasLimit: 300_000,
+    //             gasPrice: parseUnits("30", "gwei")
+    //         }
+    //         setBaseFee(await functionsBillingRegistry.getRequiredFee("0x", requestBilling))
+    //     }
+    //     fetchData()
+    //
+    // }, [func])
     let renderConstructor: string = `constructor() {
         linkToken = LinkTokenInterface(${networkConfig.linkToken});
         functionsManager = FunctionsManagerInterface(${networkConfig.functionsManager});
@@ -127,13 +131,15 @@ export const generateSnippetString = (func: CombinedFunctionMetadata, opts: Gene
     } else if (!opts.hardcodeParameters && func.expectedArgs?.length > 0) {
         parameterString = generateParameterString(argsAsFunctionArg, "paramWithType")
     }
-    const feeRender = formatEther(BigInt(func.fee) + baseFee);
+    //TODO make me dynamic
+    const feeRender = formatEther(BigInt(func.fee) + BASE_FEE);
     const renderFunctionId = opts.makeGeneric ? "_functionId" : func.functionId
     let renderArgs: string = "";
     if (!opts.makeGeneric && func.expectedArgs.length > 0) {
         renderArgs = `\n        string[] memory args = new string[](${func.expectedArgs.length});\n`
 
         renderArgs += argsAsFunctionArg.map((arg, index) => {
+            console.log(argsAsFunctionArg, arg, index)
             return `        args[${index}] = ${opts.hardcodeParameters ? `"<${arg.name}>"` : `_${arg.name}`};`
         }).join("\n")
         renderArgs += "\n"
@@ -151,20 +157,21 @@ ${opts.inlineInterfaces
 }
 
 interface FunctionsManagerInterface {
-    function executeRequest(bytes32 functionId, string[] calldata args) external returns (bytes32);
+    function executeRequest(bytes32 _functionId, string[] calldata args) external returns (bytes32);
+    function getFunctionResponseValue(bytes32 _requestId) external view returns (bytes memory);
 }` : `import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
 import {FunctionsManagerInterface} from "chainlink-functions-marketplace/contracts/interfaces.FunctionsManagerInterface.sol";`}
 
 contract Snippet {
 
-    LinkTokenInterface linkToken${opts.hardcodeAddresses ? ` = LinkTokenInterface(${networkConfig.linkToken})` : ""};
-    FunctionsManagerInterface functionsManager${opts.hardcodeAddresses ? ` = FunctionsManagerInterface(${networkConfig.functionsManager})` : ""};
+    LinkTokenInterface linkToken;
+    FunctionsManagerInterface functionsManager;
 
     ${renderConstructor}
 
     /// @notice Sends a request to the ${func.name} integration
     ${argsAsFunctionArg.map((arg, i) => {
-        return `${i === 0 ? "" : "    "}/// @param ${arg.name} ${arg.comment}`
+        return `${i === 0 ? "" : "    "}/// @param _${arg.name} ${arg.comment}`
     }).join("\n")}
     /// @return A requestId that can be used to retrieve an array of bytes representing 
     //          a/an ${returnTypeEnumToString(func.expectedReturnType)} once the request is fulfilled
@@ -177,6 +184,13 @@ contract Snippet {
         linkToken.transferFrom(msg.sender, address(this), ${feeRender} ether);\
         ${renderArgs}
         return functionsManager.executeRequest(${renderFunctionId}, ${opts.makeGeneric ? "_args" : "args"});
+    }
+    
+    /// @notice Retrieves the result of a request
+    /// @param _requestId The requestId of the request
+    /// @return The result of the request as an array of bytes
+    function getRequestResult(bytes32 _requestId) public view returns (bytes memory) {
+        return functionsManager.getFunctionResponseValue(_requestId);
     }
     ${opts.allowDeposit ? `/// @notice Allows the contract to receive LINK tokens
     function deposit(uint256 _amount) public {

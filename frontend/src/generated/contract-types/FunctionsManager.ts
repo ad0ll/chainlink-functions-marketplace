@@ -102,6 +102,9 @@ export declare namespace FunctionsManager {
     functionId: BytesLike;
     caller: AddressLike;
     callbackFunction: BytesLike;
+    premiumFee: BigNumberish;
+    baseFee: BigNumberish;
+    functionsManagerCut: BigNumberish;
     args: string[];
     response: BytesLike;
     err: BytesLike;
@@ -111,6 +114,9 @@ export declare namespace FunctionsManager {
     functionId: string,
     caller: string,
     callbackFunction: string,
+    premiumFee: bigint,
+    baseFee: bigint,
+    functionsManagerCut: bigint,
     args: string[],
     response: string,
     err: string
@@ -118,6 +124,9 @@ export declare namespace FunctionsManager {
     functionId: string;
     caller: string;
     callbackFunction: string;
+    premiumFee: bigint;
+    baseFee: bigint;
+    functionsManagerCut: bigint;
     args: string[];
     response: string;
     err: string;
@@ -215,6 +224,8 @@ export interface FunctionsManagerInterface extends Interface {
       | "getFunctionExecuteMetadata"
       | "getFunctionMetadata"
       | "getFunctionResponse"
+      | "getFunctionResponseValue"
+      | "getGasPrice"
       | "getSubscriptionBalance"
       | "handleOracleFulfillment"
       | "maxGasLimit"
@@ -307,6 +318,14 @@ export interface FunctionsManagerInterface extends Interface {
   encodeFunctionData(
     functionFragment: "getFunctionResponse",
     values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getFunctionResponseValue",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getGasPrice",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "getSubscriptionBalance",
@@ -428,6 +447,14 @@ export interface FunctionsManagerInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getFunctionResponse",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getFunctionResponseValue",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getGasPrice",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -566,6 +593,7 @@ export namespace FunctionCalledEvent {
     callbackFunction: BytesLike,
     baseFee: BigNumberish,
     fee: BigNumberish,
+    functionsManagerCut: BigNumberish,
     args: string[]
   ];
   export type OutputTuple = [
@@ -576,6 +604,7 @@ export namespace FunctionCalledEvent {
     callbackFunction: string,
     baseFee: bigint,
     fee: bigint,
+    functionsManagerCut: bigint,
     args: string[]
   ];
   export interface OutputObject {
@@ -586,6 +615,7 @@ export namespace FunctionCalledEvent {
     callbackFunction: string;
     baseFee: bigint;
     fee: bigint;
+    functionsManagerCut: bigint;
     args: string[];
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
@@ -833,10 +863,13 @@ export interface FunctionsManager extends BaseContract {
   functionResponses: TypedContractMethod<
     [arg0: BytesLike],
     [
-      [string, string, string, string, string] & {
+      [string, string, string, bigint, bigint, bigint, string, string] & {
         functionId: string;
         caller: string;
         callbackFunction: string;
+        premiumFee: bigint;
+        baseFee: bigint;
+        functionsManagerCut: bigint;
         response: string;
         err: string;
       }
@@ -867,6 +900,14 @@ export interface FunctionsManager extends BaseContract {
     [FunctionsManager.FunctionResponseStructOutput],
     "view"
   >;
+
+  getFunctionResponseValue: TypedContractMethod<
+    [_requestId: BytesLike],
+    [string],
+    "view"
+  >;
+
+  getGasPrice: TypedContractMethod<[], [bigint], "view">;
 
   getSubscriptionBalance: TypedContractMethod<
     [_subscriptionId: BigNumberish],
@@ -1048,10 +1089,13 @@ export interface FunctionsManager extends BaseContract {
   ): TypedContractMethod<
     [arg0: BytesLike],
     [
-      [string, string, string, string, string] & {
+      [string, string, string, bigint, bigint, bigint, string, string] & {
         functionId: string;
         caller: string;
         callbackFunction: string;
+        premiumFee: bigint;
+        baseFee: bigint;
+        functionsManagerCut: bigint;
         response: string;
         err: string;
       }
@@ -1088,6 +1132,12 @@ export interface FunctionsManager extends BaseContract {
     [FunctionsManager.FunctionResponseStructOutput],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "getFunctionResponseValue"
+  ): TypedContractMethod<[_requestId: BytesLike], [string], "view">;
+  getFunction(
+    nameOrSignature: "getGasPrice"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "getSubscriptionBalance"
   ): TypedContractMethod<[_subscriptionId: BigNumberish], [bigint], "view">;
@@ -1261,7 +1311,7 @@ export interface FunctionsManager extends BaseContract {
       FunctionCallCompletedEvent.OutputObject
     >;
 
-    "FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96,string[])": TypedContractEvent<
+    "FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96,uint96,string[])": TypedContractEvent<
       FunctionCalledEvent.InputTuple,
       FunctionCalledEvent.OutputTuple,
       FunctionCalledEvent.OutputObject

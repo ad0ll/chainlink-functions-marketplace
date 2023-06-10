@@ -1,7 +1,7 @@
 {
   "_format": "hh-sol-artifact-1",
   "contractName": "FunctionsManagerInterface",
-  "sourceName": "contracts/FunctionsManagerInterface.sol",
+  "sourceName": "contracts/interfaces/FunctionsManagerInterface.sol",
   "abi": [
     {
       "inputs": [

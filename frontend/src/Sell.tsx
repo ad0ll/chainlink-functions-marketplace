@@ -165,7 +165,7 @@ return Functions.encodeUint256(Math.round(res * 100));`,
         const post = {
             ...data,
             expectedArgs: data.expectedArgs.map(t => {
-                return `${t.name}:${t.type}:${t.comment}`
+                return `${t.name};${t.type};${t.comment}`
             }),
             category: encodeBytes32String(data.category),
             fee: ethers.parseUnits(data.fee.toString()),

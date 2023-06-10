@@ -274,16 +274,8 @@ const DetailsDialog: React.FC<{
         };
     }, [open, requestId]);
 
-    let color: string = "grey";
-    let text: string = "PENDING";
-    const hasResponse = functionResponse?.response || functionResponse?.err
-    if (functionResponse?.err && functionResponse?.err !== "0x") {
-        color = "#ff3131"
-        text = "ERROR"
-    } else if (functionResponse?.response && functionResponse?.response !== "0x") {
-        color = "#31ff87"
-        text = "SUCCESS"
-    }
+
+    const hasResponse = (functionResponse?.response && functionResponse.response !== "0x") || (functionResponse?.err && functionResponse.err !== "0x")
 
     // if (!hasResponse) return <CircularProgress></CircularProgress>
     if (!requestId) return <></>
@@ -596,70 +588,78 @@ export const Buy: React.FC = () => {
                 />
 
                 <MetricsCards functionId={func.functionId.toString()}/>
-                <InputSnippetGenerator func={func}
-                                       functionManagerAddress={networkConfig.functionsManager}/>
-                <Paper sx={{
-                    width: "100%",
-                    display: "flex",
-                    borderColor: "primary.main", border: 1, padding: 1
-                }}>
-                    <Grid container spacing={1}>
-                        <Grid item xs={12} sx={{borderBottom: 1, borderColor: "white"}}>
-                            {/*<Grid item xs={12} sx={{borderBottom: 1, borderColor: "primary.main"}}>*/}
-                            <Typography variant={"h6"}>Details</Typography>
-                        </Grid>
-                        <GridRow label={"Function ID"}>
-                            <CopyToClipboard text={functionId} onCopy={() => {
-                                toast.success("Copied ID to clipboard")
-                            }}>
-                                <Tooltip title={<Box>
-                                    <Typography>{functionId}</Typography>
-                                    <Typography>Click to copy to clipboard</Typography>
-                                </Box>}>
-                                    <Typography sx={{overflow: "hidden", textOverflow: "ellipsis"}}
-                                                variant={"body1"}>{functionId}</Typography>
-                                </Tooltip>
-                            </CopyToClipboard>
-                        </GridRow>
-                        <GridRow label={"Owner"}>
-                            <Box sx={{display: "flex", alignItems: "center"}}>
-                                <Jazzicon seed={addressToJazziconSeed(func.owner.toString())}
-                                          style={{height: 20, marginRight: 8}}/>
-                                <Link to={`/author/${func.owner}`}>
-                                    <Typography>
-                                        {func.owner.toString()}
-                                    </Typography>
-                                </Link>
-                            </Box>
-                        </GridRow>
-                        <GridRowTyp label={"Name"} value={func.name}/>
-                        <GridRowTyp label={"Description"} value={func.desc}/>
-                        <GridRowTyp label={"Category"} value={decodeBytes32String(func.category)}/>
-                        <GridRow label={"Fee"}>
-                            <Box display={"flex"} flexDirection={"row"}>
-                                <TypographyWithLinkIcon
-                                    variant={"body1"}>{formatEther(BigInt(func.fee) + baseFee)}</TypographyWithLinkIcon>
-                                <Typography>({formatEther(baseFee)} base, {formatEther(func.fee)} premium)</Typography>
-                            </Box>
-                        </GridRow>
-                        <GridRowTyp label={"Code Location"} value={codeLocationToString(func.codeLocation)}/>
-                        <GridRowTyp label={"Code Language"} value={codeLanguageToStrong(func.language)}/>
-                        <GridRow label={"Return type"}>
-                            <Typography variant={"body1"}>
-                                {returnTypeEnumToString(1)} (Raw
-                                value: {1})
-                            </Typography>
-                        </GridRow>
-                        <GridRow label={"Arguments"}>
-                            <Typography>
-                                {splitArgStrings(func?.expectedArgs).map((arg, i) => {
-                                    return `${arg.name} (${arg.type})`
-                                }).join(", ")}
-                            </Typography>
-                        </GridRow>
+                <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                        <InputSnippetGenerator func={func}
+                                               functionManagerAddress={networkConfig.functionsManager}/>
                     </Grid>
-                </Paper>
-                <ExecutionTable functionId={func.functionId.toString()} expectedReturnType={1}/>
+                    <Grid item xs={12}>
+                        <Paper sx={{
+                            width: "100%",
+                            display: "flex",
+                            borderColor: "primary.main", border: 1, padding: 1
+                        }}>
+                            <Grid container spacing={1}>
+                                <Grid item xs={12} sx={{borderBottom: 1, borderColor: "white"}}>
+                                    {/*<Grid item xs={12} sx={{borderBottom: 1, borderColor: "primary.main"}}>*/}
+                                    <Typography variant={"h6"}>Details</Typography>
+                                </Grid>
+                                <GridRow label={"Function ID"}>
+                                    <CopyToClipboard text={functionId} onCopy={() => {
+                                        toast.success("Copied ID to clipboard")
+                                    }}>
+                                        <Tooltip title={<Box>
+                                            <Typography>{functionId}</Typography>
+                                            <Typography>Click to copy to clipboard</Typography>
+                                        </Box>}>
+                                            <Typography sx={{overflow: "hidden", textOverflow: "ellipsis"}}
+                                                        variant={"body1"}>{functionId}</Typography>
+                                        </Tooltip>
+                                    </CopyToClipboard>
+                                </GridRow>
+                                <GridRow label={"Owner"}>
+                                    <Box sx={{display: "flex", alignItems: "center"}}>
+                                        <Jazzicon seed={addressToJazziconSeed(func.owner.toString())}
+                                                  style={{height: 20, marginRight: 8}}/>
+                                        <Link to={`/author/${func.owner}`}>
+                                            <Typography>
+                                                {func.owner.toString()}
+                                            </Typography>
+                                        </Link>
+                                    </Box>
+                                </GridRow>
+                                <GridRowTyp label={"Name"} value={func.name}/>
+                                <GridRowTyp label={"Description"} value={func.desc}/>
+                                <GridRowTyp label={"Category"} value={decodeBytes32String(func.category)}/>
+                                <GridRow label={"Fee"}>
+                                    <Box display={"flex"} flexDirection={"row"}>
+                                        <TypographyWithLinkIcon
+                                            variant={"body1"}>{formatEther(BigInt(func.fee) + baseFee)}</TypographyWithLinkIcon>
+                                        <Typography>({formatEther(baseFee)} base, {formatEther(func.fee)} premium)</Typography>
+                                    </Box>
+                                </GridRow>
+                                <GridRowTyp label={"Code Location"} value={codeLocationToString(func.codeLocation)}/>
+                                <GridRowTyp label={"Code Language"} value={codeLanguageToStrong(func.language)}/>
+                                <GridRow label={"Return type"}>
+                                    <Typography variant={"body1"}>
+                                        {returnTypeEnumToString(1)} (Raw
+                                        value: {1})
+                                    </Typography>
+                                </GridRow>
+                                <GridRow label={"Arguments"}>
+                                    <Typography>
+                                        {splitArgStrings(func?.expectedArgs).map((arg, i) => {
+                                            return `${arg.name} (${arg.type})`
+                                        }).join(", ")}
+                                    </Typography>
+                                </GridRow>
+                            </Grid>
+                        </Paper>
+                    </Grid>
+                    <Grid item xs={12}>
+                        <ExecutionTable functionId={func.functionId.toString()} expectedReturnType={1}/>
+                    </Grid>
+                </Grid>
             </Stack>
         </Box>
     )

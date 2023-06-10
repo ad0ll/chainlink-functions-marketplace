@@ -90,7 +90,7 @@ export const TryItNowModal: React.FC<{
 
         try {
             setStatusText("Executing function...")
-            const execTx = await functionsManager.executeRequest(func.functionId, args, {gasLimit: 1_500_000});
+            const execTx = await functionsManager.executeRequest(func.functionId, args, {gasLimit: 2_000_000});
             setWaitingForResponse(true)
             setStatusText("Waiting for transaction to be mined...")
             const execReceipt = await provider?.waitForTransaction(execTx.hash, 1);
@@ -101,7 +101,8 @@ export const TryItNowModal: React.FC<{
                     </a></Typography>)
             }
             console.log("execReceipt", execReceipt)
-            const sig = keccak256(toUtf8Bytes("FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96,string[])"))
+
+            const sig = keccak256(toUtf8Bytes("FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96,uint96,string[])"))
             setStatusText("Scraping logs for request id...")
             const reqIdLoc = execReceipt?.logs?.find((e) => e.topics[0] === sig)
             if (!reqIdLoc) {
