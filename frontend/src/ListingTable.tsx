@@ -1,9 +1,13 @@
-//ListingTable.tsx, used  for the function listing on the homepage.
-import React, {startTransition, useContext, useState} from "react";
+/*
+ListingTable is a generic table used to list Chainlink Functions based integrations. It's used on the home page,
+the owner dashboard, and the user drilldown
+ */
+import React, {startTransition, useContext, useEffect, useState} from "react";
 import {
     Box,
     Button,
     CardMedia,
+    CircularProgress,
     Stack,
     Table,
     TableBody,
@@ -17,8 +21,8 @@ import {
 } from "@mui/material";
 import {toast} from "react-toastify";
 import {Link} from "react-router-dom";
-import {fallbackToJazzicon, jazziconImageString, renderCurrency} from "./utils/util";
-import {generateDefaultSnippetString, SoliditySyntaxHighlighter} from "./Snippets";
+import {fallbackToJazzicon, jazziconImageString, renderCurrency} from "./util";
+import {generateDefaultSnippetString, SoliditySyntaxHighlighter} from "./ContractGenerator";
 import {DocumentNode, useQuery} from "@apollo/client";
 import {FunctionRegistered, Query} from "./gql/graphql";
 import {
@@ -28,10 +32,11 @@ import {
     TypographyWithLinkIcon
 } from "./common";
 import {Search as SearchIcon} from "@mui/icons-material";
-import {ethers} from "ethers"
+import {ethers, parseUnits} from "ethers"
 import {AddressCard} from "./Cards";
-import {FunctionsManagerContext} from "./FunctionsManagerProvider";
 import {TryItNowModal} from "./TryItNowModal";
+import {FunctionsBillingRegistryInterface} from "./generated/contract-types";
+import {FunctionsManagerContext} from "./FunctionsManagerProvider";
 
 
 type AvailableListingColumns = "name" | "author" | "category" | "fee" | "created" | "actions";
@@ -52,7 +57,28 @@ const ListingTable: React.FC<{
     const [nameDescFilter, setNameDescFilter] = useState("");
     const [functionSelected, setFunctionSelected] = useState<FunctionRegistered>();
     const [tryDialogOpen, setTryDialogOpen] = useState(false);
-    const {networkConfig} = useContext(FunctionsManagerContext);
+    const [baseFee, setBaseFee] = useState(0n)
+    const {functionsManager, functionsBillingRegistry} = useContext(FunctionsManagerContext);
+    useEffect(() => {
+        if (!functionSelected || !functionSelected.functionId) return;
+        const fetchData = async () => {
+            try {
+                console.log("functionSelected", functionSelected)
+                const requestBilling: FunctionsBillingRegistryInterface.RequestBillingStruct = {
+                    subscriptionId: functionSelected?.subId,
+                    client: functionSelected?.owner,
+                    gasLimit: 300_000,
+                    gasPrice: parseUnits("30", "gwei")
+                }
+                const baseFee = await functionsBillingRegistry.getRequiredFee("0x", requestBilling)
+                console.log("baseFee", baseFee, "wei")
+                setBaseFee(baseFee)
+            } catch (e: any) {
+                console.error("Drilldown fetchData", e)
+            }
+        }
+        fetchData();
+    }, [functionSelected]);
     const skip = page * pageSize;
     const {loading, error, data} = useQuery<Query, { first: number, skip: number, searchTerm: string }>(query, {
         variables: {
@@ -67,10 +93,9 @@ const ListingTable: React.FC<{
 
     const notify = () => toast.success("Copied snippet to keyboard");
 
-    // TODO loading is ugly
-    // if (loading) {
-    //     return <Typography><CircularProgress/>Loading...</Typography>
-    // }
+    if (loading) {
+        return <Typography><CircularProgress/>Loading...</Typography>
+    }
     if (error) {
         console.log(error)
         return <Typography>Something went wrong</Typography>
@@ -162,15 +187,17 @@ const ListingTable: React.FC<{
                                      title={<Box sx={{minWidth: 450}}>
                                          <Typography variant={"h6"}>Click to copy example contract</Typography>
                                          <SoliditySyntaxHighlighter>
-                                             {generateDefaultSnippetString(f)}
+                                             {generateDefaultSnippetString(f, baseFee)}
                                          </SoliditySyntaxHighlighter>
                                      </Box>}>
-                                {/*<ContentCopyIcon onClick={notify}/>*/}
-                                <Button variant={"outlined"} onClick={notify}>Example</Button>
+                                <Button variant={"outlined"}
+                                        onMouseEnter={() => setFunctionSelected(f)}
+                                        onClick={notify}>Contract</Button>
                             </Tooltip>
                         </TableCell>}
                     </TableRow>)}
                 </TableBody>
+                {/*We had a really hard time with pagination w/ the graphql api, and cut it so we could focus on features*/}
                 {/*<TableFooter>*/}
                 {/*    <TableRow>*/}
                 {/*        <TablePagination*/}

@@ -1,42 +1,52 @@
-// SPDX-License-Identifier: MIT
+/*
+This is the contract backend for the Functions Marketplace product. It's used to store and run Chainlink Functions
+based integrations.
+*/
 pragma solidity ^0.8.18;
 
 import {FunctionsClient} from "./functions/FunctionsClient.sol";
 import {Functions} from "./functions/Functions.sol";
-import {LocalFunctionsBillingRegistryInterface} from "./LocalFunctionsBillingRegistryInterface.sol";
+import {LocalFunctionsBillingRegistryInterface} from "./interfaces/LocalFunctionsBillingRegistryInterface.sol";
 import {FunctionsOracleInterface} from "./functions/interfaces/FunctionsOracleInterface.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
-
 import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
+
 import "hardhat/console.sol";
 
 contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     using Functions for Functions.Request;
 
+    // functionMetadatas contains presentation metadata and configuration used for the webapp
     mapping(bytes32 => FunctionMetadata) public functionMetadatas;
+    // functionExecuteMetadatas contains metadata that's required to run a Chainlink Functions based integration
     mapping(bytes32 => FunctionExecuteMetadata) public functionExecuteMetadatas;
+    // Our main callback stores the Chainlink Function response in this collection
     mapping(bytes32 => FunctionResponse) public functionResponses;
+    // This is a collection of prebuilt Function.Request(s). It's kept separate from execute metadata since we need it when calling but don't need it when storing the response.
     mapping(bytes32 => Functions.Request) private functionRequests;
     mapping(uint64 => address) private subscriptionOwnerMapping;
 
-    // Balances that can be dumped into a subscription when the subscription balance runs low
+    // Balances containing reserved fees that can be dumped into a subscription when the subscription balance runs low
     mapping(uint64 => uint96) public subscriptionBalances;
 
-    // mapping(bytes32 => FeePool) public feePools;
+ 
+
+    //FunctionsManager configuration
     LinkTokenInterface private LINK;
     LocalFunctionsBillingRegistryInterface private BILLING_REGISTRY;
     FunctionsOracleInterface private ORACLE_PROXY;
+    uint96 public minimumSubscriptionBalance;
+    uint96 public functionManagerProfitPool; // The profits earned by the FunctionsManager, incremented by the (feeManagerCut/100) * premiumFee on each call
+    uint32 public feeManagerCut; // What percent the FunctionsManager takes from the premium fee. Should be a whole number representing percentage
+    uint32 public maxGasLimit; //Leave this at 300k, see service limits doc
 
-    uint96 public minimumSubscriptionBalance; // 1 LINK (18 decimals)
-    uint96 public functionManagerProfitPool; // The fee manager's cut of fees, whole number representing percentage
-    uint32 public feeManagerCut;
 
     // Global metrics
     uint64 public functionsRegisteredCount;
     uint96 public functionsCalledCount;
-    uint96 public totalFeesCollected;
-    uint32 public maxGasLimit; //Leave this at 300k, see service limits doc
-
+    uint96 public totalFeesCollected; 
+    
+    
     enum ReturnTypes {
         Bytes,
         Uint256,
@@ -94,13 +104,15 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         bytes32 functionId;
         address caller;
         bytes32 callbackFunction;
+        uint96 premiumFee;
+        uint96 baseFee;
+        uint96 functionsManagerCut;
+        // uint96 gasReserve;
         string[] args;
         bytes response;
         bytes err;
     }
 
-    // Event emitted when a Function is registered
-    // Recording owner twice isn't ideal, but we want to be able to filter on owner
     event FunctionRegistered(
         bytes32 indexed functionId,
         address indexed owner,
@@ -118,6 +130,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         bytes32 callbackFunction,
         uint96 baseFee,
         uint96 fee,
+        // uint96 gasReserve,
+        uint96 functionsManagerCut,
         string[] args
     );
 
@@ -276,7 +290,11 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         bytes memory emptyBytes;
         LocalFunctionsBillingRegistryInterface.RequestBilling memory emptyRequestBilling;
         uint96 baseFee = BILLING_REGISTRY.getRequiredFee(emptyBytes, emptyRequestBilling);
-        uint96 totalFee = baseFee + executeMetadata.fee;
+        uint96 premiumFee = executeMetadata.fee;
+        if (msg.sender == executeMetadata.owner) {
+            premiumFee = 0;
+        }
+        uint96 totalFee = baseFee + premiumFee;
         uint64 subId = executeMetadata.subId;
 
         require(
@@ -292,15 +310,14 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         require(LINK.transferFrom(msg.sender, address(this), totalFee), "Failed to collect fees from caller");
 
         console.log("reserved subscription fee %d", subscriptionBalances[subId]);
+
+        uint96 functionManagerCut = (executeMetadata.fee * feeManagerCut) / 100;
+        // uint96 gasReserve = (maxGasLimit * 25 gwei); // TODO, not ideal leaving this fixed, just short on time
+        // subscriptionBalances[subId] += baseFee + gasReserve;
         subscriptionBalances[subId] += baseFee;
-
-        if (msg.sender != executeMetadata.owner) {
-            console.log("caller is not the owner, collecting fees");
-            uint96 functionManagerCut = (executeMetadata.fee * feeManagerCut) / 100;
-            functionManagerProfitPool += functionManagerCut;
-            executeMetadata.lockedProfitPool += executeMetadata.fee - functionManagerCut;
-        }
-
+        functionManagerProfitPool += functionManagerCut;
+        executeMetadata.lockedProfitPool += premiumFee - functionManagerCut;
+        // executeMetadata.lockedProfitPool += premiumFee - functionManagerCut - gasReserve;
         executeMetadata.functionsCalledCount++;
         functionsCalledCount++;
 
@@ -315,6 +332,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         functionResponse.functionId = functionId;
         functionResponse.caller = msg.sender;
         functionResponse.args = args;
+        functionResponse.baseFee = baseFee;
+        functionResponse.premiumFee = premiumFee;
+        // functionResponse.gasReserve = gasReserve;
+        functionResponse.functionsManagerCut = functionManagerCut;
         functionResponses[assignedReqID] = functionResponse;
 
         console.log("emitting FunctionCalled event");
@@ -325,17 +346,18 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             owner: executeMetadata.owner,
             callbackFunction: bytes32(""),
             baseFee: baseFee,
-            fee: executeMetadata.fee,
+            fee: premiumFee,
+            // gasReserve: gasReserve,
+            functionsManagerCut: functionManagerCut,
             args: args
         });
 
         return assignedReqID;
     }
 
+    // This function is called by the FunctionsBillingRegistry (one of the Chainlink Functions) some time after the DON has finished executing the function. It closes out the request that was started in executeRequest by unlocking the premium fee, storing the response, and ticking metrics.
     function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
-        // Allow only the Billing Registry to call fulfillRequest
-        console.log("fulfilling request");
-        console.log("Checking if %s is authorized to call fulfillRequest", msg.sender);
+        // The FunctionsBillingRegistry is the only entrypoint to fulfill a request
         require(address(BILLING_REGISTRY) == msg.sender, "Only the  Billing Registry can call fulfillRequest");
         require(functionResponses[requestId].caller != address(0), "Request not found in FunctionsManager");
         require(
@@ -348,45 +370,42 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         functionResponse.err = err;
         functionResponses[requestId] = functionResponse;
 
-        FunctionExecuteMetadata memory functionMetadata = functionExecuteMetadatas[functionResponse.functionId];
+        FunctionExecuteMetadata memory executeMetadata = functionExecuteMetadatas[functionResponse.functionId];
 
-        if (functionMetadata.owner != functionResponse.caller) {
-            uint96 unlockAmount = (functionMetadata.fee * (100 - feeManagerCut)) / 100;
-            functionMetadata.lockedProfitPool -= unlockAmount;
-            functionMetadata.unlockedProfitPool += unlockAmount;
-            functionMetadata.totalFeesCollected += unlockAmount;
-            totalFeesCollected += unlockAmount;
-            console.log("Finished unlocking fees, checking if need fill subscription");
-            //Refill the subscription if necessary, do this in fulfillRequest so the function caller pays for it
-        }
+        // If the owner was the caller, premiumFee and functionsManagerCut will both be 0
+        uint96 unlockAmount = functionResponse.premiumFee - functionResponse.functionsManagerCut;
+        executeMetadata.lockedProfitPool -= unlockAmount;
+        executeMetadata.unlockedProfitPool += unlockAmount;
+        executeMetadata.totalFeesCollected += unlockAmount;
+        totalFeesCollected += unlockAmount;
+        console.log("Finished unlocking fees, checking if need fill subscription");
+
         // Only err or res will be set, never both, so consider set err as failure
         if (err.length == 0) {
-            functionMetadata.successfulResponseCount++;
+            executeMetadata.successfulResponseCount++;
         } else {
-            functionMetadata.failedResponseCount++;
+            executeMetadata.failedResponseCount++;
         }
-        functionExecuteMetadatas[functionResponse.functionId] = functionMetadata;
 
-        (uint96 balance,,) = BILLING_REGISTRY.getSubscription(functionMetadata.subId);
-        console.log("Subscription balance %d", balance);
-        console.log("Minimum subscription balance %d", minimumSubscriptionBalance);
+        functionExecuteMetadatas[functionResponse.functionId] = executeMetadata;
+
+        (uint96 balance,,) = BILLING_REGISTRY.getSubscription(executeMetadata.subId);
         if (balance < minimumSubscriptionBalance) {
-            refillSubscription(functionMetadata.subId);
+            refillSubscription(executeMetadata.subId);
         }
 
-        // Emit FunctionCallCompleted event
         emit FunctionCallCompleted({
             functionId: functionResponse.functionId,
             caller: functionResponse.caller,
             requestId: requestId,
-            owner: functionMetadata.owner,
+            owner: executeMetadata.owner,
             callbackFunction: functionResponse.callbackFunction,
             response: response,
             err: err
         });
     }
 
-    // TODO If we keep this function, we need to let the keeper call it after some function timeout
+    // This is an override that we use to force unlock fees for a function, only intended for development.
     function forceUnlockFees(bytes32 functionId) external onlyOwner {
         FunctionExecuteMetadata storage chainlinkFunction = functionExecuteMetadatas[functionId];
         require(chainlinkFunction.owner != address(0), "Function does not exist");
@@ -394,12 +413,15 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         chainlinkFunction.lockedProfitPool = 0;
     }
 
+    // This is behind the "TRANSFER" button on the owner dashboard and our subscription balance check in
+    // fulfillRequest. It dumps the reserved fees into the Chainlink Functions subscription.
+    // If the owner is inclined, then can withdraw the fees from the subscription to their wallet
+    // using Chainlink's contracts, so empowers owners to force withdraw their held fees if they want (at the peril of the reliability of their integration)
     function refillSubscription(uint64 _subscriptionId) public {
-        // TODO, this call is going to be EXPENSIVE
         console.log("using existing subscription %d, checking if authorized", _subscriptionId);
         (, address owner, address[] memory consumers) = BILLING_REGISTRY.getSubscription(_subscriptionId);
         bool callerAuthorized = msg.sender == address(this) || msg.sender == address(BILLING_REGISTRY)
-            || msg.sender == address(ORACLE_PROXY);
+            || msg.sender == address(ORACLE_PROXY) || msg.sender == owner;
         if (!callerAuthorized) {
             for (uint256 i = 0; i < consumers.length; i++) {
                 if (consumers[i] == msg.sender) {
@@ -436,13 +458,15 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         LINK.transferAndCall(address(BILLING_REGISTRY), amountToTransfer, abi.encode(_subscriptionId));
     }
 
+
     function withdrawFunctionsManagerProfitToOwner() external onlyOwner {
         console.log("Withdrawing all fees to FunctionsManager owner %s", owner());
         uint96 amountToTransfer = functionManagerProfitPool;
         functionManagerProfitPool = 0;
-        LINK.transfer(owner(), amountToTransfer);
+        require(LINK.transfer(owner(), amountToTransfer), "failed to transfer link to FunctionsManager owner");
     }
 
+    // This function is behind "WITHDRAW" in the webapp
     function withdrawFunctionProfitToAuthor(bytes32 functionId) external {
         require(
             msg.sender == address(this) || msg.sender == owner()
@@ -451,9 +475,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         );
         uint96 amountToTransfer = functionExecuteMetadatas[functionId].unlockedProfitPool;
         functionExecuteMetadatas[functionId].unlockedProfitPool = 0;
-        LINK.transfer(functionExecuteMetadatas[functionId].owner, amountToTransfer);
+        require(LINK.transfer(functionExecuteMetadatas[functionId].owner, amountToTransfer), "failed to transfer link to function owner");
     }
 
+    // This function is behind "WITHDRAW ALL" in the webapp
     function withdrawMultipleFunctionProfitToAuthor(bytes32[] memory functionIds) external {
         for (uint256 i = 0; i < functionIds.length; i++) {
             this.withdrawFunctionProfitToAuthor(functionIds[i]);
@@ -490,7 +515,23 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         return functionResponses[_requestId];
     }
 
+    function getFunctionResponseValue(bytes32 _requestId) external view returns (bytes memory) {
+        if (functionResponses[_requestId].err.length > 0) {
+            return functionResponses[_requestId].err;
+        }
+        return functionResponses[_requestId].response;
+    }
+
     function getSubscriptionBalance(uint64 _subscriptionId) external view returns (uint256) {
         return subscriptionBalances[_subscriptionId];
+    }
+
+    // From: https://ethereum.stackexchange.com/questions/136122/how-to-get-gas-price-in-solidity-smart-contract
+    function getGasPrice() public view returns (uint256) {
+        uint256 gasPrice;
+        assembly {
+            gasPrice := gasprice()
+        }
+        return gasPrice;
     }
 }

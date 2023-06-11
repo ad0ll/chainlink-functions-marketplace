@@ -33,5 +33,6 @@ task("get-function", "gets function response")
       taskArgs.functionid
     );
 
+    console.log(metadata.expectedReturnType);
     console.log(`Metadata: ${JSON.stringify(metadata)}`);
   });

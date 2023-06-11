@@ -1,16 +1,15 @@
-//Functions and components that are used to render snippets
+/*
+ContractGenerator is a library that is used to create the example contracts that you can see behind the "contract" button
+on the home page and the example contract box on the buy page.
+ */
 import React, {FC, useContext} from "react"
 import {Prism as SyntaxHighlighter} from "react-syntax-highlighter";
 import {vscDarkPlus} from "react-syntax-highlighter/dist/esm/styles/prism";
 import {FunctionRegistered} from "./gql/graphql";
-import {
-    BASE_FEE,
-    CombinedFunctionMetadata,
-    functionRegisteredToCombinedMetadata,
-    returnTypeEnumToString
-} from "./common";
+import {CombinedFunctionMetadata, functionRegisteredToCombinedMetadata, returnTypeEnumToString} from "./common";
 import {formatEther} from "ethers";
 import {FunctionsManagerContext} from "./FunctionsManagerProvider";
+
 
 export type FunctionArg = {
     name: string
@@ -93,24 +92,9 @@ export const splitArgString = (argString: string): FunctionArg => {
 }
 
 // This is a cosmic horror
-export const generateSnippetString = (func: CombinedFunctionMetadata, opts: GenerateSnippetOptions) => {
+export const generateSnippetString = (func: CombinedFunctionMetadata, opts: GenerateSnippetOptions, baseFee: bigint) => {
 
     const {networkConfig, functionsBillingRegistry, chainId} = useContext(FunctionsManagerContext)
-    // const [baseFee, setBaseFee] = useState<bigint>(10n ** 16n * 2n)
-    // This useEffect is really gross, is this going to be a double load on init?
-    // useEffect(() => {
-    //     const fetchData = async () => {
-    //         const requestBilling: FunctionsBillingRegistryInterface.RequestBillingStruct = {
-    //             subscriptionId: func.subId,
-    //             client: func.owner,
-    //             gasLimit: 300_000,
-    //             gasPrice: parseUnits("30", "gwei")
-    //         }
-    //         setBaseFee(await functionsBillingRegistry.getRequiredFee("0x", requestBilling))
-    //     }
-    //     fetchData()
-    //
-    // }, [func])
     let renderConstructor: string = `constructor() {
         linkToken = LinkTokenInterface(${networkConfig.linkToken});
         functionsManager = FunctionsManagerInterface(${networkConfig.functionsManager});
@@ -131,15 +115,15 @@ export const generateSnippetString = (func: CombinedFunctionMetadata, opts: Gene
     } else if (!opts.hardcodeParameters && func.expectedArgs?.length > 0) {
         parameterString = generateParameterString(argsAsFunctionArg, "paramWithType")
     }
+
     //TODO make me dynamic
-    const feeRender = formatEther(BigInt(func.fee) + BASE_FEE);
+    const feeRender = formatEther(BigInt(func.fee) + baseFee);
     const renderFunctionId = opts.makeGeneric ? "_functionId" : func.functionId
     let renderArgs: string = "";
     if (!opts.makeGeneric && func.expectedArgs.length > 0) {
         renderArgs = `\n        string[] memory args = new string[](${func.expectedArgs.length});\n`
 
         renderArgs += argsAsFunctionArg.map((arg, index) => {
-            console.log(argsAsFunctionArg, arg, index)
             return `        args[${index}] = ${opts.hardcodeParameters ? `"<${arg.name}>"` : `_${arg.name}`};`
         }).join("\n")
         renderArgs += "\n"
@@ -199,31 +183,12 @@ contract Snippet {
 }`
 }
 
-// function sendRequest (${parameterString}) public ${opts.returnRequestId ? "returns (bytes32)" : ""} {
-//     address functionManager = ${networkConfig[chainId].functionsManager};
-// (bool success, ${opts.returnRequestId ? "bytes memory result" : ""}) = functionManager.call(abi.encodeWithSignature("executeRequest(address,string[])", ${func.functionId}, [${sendRequestArgs}]));
-// require(success, "Failed to call sendRequest function.");
-// ${opts.returnRequestId ? "return abi.decode(result, (bytes32));" : ""}
-// }
-export const generateDefaultSnippetString = (func: FunctionRegistered) => {
+export const generateDefaultSnippetString = (func: FunctionRegistered, baseFee: bigint) => {
     return generateSnippetString(functionRegisteredToCombinedMetadata(func), {
         hardcodeParameters: true,
         makeGeneric: false,
         hardcodeAddresses: true,
         inlineInterfaces: true,
         allowDeposit: false
-    })
+    }, baseFee)
 }
-
-
-/* TODO Callback generator:
-A guided UI that lets you add steps to build and deploy your own custom callback function
-Steps allowed:
-- Store permanent, full error
-- Store permanent, bool error
-- Store latest, full error
-- Store latest, bool error
-- Call another callback function
-- Call another function
-- Emit an event
- */

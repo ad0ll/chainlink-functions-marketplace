@@ -8,7 +8,6 @@ import {Query} from "./gql/graphql";
 import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
 import {ethers} from "ethers";
 import {FunctionsManagerContext} from "./FunctionsManagerProvider";
-// import LogoPng from "./assets/icons/logo-with-text.png"
 
 const LISTING_QUERY = gql`
     query EventSpammerFunctionRegistered($first: Int!, $skip: Int!, $searchTerm: String!){
@@ -21,12 +20,12 @@ const LISTING_QUERY = gql`
                 or: [
                     {metadata_name_contains_nocase: $searchTerm},
                     {metadata_desc_contains_nocase: $searchTerm},
-                    #                    {metadata_category_contains: $searchTerm}
                 ]
             }
         ) {
             id
             functionId
+            subId
             owner
             fee
             metadata_expectedArgs
@@ -50,6 +49,7 @@ const RECENTLY_ADDED_QUERY = gql`
             id
             functionId
             owner
+            subId
             metadata_expectedArgs
             metadata_name
             metadata_desc

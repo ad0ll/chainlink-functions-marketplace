@@ -422,7 +422,8 @@ task(
     for (let i = 0; i < demos.length; i++) {
       const demo = demos[i];
       const functionId = demo.functionId;
-      for (let j = 0; j < demo.execute.args.length; j++) {
+      for (let j = 0; j < 1; j++) {
+        // for (let j = 0; j < demo.execute.args.length; j++) {
         console.log(
           `Starting run ${j + 1}/${demo.execute.args.length} for ${functionId}`
         );

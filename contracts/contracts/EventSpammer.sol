@@ -1,3 +1,7 @@
+/*
+* This was a contract that we used for the first half of the hackathon. We used it in place of a functioning
+FunctionsManager to demonstrate the functionality of the webapp. It is not used anywhere in our submission.
+*/
 pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";

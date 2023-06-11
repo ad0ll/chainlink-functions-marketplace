@@ -1,5 +1,5 @@
 import React, {SyntheticEvent} from "react";
-import Jazzicon from "../Jazzicon";
+import Jazzicon from "./Jazzicon";
 import {renderToStaticMarkup} from "react-dom/server";
 
 

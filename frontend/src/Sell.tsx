@@ -1,5 +1,7 @@
-// Code for the form used to create a new function
-import React, {useContext} from "react";
+/*
+The Sell page is where you can register a new Chainlink Functions based integration
+ */
+import React, {startTransition, useContext} from "react";
 import {
     Autocomplete,
     Box,
@@ -22,7 +24,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import UsdcIcon from "./assets/icons/usd-coin-logo.svg";
 import LinkIcon from "./assets/icons/link-token-blue.svg";
-import {MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
+import {ExpectedReturnTypes, MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 // import FunctionsOracleJson from "./generated/abi/FunctionsOracle.json"
@@ -73,28 +75,29 @@ initial deposit should be number, use ethers.ParseUnits for validation
 const getRandomExample = (chainId: typeof MUMBAI_CHAIN_ID | typeof SEPOLIA_CHAIN_ID) => {
     const examples: FormValues[] = [
         {
-            name: "Test" + Math.floor(Math.random() * 1000000),
-            description: "This is a test function that I am creating",
-            imageUrl: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png?v=025",
+            name: "CoinGecko Demo " + Math.floor(Math.random() * 1000000),
+            description: "Fetches the price for a given currency pair from CoinGecko",
+            imageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg",
             fee: 0.05,
             expectedArgs: [
                 {name: "base", type: "string", comment: "The base currency of the price pair"},
                 {name: "quote", type: "string", comment: "The target currency of the price pair"},
             ],
             category: "Price Feed",
-            subscriptionId: "941",
-            source: `const base = args[0];
-const quote = args[1];
+            subscriptionId: "NEW",
+            source: `const base = args[0].toLowerCase();
+const quote = args[1].toLowerCase();
 
 const response = await Functions.makeHttpRequest({
-  url: \`https://api.coingecko.com/api/v3/simple/price?ids=\$\{base\}&vs_currencies=\$\{quote\}\`,
+    url: \`https://api.coingecko.com/api/v3/simple/price?ids=\${base}&vs_currencies=\${quote}\`,
 });
 
-const res = response.data[\`\$\{base\}.\$\{quote\}\`];
+const res = response.data[base][quote];
 
 return Functions.encodeUint256(Math.round(res * 100));`,
+
             suggestedGasLimit: 300000,
-            expectedReturnType: 1,
+            expectedReturnType: ExpectedReturnTypes.Uint,
             feeToken: networkConfig[chainId].linkToken,
             secretsPreEncrypted: false,
             initialDeposit: "0",
@@ -104,6 +107,7 @@ return Functions.encodeUint256(Math.round(res * 100));`,
     ]
     return examples[Math.floor(Math.random() * examples.length)];
 }
+
 export const Sell: React.FC = () => {
     const {
         account,
@@ -118,33 +122,9 @@ export const Sell: React.FC = () => {
 
     const {register, handleSubmit, getValues, setValue, watch, formState, control} = useForm<FormValues>({
         defaultValues: {
-            // subscriptionId: "NEW",
-            // suggestedGasLimit: 500000,
-            // oracle: networkConfig[chainId].functionsOracleProxy,
-            // initialDeposit: "3", //Whole LINK units, conversion happens later
-
-            name: "CoinGecko Price (Demo)" + Math.floor(Math.random() * 1000000),
-            description: "Fetches the price for a given currency pair from CoinGecko",
-            imageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg",
-            fee: 0.05,
-            expectedArgs: [
-                {name: "base", type: "string", comment: "The base currency of the price pair"},
-                {name: "quote", type: "string", comment: "The target currency of the price pair"},
-            ],
-            category: "Price Feed",
-            subscriptionId: "941",
-            source: `const base = args[0].toLowerCase();
-const quote = args[1].toLowerCase();
-
-const response = await Functions.makeHttpRequest({
-    url: \`https://api.coingecko.com/api/v3/simple/price?ids=\${base}&vs_currencies=\${quote}\`,
-});
-
-const res = response.data[base][quote];
-
-return Functions.encodeUint256(Math.round(res * 100));`,
+            subscriptionId: "NEW",
             suggestedGasLimit: 300000,
-            expectedReturnType: 1,
+            expectedReturnType: ExpectedReturnTypes.Bytes,
             feeToken: networkConfig.linkToken,
             secretsPreEncrypted: false,
             initialDeposit: "0",
@@ -208,7 +188,6 @@ return Functions.encodeUint256(Math.round(res * 100));`,
         }
 
 
-        // TODO if sub is new, check that user is registered.
         console.log("Final data for form: ", post);
         const registerTx = await functionsManager.registerFunction({
             functionName: post.name,
@@ -216,26 +195,24 @@ return Functions.encodeUint256(Math.round(res * 100));`,
             desc: post.description,
             imageUrl: post.imageUrl,
             expectedArgs: post.expectedArgs,
-            codeLocation: 0,
-            secretsLocation: 0,
-            language: 0,
+            codeLocation: post.codeLocation,
+            secretsLocation: 0, //TODO Remember this is hardcorded when secrets are added
+            language: post.language,
             category: post.category,
             subId: post.subscriptionId,
             source: post.source,
             secrets: encodeBytes32String(""),
-            expectedReturnType: 0,
+            expectedReturnType: post.expectedReturnType,
             // secrets: post.secretsPreEncrypted ? post.secrets : ethers.utils.keccak256(post.secrets)
         }, {gasLimit: "2500000"})
 
 
-        console.log("Register TX:", registerTx)
-        console.log(networkConfig)
         toast((<div>
             <Typography>Function registration is being processed</Typography>
             <a href={`${networkConfig.getScannerTxUrl(registerTx.hash)}`}>
                 View transaction in scanner...
             </a>
-        </div>), {autoClose: false, toastId: 1})
+        </div>))
 
         const registerReceipt = await provider?.waitForTransaction(registerTx.hash, 1);
         if (registerReceipt?.status === 0) {
@@ -244,7 +221,7 @@ return Functions.encodeUint256(Math.round(res * 100));`,
                 <a href={`${networkConfig.getScannerTxUrl(registerTx.hash)}`} target="_blank">
                     View transaction in scanner for details...
                 </a>
-            </div>, {toastId: 1})
+            </div>)
         } else if (registerReceipt?.status === 1) {
             // TODO get the function id and load it into this message
             toast.success(<div>
@@ -252,7 +229,7 @@ return Functions.encodeUint256(Math.round(res * 100));`,
                 <a href={`${networkConfig.getScannerTxUrl(registerTx.hash)}`} target="_blank">
                     View transaction in scanner for details...
                 </a>
-            </div>, {toastId: 1})
+            </div>)
         } else {
             toast.error("Received unknown status from contract interaction: " + registerReceipt?.status, {toastId: 1})
         }
@@ -384,7 +361,6 @@ return Functions.encodeUint256(Math.round(res * 100));`,
                                     </Select>
                                 </Grid>
                                 <Grid item xs={2}>
-                                    {/*TODO Colors below are messed up*/}
                                     <Box display={"flex"} alignItems={"center"}>
                                         <IconButton color={"secondary"}
                                                     onClick={() => {
@@ -466,24 +442,23 @@ return Functions.encodeUint256(Math.round(res * 100));`,
 
                 <Button startIcon={<EditIcon/>} variant={"outlined"} color={"primary"} onClick={() => {
                     const example = getRandomExample(chainId)
-                    // startTransition(() => {
-                    //     setValue("name", example.name)
-                    //     setValue("description", example.description)
-                    //     setValue("imageUrl", example.imageUrl)
-                    //     setValue("source", example.source)
-                    //     setValue("category", example.category)
-                    //     setValue("fee", example.fee)
-                    //     setValue("expectedReturnType", example.expectedReturnType)
-                    //     setValue("expectedArgs", example.expectedArgs)
-                    //     setValue("suggestedGasLimit", example.suggestedGasLimit)
-                    //     setValue("subscriptionId", example.subscriptionId)
-                    //     setValue("oracle", example.oracle)
-                    //     setValue("initialDeposit", example.initialDeposit)
-                    //     //
-                    //     // Object.keys(example).forEach((key)  => {
-                    //     //     setValue(key, example[key])
-                    //     // })
-                    // })
+                    startTransition(() => {
+                        setValue("name", example.name)
+                        setValue("description", example.description)
+                        setValue("imageUrl", example.imageUrl)
+                        setValue("source", example.source)
+                        setValue("category", example.category)
+                        setValue("fee", example.fee)
+                        setValue("expectedReturnType", example.expectedReturnType)
+                        setValue("expectedArgs", example.expectedArgs)
+                        setValue("suggestedGasLimit", example.suggestedGasLimit)
+                        setValue("subscriptionId", example.subscriptionId)
+                        setValue("initialDeposit", example.initialDeposit)
+                        //
+                        // Object.keys(example).forEach((key)  => {
+                        //     setValue(key, example[key])
+                        // })
+                    })
                 }}>
                     Pre-fill Example
                 </Button>

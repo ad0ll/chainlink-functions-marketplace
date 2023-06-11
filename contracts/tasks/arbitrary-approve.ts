@@ -2,31 +2,23 @@ import { task, types } from "hardhat/config";
 
 task("arbitrary-approve", "approve arbitrary address to transfer LINK")
   .addParam(
-    "linktokenaddr",
-    "The address of LINK token",
-    process.env["FUNCTIONS_MANAGER_ADDR"],
+    "contractaddr",
+    "The address to approve transfers to",
+    undefined,
     types.string
   )
   .setAction(async (taskArgs, { ethers }) => {
-    if (!taskArgs.linktokenaddr) {
-      throw new Error("--functionmanager must be specified");
+    if (!taskArgs.contractaddr) {
+      throw new Error("--contractaddr must be specified");
     }
-    const linkToken= await ethers.getContractAt(
-      "LinkTokenInterface",
-      
-    if (!taskArgs.subId) {
-      throw new Error("--subId must be specified");
-    }
-
-    const [signer] = await ethers.getSigners();
-    const functionsManagerRaw = await ethers.getContractAt(
-      "FunctionsManager",
-      taskArgs.functionsmanager
+    const linkToken = await ethers.getContractAt(
+      "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol:LinkTokenInterface",
+      "0x326C977E6efc84E512bB9C30f76E30c160eD06FB"
     );
-    const functionsManager = functionsManagerRaw.connect(signer);
-
-    console.log("Refilling subId: ", taskArgs.subId);
-    const metadata = await functionsManager.refillSubscription(taskArgs.subId);
-
-    console.log(`Metadata: ${JSON.stringify(metadata)}`);
+    const tx = await linkToken.approve(
+      taskArgs.contractaddr,
+      ethers.utils.parseEther("10000")
+    );
+    const receipt = await tx.wait();
+    console.log(receipt);
   });

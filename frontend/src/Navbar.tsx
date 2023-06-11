@@ -1,3 +1,6 @@
+/*
+NavBar appears at the top of every page and contains the controls used to connect to MetaMask
+ */
 import {AppBar, Button, IconButton, Toolbar, Tooltip} from "@mui/material";
 import Logo from "./assets/icons/logo-with-text.svg";
 import React, {useEffect} from "react";
@@ -5,12 +8,11 @@ import {useWeb3React} from "@web3-react/core";
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import {Link} from "react-router-dom";
 import {MUMBAI_CHAIN_ID, SEPOLIA_CHAIN_ID} from "./common";
-import {fallbackToJazzicon, jazziconImageString} from "./utils/util";
+import {fallbackToJazzicon, jazziconImageString} from "./util";
 
 export const NavBar: React.FC = ({}) => {
     const {isActive, chainId, account, connector,} = useWeb3React()
     const [connectIcon, setConnectIcon] = React.useState(<AccountBalanceWalletIcon/>)
-    const [initialLoad, setInitialLoad] = React.useState(true)
     const [tooltipText, setTooltipText] = React.useState("")
 
     const connectWallet = async () => {

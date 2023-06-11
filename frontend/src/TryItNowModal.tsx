@@ -1,10 +1,14 @@
+/*
+The try it now modal appears on the home page and the buy page.
+It makes a raw request to the FunctionsManager contract for a given function, and then polls for the response.
+It also checks if the user is allowed to transfer LINK to the functions manager and starts an approval tx if they aren't
+*/
 import React, {ReactNode, startTransition, useContext, useEffect, useState} from "react";
 import {CombinedFunctionMetadata, decodeResponse} from "./common";
 import {useContract} from "./contractHooks";
 import {FunctionsManager, LinkTokenInterface} from "./generated/contract-types";
 import LinkTokenJson from "./generated/abi/LinkTokenInterface.json";
 import {useFieldArray, useForm} from "react-hook-form";
-import {gql} from "@apollo/client";
 import {toast} from "react-toastify";
 import {AbiCoder, keccak256, parseEther, toUtf8Bytes} from "ethers";
 import {
@@ -20,26 +24,16 @@ import {
     TextField,
     Typography
 } from "@mui/material";
-import {splitArgStrings} from "./Snippets";
+import {splitArgStrings} from "./ContractGenerator";
 import {FunctionsManagerContext} from "./FunctionsManagerProvider";
 
-//TODO low pri, add caller
-const TRIAL_CALL_COMPLETE_QUERY = gql`
-    query TrialCallComplete($requestId: Bytes!){
-        #    query TrialCallComplete($caller: Bytes!, $requestId: Bytes!){
-        functionCallCompleteds(first: 1, skip: 0, where: {
-            requestId: $requestId
-        }){
-            requestId
-            response
-            err
-        }
-    }`
+
 type FormValues = {
     args: {
         value: string
     }[]
 }
+
 
 export const TryItNowModal: React.FC<{
     func?: CombinedFunctionMetadata,
@@ -102,6 +96,7 @@ export const TryItNowModal: React.FC<{
             }
             console.log("execReceipt", execReceipt)
 
+            //Scrape for raw signature because ethers bug: https://github.com/ethers-io/ethers.js/issues/3830
             const sig = keccak256(toUtf8Bytes("FunctionCalled(bytes32,bytes32,address,address,bytes32,uint96,uint96,uint96,string[])"))
             setStatusText("Scraping logs for request id...")
             const reqIdLoc = execReceipt?.logs?.find((e) => e.topics[0] === sig)
@@ -192,7 +187,7 @@ export const TryItNowModal: React.FC<{
                 {(functionResponse?.response && functionResponse.response !== "0x") || (functionResponse?.err && functionResponse.err !== "0x")
                     ? <Box display={"flex"} justifyContent={"center"} alignItems={"center"}>
                         <Typography
-                            variant={"h5"}>Response: {decodeResponse(functionResponse?.response.toString() || "", functionResponse?.err.toString() || "", 1)}</Typography>
+                            variant={"h5"}>Response: {decodeResponse(functionResponse?.response.toString() || "", functionResponse?.err.toString() || "", func.expectedReturnType)}</Typography>
                     </Box>
                     : <div/>
                 }

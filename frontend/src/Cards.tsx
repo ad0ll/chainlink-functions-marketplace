@@ -1,6 +1,9 @@
+/*
+Cards contains generic components for Metrics + Recently Added + Users
+ */
 import React, {ReactNode} from "react";
 import {Box, Card, CardActionArea, CardMedia, Stack, Typography} from "@mui/material";
-import {addressToJazziconSeed, fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./utils/util";
+import {addressToJazziconSeed, fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./util";
 import {Link} from "react-router-dom";
 import {FunctionRegistered} from "./gql/graphql";
 import Jazzicon from "./Jazzicon";
@@ -65,9 +68,6 @@ export const RecentlyAddedCard: React.FC<{ func: FunctionRegistered }> = ({func}
                 </Box>
             </Stack>
         </CardActionArea>
-        {/*<CardActions sx={{display: mouseOver ? "flex" : "none", justifyContent: "flex-end", margin: 0}}>*/}
-        {/*    <Button variant={"outlined"}>Copy Snippet</Button>*/}
-        {/*</CardActions>*/}
     </Card>
 }
 

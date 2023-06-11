@@ -1,9 +1,12 @@
+/*
+Partial, somewhat inaccurate mock of the BillingRegistry contract created for unit tests.
+*/
 pragma solidity ^0.8.18;
 
-import {FunctionsOracleInterface} from "./functions/interfaces/FunctionsOracleInterface.sol";
-import {FunctionsBillingRegistryInterface} from "./functions/interfaces/FunctionsBillingRegistryInterface.sol";
-import {FunctionsManager} from "./FunctionsManager.sol";
-import {FunctionsClientInterface} from "./functions/interfaces/FunctionsClientInterface.sol";
+import {FunctionsOracleInterface} from "../functions/interfaces/FunctionsOracleInterface.sol";
+import {FunctionsBillingRegistryInterface} from "../functions/interfaces/FunctionsBillingRegistryInterface.sol";
+import {FunctionsManager} from "../FunctionsManager.sol";
+import {FunctionsClientInterface} from "../functions/interfaces/FunctionsClientInterface.sol";
 import "hardhat/console.sol";
 
 contract MockBillingRegistry {

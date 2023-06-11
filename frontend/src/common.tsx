@@ -23,7 +23,6 @@ export enum ExpectedReturnTypes {
 
 export type NetworkConfig = {
     functionsManager: "0x47564e344A2E0f5E73dd41ae1142530C01f10471",
-    // functionsManager: "0x47564e344A2E0f5E73dd41ae1142530C01f10471",
     linkToken: string,
     linkEthPriceFeed: string,
     functionsOracleProxy: string,
@@ -38,7 +37,6 @@ export const networkConfig: {
     [key: number]: NetworkConfig
 } = {
     [MUMBAI_CHAIN_ID]: {
-        // functionsManager: "0x47564e344A2E0f5E73dd41ae1142530C01f10471",
         functionsManager: "0x47564e344A2E0f5E73dd41ae1142530C01f10471",
         // demoFunctionsManager: "0x3744551b069e845B3E1A2832a17F7175Fcf2CB96",
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
@@ -63,7 +61,6 @@ export const networkConfig: {
     },
 }
 
-// TODO This should be a branded, better looking suspense component
 export const DefaultSuspense: React.FC<{ children: React.ReactNode }> = ({children}) => {
     return <Suspense fallback={<div>Loading...</div>}>
         {children}
@@ -95,16 +92,6 @@ export const TypographyWithLinkIcon: React.FC<{
 }
 export const blockTimestampToDate = (timestamp: number) => {
     const date = new Date(timestamp * 1000); // Convert seconds to milliseconds
-    // const options = {
-    //     weekday: 'long',
-    //     year: 'numeric',
-    //     month: 'long',
-    //     day: 'numeric',
-    //     hour: 'numeric',
-    //     minute: 'numeric',
-    //     second: 'numeric',
-    //     timeZoneName: 'short'
-    // };
     return date.toLocaleString();
 }
 

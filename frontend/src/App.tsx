@@ -1,3 +1,6 @@
+/*
+App is where the router lives and where the application starts
+ */
 import {Container, createTheme, CssBaseline, ThemeProvider, Typography} from '@mui/material';
 import React, {ReactNode} from 'react';
 import {initializeConnector, useWeb3React, Web3ReactHooks, Web3ReactProvider} from "@web3-react/core";
@@ -43,7 +46,7 @@ const RequireConnection: React.FC<{ children: ReactNode }> = ({children}) => {
         return <Typography>Account not found</Typography>
     }
 
-    // TODO check if account is authorized spender
+    // TODO check if account is authorized to create subscriptions
     // const Oracle = await ethers.getContractFactory("contracts/dev/functions/FunctionsOracle.sol:FunctionsOracle")
     // const oracle = await Oracle.attach(networkConfig[network.name]["functionsOracleProxy"])
     // const isWalletAllowed = await oracle.isAuthorizedSender((await ethers.getSigner()).address)

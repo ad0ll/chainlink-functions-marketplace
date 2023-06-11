@@ -1,9 +1,13 @@
-// Code for the user drilldown page
+/*
+The author page is what you see when you click on a user's address in the app
+It's light on features so we didn't show it in the demo, currently just lists what functions the Author has registered
+We made it with the intent of adding Author metadata to the app, but that feature got cut because time
+ */
 import React from "react";
 import {Card, Stack, Tooltip, Typography} from "@mui/material";
 import {gql} from "@apollo/client";
 import {Link, useParams} from "react-router-dom";
-import {fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./utils/util";
+import {fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./util";
 import {MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import {useWeb3React} from "@web3-react/core";
@@ -33,32 +37,6 @@ const OWNER_LISTING_QUERY = gql`
             blockTimestamp
         }
     }
-    #    query AuthorFunctionRegistereds($first: Int!, $skip: Int!, $owner: Bytes!, $searchTerm: String!) {
-    #        functionRegistereds(
-    #            orderBy: blockNumber
-    #            orderDirection: desc
-    #            skip: $skip
-    #            first: $first
-    #            where: {
-    #                owner: $owner,
-    #                or: [
-    #                    {metadata_name_contains_nocase: $searchTerm},
-    #                    {metadata_desc_contains_nocase: $searchTerm},
-    #                    #                    {metadata_category_contains: $searchTerm}
-    #                ]
-    #            }
-    #        ) {
-    #            id
-    #            functionId
-    #            owner
-    #            metadata_name
-    #            metadata_desc
-    #            metadata_imageUrl
-    #            metadata_category
-    #            fee
-    #            blockTimestamp
-    #        }
-    #    }
 `;
 
 const AuthorAddressCard: React.FC<{ address?: string }> = ({address}) => {
@@ -67,7 +45,6 @@ const AuthorAddressCard: React.FC<{ address?: string }> = ({address}) => {
     //TODO Fetch author metadata from the contract, no need to fetch from the graph
     return <Stack spacing={2} width={"auto"} margin={"auto"} sx={{marginTop: 2}}>
         <img style={{maxWidth: 150, margin: "auto"}}
-            // src={func.metadata_imageUrl || jazziconImageString(func.functionId)}
              src={jazziconImageString(address)}
              onError={(e) => fallbackToJazzicon(e, address || "")}/>
         <Card sx={{
@@ -80,14 +57,10 @@ const AuthorAddressCard: React.FC<{ address?: string }> = ({address}) => {
             paddingLeft: 2,
             paddingRight: 2
         }} elevation={2}>
-            {/*<Tooltip title={"Click to copy to clipboard"}>*/}
-            {/*<CopyToClipboard text={address || ""}>*/}
             <Typography variant={"h5"} color={"secondary"}
                         sx={{
                             marginRight: 1,
                         }}>{truncateIfAddress(address || "")}</Typography>
-            {/*</CopyToClipboard>*/}
-            {/*</Tooltip>*/}
             <Tooltip title={"Open in scanner"}>
                 <Link to={networkConfig[chainId].getScannerAddressUrl(address || "")}>
                     {<OpenInNewIcon/>}

@@ -1,7 +1,7 @@
 pragma solidity ^0.8.18;
 
-import {FunctionsOracleInterface} from "./functions/interfaces/FunctionsOracleInterface.sol";
-import {FunctionsBillingRegistryInterface} from "./functions/interfaces/FunctionsBillingRegistryInterface.sol";
+import {FunctionsOracleInterface} from "../functions/interfaces/FunctionsOracleInterface.sol";
+import {FunctionsBillingRegistryInterface} from "../functions/interfaces/FunctionsBillingRegistryInterface.sol";
 
 contract MockFunctionsOracle is FunctionsOracleInterface {
     uint256 public constant BASE_FEE = 10 ** 18 / 10; // 0.1 LINK

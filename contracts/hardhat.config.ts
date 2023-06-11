@@ -11,6 +11,8 @@ import "./tasks/get-function";
 import "./tasks/get-subscription";
 import "./tasks/add-user-to-subscription";
 import "./tasks/scrub-consumers";
+import "./tasks/refill-subscription";
+import "./tasks/arbitrary-approve";
 
 dotenv.config();
 

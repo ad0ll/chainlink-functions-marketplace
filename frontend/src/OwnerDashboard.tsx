@@ -1,3 +1,8 @@
+/*
+The Owner Dashboard is where Sellers can view the performance of their integrations, manage their integrations,
+and monitor their subscription balances (which is especially important in the submission because the contract
+is not currently reserving funds for gas).
+ */
 import React, {startTransition, useContext, useEffect, useState} from "react";
 import {
     Box,
@@ -35,7 +40,7 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {FunctionsManagerContext} from "./FunctionsManagerProvider";
 import {toast} from "react-toastify";
 import {AddressCard} from "./Cards";
-import {fallbackToJazzicon, jazziconImageString} from "./utils/util";
+import {fallbackToJazzicon, jazziconImageString} from "./util";
 
 type SubscriptionRecord = {
     owner: string,

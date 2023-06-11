@@ -1,3 +1,7 @@
+/*
+FunctionsManagerProvider reads the state from Metamask and then makes it available to the rest of the app.
+It also loads the contracts that we'll use through the entire app
+*/
 import React from "react";
 import {MUMBAI_CHAIN_ID, NetworkConfig, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
 import {useWeb3React} from "@web3-react/core";

@@ -1,4 +1,12 @@
-// Drilldown page for an individual function
+/*
+The "Buy" page is the drilldown for a given integration.
+It contains the example contract generator, execution history, and full details (minus source) of the integration.
+
+While developing the app, we spent most of our time debugging while viewingthe Buy page.
+Being able to see plaintext responses from the server, having instant access to the transaction hash + scanner, being
+able to instantly run or scaffold a contract, and being able to see the execution history update on calls was very
+useful.
+ */
 import React, {startTransition, useContext, useEffect, useState} from "react";
 import {
     Box,
@@ -21,7 +29,7 @@ import {
     Typography
 } from "@mui/material";
 import {Link, useParams} from "react-router-dom";
-import {generateSnippetString, SoliditySyntaxHighlighter, splitArgStrings} from "./Snippets";
+import {generateSnippetString, SoliditySyntaxHighlighter, splitArgStrings} from "./ContractGenerator";
 import {CopyToClipboard} from "react-copy-to-clipboard";
 import {gql, useQuery} from "@apollo/client";
 import {
@@ -45,7 +53,7 @@ import {FunctionsBillingRegistryInterface, FunctionsManager} from "./generated/c
 import LinkTokenIcon from "./assets/icons/link-token-blue.svg";
 import {AddressCard} from "./Cards";
 import {FunctionsManagerContext} from "./FunctionsManagerProvider";
-import {addressToJazziconSeed, fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./utils/util";
+import {addressToJazziconSeed, fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./util";
 import {TryItNowModal} from "./TryItNowModal";
 import Jazzicon from "./Jazzicon";
 
@@ -300,13 +308,11 @@ const DetailsDialog: React.FC<{
                     <Grid item xs={4}>Transaction Hash</Grid>
                     <Grid item xs={8}>
                         <Tooltip title={"View in scanner"}>
-                            {/*            <CopyToClipboard text={transactionHash}>*/}
                             <a href={networkConfig?.getScannerTxUrl(transactionHash)} target={"_blank"}>
                                 <Typography sx={{overflow: "hidden", textOverflow: "ellipsis"}}>
                                     {transactionHash}
                                 </Typography>
                             </a>
-                            {/*            </CopyToClipboard>*/}
                         </Tooltip>
                     </Grid>
                 </Grid>
@@ -326,14 +332,7 @@ const DetailsDialog: React.FC<{
                         {hasResponse && decodeResponse(functionResponse?.response?.toString(), functionResponse?.err?.toString(), expectedReturnType.valueOf())}
                     </Grid>
                 </Grid>
-                {/*<Grid container>*/}
-                {/*    <Grid item>*/}
-                {/*        <a href={networkConfig?.getScannerTxUrl(transactionHash)}>*/}
-                {/*            <Button variant={"outlined"} startIcon={<OpenInNewIcon/>}>View transaction in*/}
-                {/*                scanner</Button>*/}
-                {/*        </a>*/}
-                {/*    </Grid>*/}
-                {/*</Grid>*/}
+
             </Stack>
         </DialogContent>
     </Dialog>
@@ -416,9 +415,10 @@ const ExecutionTable: React.FC<{ functionId: string, expectedReturnType: BigNumb
 
 const InputSnippetGenerator: React.FC<{
     func: CombinedFunctionMetadata,
-    functionManagerAddress: string
+    baseFee: bigint
 }> = ({
           func,
+          baseFee
       }) => {
     const [hardcodeParameters, setHardcodeParameters] = React.useState(true);
     const [inlineInterfaces, setInlineInterfaces] = React.useState(true);
@@ -432,7 +432,7 @@ const InputSnippetGenerator: React.FC<{
         hardcodeAddresses,
         makeGeneric,
         allowDeposit
-    })
+    }, baseFee)
 
     const stackStyle = customizeVisible
         ? {border: 2, borderColor: "secondary.main", borderRadius: 1, padding: 2}
@@ -519,9 +519,6 @@ export const Buy: React.FC = () => {
         if (!functionId) return;
         const fetchData = async () => {
             try {
-                // const [f, fe] = await functionsManagerContract.getAllFunctionMetadata(functionId);
-
-                console.log("FunctionId", functionId)
                 const presentationMeta = await functionsManager.getFunctionMetadata(functionId);
                 const executionMeta = await functionsManager.getFunctionExecuteMetadata(functionId);
                 if (!presentationMeta) return;
@@ -548,7 +545,6 @@ export const Buy: React.FC = () => {
 
     if (loading) return <Typography><CircularProgress/>Loading...</Typography>
     if (!func) return <Typography>Function not found</Typography>
-    console.log("func", func)
     return (<Box width={{xs: "100%", sm: "100%", md: "80%", lg: "65%"}} margin={"auto"}>
             <Stack spacing={2} sx={{marginTop: 2}}>
                 <img style={{maxWidth: 150, margin: "auto"}}
@@ -591,7 +587,7 @@ export const Buy: React.FC = () => {
                 <Grid container spacing={3}>
                     <Grid item xs={12}>
                         <InputSnippetGenerator func={func}
-                                               functionManagerAddress={networkConfig.functionsManager}/>
+                                               baseFee={baseFee}/>
                     </Grid>
                     <Grid item xs={12}>
                         <Paper sx={{
@@ -642,8 +638,8 @@ export const Buy: React.FC = () => {
                                 <GridRowTyp label={"Code Language"} value={codeLanguageToStrong(func.language)}/>
                                 <GridRow label={"Return type"}>
                                     <Typography variant={"body1"}>
-                                        {returnTypeEnumToString(1)} (Raw
-                                        value: {1})
+                                        {returnTypeEnumToString(func.expectedReturnType)} (Raw
+                                        value: {func.expectedReturnType.toString()})
                                     </Typography>
                                 </GridRow>
                                 <GridRow label={"Arguments"}>
@@ -657,7 +653,8 @@ export const Buy: React.FC = () => {
                         </Paper>
                     </Grid>
                     <Grid item xs={12}>
-                        <ExecutionTable functionId={func.functionId.toString()} expectedReturnType={1}/>
+                        <ExecutionTable functionId={func.functionId.toString()}
+                                        expectedReturnType={func.expectedReturnType}/>
                     </Grid>
                 </Grid>
             </Stack>

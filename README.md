@@ -2,10 +2,8 @@
 
 This project is a submission for the 2023 Spring Chainlink Hack-a-thon.
 
-(**Note, this readme is internal facing. We'll clean it up when we get ready to submit the project**)
-
 "Sell your web2 data on web3". The Functions Marketplace is a decentralized marketplace for web2 data, powered by
-Chainlink Functions and Chainlink Automation.
+Chainlink Functions
 
 There are three parts to the application
 
