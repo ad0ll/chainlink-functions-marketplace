@@ -8,7 +8,7 @@ import {MetaMask} from "@web3-react/metamask";
 import {ToastContainer} from "react-toastify";
 import {BrowserRouter, Route, Routes} from "react-router-dom";
 import {NavBar} from "./Navbar";
-import {DefaultSuspense, MUMBAI_CHAIN_ID, SEPOLIA_CHAIN_ID} from "./common";
+import {DefaultSuspense, MUMBAI_CHAIN_ID} from "./common";
 import {Home} from "./Home";
 import Buy from "./Buy";
 import {Sell} from "./Sell";
@@ -40,8 +40,8 @@ const RequireConnection: React.FC<{ children: ReactNode }> = ({children}) => {
     const {isActive, chainId, account, connector} = useWeb3React()
     if (!isActive) {
         return <Typography>Please connect to MetaMask by clicking the connect button</Typography>
-    } else if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
-        return <Typography>Please change your network to Mumbai or Sepolia</Typography>
+    } else if (chainId !== MUMBAI_CHAIN_ID) {
+        return <Typography>Please change your network to Mumbai</Typography>
     } else if (!account) {
         return <Typography>Account not found</Typography>
     }

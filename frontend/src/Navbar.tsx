@@ -7,7 +7,7 @@ import React, {useEffect} from "react";
 import {useWeb3React} from "@web3-react/core";
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import {Link} from "react-router-dom";
-import {MUMBAI_CHAIN_ID, SEPOLIA_CHAIN_ID} from "./common";
+import {MUMBAI_CHAIN_ID} from "./common";
 import {fallbackToJazzicon, jazziconImageString} from "./util";
 
 export const NavBar: React.FC = ({}) => {
@@ -18,8 +18,8 @@ export const NavBar: React.FC = ({}) => {
     const connectWallet = async () => {
         try {
             setTooltipText("")
-            if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
-                setTooltipText("Please switch to either Mumbai or Sepolia in Metamask")
+            if (chainId !== MUMBAI_CHAIN_ID) {
+                setTooltipText("Please switch to either Mumbai in Metamask")
             }
             await connector.activate()
         } catch (err: any) {

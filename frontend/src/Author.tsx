@@ -8,10 +8,10 @@ import {Card, Stack, Tooltip, Typography} from "@mui/material";
 import {gql} from "@apollo/client";
 import {Link, useParams} from "react-router-dom";
 import {fallbackToJazzicon, jazziconImageString, truncateIfAddress} from "./util";
-import {MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
+import {MUMBAI_CHAIN_ID, networkConfig} from "./common";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import {useWeb3React} from "@web3-react/core";
-import ListingTable from "./ListingTable";
+import ListingTable from "./ListingTable"
 
 const OWNER_LISTING_QUERY = gql`
     query AuthorFunctionRegistereds($first: Int!, $skip: Int!, $searchTerm: String!, $owner: Bytes!){
@@ -41,7 +41,7 @@ const OWNER_LISTING_QUERY = gql`
 
 const AuthorAddressCard: React.FC<{ address?: string }> = ({address}) => {
     const {chainId} = useWeb3React();
-    if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) return (<></>)
+    if (chainId !== MUMBAI_CHAIN_ID) return (<></>)
     //TODO Fetch author metadata from the contract, no need to fetch from the graph
     return <Stack spacing={2} width={"auto"} margin={"auto"} sx={{marginTop: 2}}>
         <img style={{maxWidth: 150, margin: "auto"}}

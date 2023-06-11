@@ -13,6 +13,7 @@ import "./tasks/add-user-to-subscription";
 import "./tasks/scrub-consumers";
 import "./tasks/refill-subscription";
 import "./tasks/arbitrary-approve";
+import "./tasks/test-gas-price-conversions";
 
 dotenv.config();
 

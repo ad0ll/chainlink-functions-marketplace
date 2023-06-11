@@ -19,11 +19,6 @@ There are three parts to the application
 
 ### Code:
 
-#### /ad0ll-contract-experiments
-
-Ignore this directory. It's experimentation that would have resulted in awful merge conflicts in early development and
-should be removed from the repo soon.
-
 #### /contracts
 
 Contains all the contracts for the marketplace, based around HardHat. See the [README](./contracts/README.md) for more

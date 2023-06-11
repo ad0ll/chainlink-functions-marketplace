@@ -3,7 +3,7 @@ FunctionsManagerProvider reads the state from Metamask and then makes it availab
 It also loads the contracts that we'll use through the entire app
 */
 import React from "react";
-import {MUMBAI_CHAIN_ID, NetworkConfig, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
+import {MUMBAI_CHAIN_ID, NetworkConfig, networkConfig} from "./common";
 import {useWeb3React} from "@web3-react/core";
 import {Typography} from "@mui/material";
 import {useContract} from "./contractHooks";
@@ -14,7 +14,7 @@ import {JsonRpcProvider} from "@ethersproject/providers";
 
 
 export const FunctionsManagerContext = React.createContext<{
-    chainId: typeof MUMBAI_CHAIN_ID | typeof SEPOLIA_CHAIN_ID,
+    chainId: typeof MUMBAI_CHAIN_ID,
     account: string,
     provider: JsonRpcProvider,
     functionsManager: FunctionsManager,
@@ -31,8 +31,8 @@ export const FunctionsManagerContext = React.createContext<{
 
 export const FunctionsManagerProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
     const {chainId, account, provider} = useWeb3React()
-    if (chainId !== MUMBAI_CHAIN_ID && chainId !== SEPOLIA_CHAIN_ID) {
-        return <Typography>Please change your network to Mumbai or Sepolia</Typography>
+    if (chainId !== MUMBAI_CHAIN_ID) {
+        return <Typography>Please change your network to Mumbai</Typography>
     }
     if (!account) {
         return <Typography>Please connect to MetaMask by clicking the connect button</Typography>

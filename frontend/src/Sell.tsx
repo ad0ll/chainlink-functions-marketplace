@@ -24,7 +24,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import UsdcIcon from "./assets/icons/usd-coin-logo.svg";
 import LinkIcon from "./assets/icons/link-token-blue.svg";
-import {ExpectedReturnTypes, MUMBAI_CHAIN_ID, networkConfig, SEPOLIA_CHAIN_ID} from "./common";
+import {ExpectedReturnTypes, MUMBAI_CHAIN_ID, networkConfig} from "./common";
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 // import FunctionsOracleJson from "./generated/abi/FunctionsOracle.json"
@@ -72,7 +72,7 @@ gasLimit is optional, should be uint32
 initial deposit should be number, use ethers.ParseUnits for validation
  */
 
-const getRandomExample = (chainId: typeof MUMBAI_CHAIN_ID | typeof SEPOLIA_CHAIN_ID) => {
+const getRandomExample = (chainId: typeof MUMBAI_CHAIN_ID) => {
     const examples: FormValues[] = [
         {
             name: "CoinGecko Demo " + Math.floor(Math.random() * 1000000),

@@ -287,6 +287,7 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         LocalFunctionsBillingRegistryInterface.RequestBilling memory emptyRequestBilling;
         uint96 baseFee = BILLING_REGISTRY.getRequiredFee(emptyBytes, emptyRequestBilling);
         uint96 premiumFee = executeMetadata.fee;
+        // Hit errors trying this, leaving commented for now
         // if (msg.sender == executeMetadata.owner) {
         //     premiumFee = 0;
         // }
@@ -308,7 +309,8 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         console.log("reserved subscription fee %d", subscriptionBalances[subId]);
 
         uint96 functionManagerCut = (executeMetadata.fee * feeManagerCut) / 100;
-        // uint96 gasReserve = (maxGasLimit * 25 gwei); // TODO, not ideal leaving this fixed, just short on time
+        // Wanted to reserve gas from the premium fee, but couldn't find mumbai price feeds.
+        // uint96 gasReserve = (maxGasLimit * 25 gwei);
         // subscriptionBalances[subId] += baseFee + gasReserve;
         subscriptionBalances[subId] += baseFee;
         functionManagerProfitPool += functionManagerCut;
