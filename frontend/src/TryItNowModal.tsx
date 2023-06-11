@@ -10,7 +10,7 @@ import {FunctionsManager, LinkTokenInterface} from "./generated/contract-types";
 import LinkTokenJson from "./generated/abi/LinkTokenInterface.json";
 import {useFieldArray, useForm} from "react-hook-form";
 import {toast} from "react-toastify";
-import {AbiCoder, keccak256, parseEther, toUtf8Bytes} from "ethers";
+import {AbiCoder, keccak256, parseEther, parseUnits, toUtf8Bytes} from "ethers";
 import {
     Box,
     Button,
@@ -84,7 +84,11 @@ export const TryItNowModal: React.FC<{
 
         try {
             setStatusText("Executing function...")
-            const execTx = await functionsManager.executeRequest(func.functionId, args, {gasLimit: 2_000_000});
+            console.log("params:", func.functionId, args, {gasLimit: 3_000_000})
+            const execTx = await functionsManager.executeRequest(func.functionId, args, {
+                gasLimit: 2_000_000,
+                gasPrice: parseUnits("25", "gwei")
+            });
             setWaitingForResponse(true)
             setStatusText("Waiting for transaction to be mined...")
             const execReceipt = await provider?.waitForTransaction(execTx.hash, 1);

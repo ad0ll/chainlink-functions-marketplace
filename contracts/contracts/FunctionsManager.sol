@@ -23,13 +23,11 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     // Our main callback stores the Chainlink Function response in this collection
     mapping(bytes32 => FunctionResponse) public functionResponses;
     // This is a collection of prebuilt Function.Request(s). It's kept separate from execute metadata since we need it when calling but don't need it when storing the response.
-    mapping(bytes32 => Functions.Request) private functionRequests;
+    mapping(bytes32 => Functions.Request) public functionRequests;
     mapping(uint64 => address) private subscriptionOwnerMapping;
 
     // Balances containing reserved fees that can be dumped into a subscription when the subscription balance runs low
     mapping(uint64 => uint96) public subscriptionBalances;
-
- 
 
     //FunctionsManager configuration
     LinkTokenInterface private LINK;
@@ -40,13 +38,11 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
     uint32 public feeManagerCut; // What percent the FunctionsManager takes from the premium fee. Should be a whole number representing percentage
     uint32 public maxGasLimit; //Leave this at 300k, see service limits doc
 
-
     // Global metrics
     uint64 public functionsRegisteredCount;
     uint96 public functionsCalledCount;
-    uint96 public totalFeesCollected; 
-    
-    
+    uint96 public totalFeesCollected;
+
     enum ReturnTypes {
         Bytes,
         Uint256,
@@ -291,9 +287,9 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         LocalFunctionsBillingRegistryInterface.RequestBilling memory emptyRequestBilling;
         uint96 baseFee = BILLING_REGISTRY.getRequiredFee(emptyBytes, emptyRequestBilling);
         uint96 premiumFee = executeMetadata.fee;
-        if (msg.sender == executeMetadata.owner) {
-            premiumFee = 0;
-        }
+        // if (msg.sender == executeMetadata.owner) {
+        //     premiumFee = 0;
+        // }
         uint96 totalFee = baseFee + premiumFee;
         uint64 subId = executeMetadata.subId;
 
@@ -347,7 +343,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
             callbackFunction: bytes32(""),
             baseFee: baseFee,
             fee: premiumFee,
-            // gasReserve: gasReserve,
             functionsManagerCut: functionManagerCut,
             args: args
         });
@@ -458,7 +453,6 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         LINK.transferAndCall(address(BILLING_REGISTRY), amountToTransfer, abi.encode(_subscriptionId));
     }
 
-
     function withdrawFunctionsManagerProfitToOwner() external onlyOwner {
         console.log("Withdrawing all fees to FunctionsManager owner %s", owner());
         uint96 amountToTransfer = functionManagerProfitPool;
@@ -475,7 +469,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
         );
         uint96 amountToTransfer = functionExecuteMetadatas[functionId].unlockedProfitPool;
         functionExecuteMetadatas[functionId].unlockedProfitPool = 0;
-        require(LINK.transfer(functionExecuteMetadatas[functionId].owner, amountToTransfer), "failed to transfer link to function owner");
+        require(
+            LINK.transfer(functionExecuteMetadatas[functionId].owner, amountToTransfer),
+            "failed to transfer link to function owner"
+        );
     }
 
     // This function is behind "WITHDRAW ALL" in the webapp
@@ -513,6 +510,10 @@ contract FunctionsManager is FunctionsClient, ConfirmedOwner {
 
     function getFunctionResponse(bytes32 _requestId) external view returns (FunctionResponse memory) {
         return functionResponses[_requestId];
+    }
+
+    function getFunctionRequest(bytes32 _functionId) external view returns (Functions.Request memory) {
+        return functionRequests[_functionId];
     }
 
     function getFunctionResponseValue(bytes32 _requestId) external view returns (bytes memory) {

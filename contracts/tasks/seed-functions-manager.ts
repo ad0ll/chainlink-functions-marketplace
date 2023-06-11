@@ -299,6 +299,37 @@ task(
           gasLimit: 500_000,
         },
       },
+      {
+        functionId: "",
+        owner: functionsManagerOwner,
+        register: {
+          fees: ethers.utils.parseEther("0.05"),
+          functionName: "CoinGecko DemoB",
+          desc: "Fetches a given price pair from CoinGecko",
+          imageUrl: imageUrls.coingecko,
+          expectedArgs: [
+            "base;string;See the following for all possible values: https://api.coingecko.com/api/v3/coins/list",
+            "quote;string;See the following for all possible values: https://api.coingecko.com/api/v3/coins/list",
+          ],
+          codeLocation: 0,
+          secretsLocation: 0,
+          language: 0,
+          category: ethers.utils.formatBytes32String("Price Feed"),
+          subId: process.env.FUNCTIONS_SUBSCRIPTION_ID,
+          source: fs.readFileSync("./demos/coingecko-price.js").toString(),
+          secrets: [],
+          expectedReturnType: 1, //uint256
+        },
+        execute: {
+          args: [
+            ["ethereum", "usd"],
+            ["bitcoin", "usd"],
+            ["ethereum", "eur"],
+            ["ethereum"],
+          ],
+          gasLimit: 500_000,
+        },
+      },
     ];
     console.log("Finished bootstrapping demos");
 

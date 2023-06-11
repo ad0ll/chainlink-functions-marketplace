@@ -206,7 +206,6 @@ export const Sell: React.FC = () => {
             // secrets: post.secretsPreEncrypted ? post.secrets : ethers.utils.keccak256(post.secrets)
         }, {gasLimit: "2500000"})
 
-
         toast((<div>
             <Typography>Function registration is being processed</Typography>
             <a href={`${networkConfig.getScannerTxUrl(registerTx.hash)}`}>

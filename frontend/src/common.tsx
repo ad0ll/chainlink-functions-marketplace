@@ -22,7 +22,7 @@ export enum ExpectedReturnTypes {
 }
 
 export type NetworkConfig = {
-    functionsManager: "0x47564e344A2E0f5E73dd41ae1142530C01f10471",
+    functionsManager: "0x845a129aDfF81761547114E66Ae1698ec6837e63",
     linkToken: string,
     linkEthPriceFeed: string,
     functionsOracleProxy: string,
@@ -37,7 +37,7 @@ export const networkConfig: {
     [key: number]: NetworkConfig
 } = {
     [MUMBAI_CHAIN_ID]: {
-        functionsManager: "0x47564e344A2E0f5E73dd41ae1142530C01f10471",
+        functionsManager: "0x845a129aDfF81761547114E66Ae1698ec6837e63",
         // demoFunctionsManager: "0x3744551b069e845B3E1A2832a17F7175Fcf2CB96",
         linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
         linkEthPriceFeed: "0x12162c3E810393dEC01362aBf156D7ecf6159528",
@@ -49,7 +49,7 @@ export const networkConfig: {
         getScannerTxUrl: (address: string) => `https://mumbai.polygonscan.com/tx/${address}`,
     },
     [SEPOLIA_CHAIN_ID]: {
-        functionsManager: "0x47564e344A2E0f5E73dd41ae1142530C01f10471",
+        functionsManager: "0x845a129aDfF81761547114E66Ae1698ec6837e63",
         linkToken: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
         linkEthPriceFeed: "0x42585eD362B3f1BCa95c640FdFf35Ef899212734",
         functionsOracleProxy: "0x649a2C205BE7A3d5e99206CEEFF30c794f0E31EC",

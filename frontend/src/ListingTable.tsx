@@ -146,7 +146,9 @@ const ListingTable: React.FC<{
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {data.functionRegistereds.map((f, i) => <TableRow key={i}>
+                    {data.functionRegistereds.map((f, i) => {
+                        console.log(f)
+                    return (<TableRow key={i}>
                         {columns.find(f => f === "name") && <TableCell>
                             {/*TODO Fix overflow*/}
                             <Link to={`/buy/${f.functionId}`} style={{display: "flex", alignItems: "center"}}>
@@ -195,7 +197,8 @@ const ListingTable: React.FC<{
                                         onClick={notify}>Contract</Button>
                             </Tooltip>
                         </TableCell>}
-                    </TableRow>)}
+                    </TableRow>)
+      })}
                 </TableBody>
                 {/*We had a really hard time with pagination w/ the graphql api, and cut it so we could focus on features*/}
                 {/*<TableFooter>*/}

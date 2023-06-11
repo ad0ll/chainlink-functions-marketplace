@@ -34,5 +34,21 @@ task("get-function", "gets function response")
     );
 
     console.log(metadata.expectedReturnType);
-    console.log(`Metadata: ${JSON.stringify(metadata)}`);
+    console.log(`Metadata: `, metadata);
+
+    console.log(
+      "Getting execute metadata for functionId: ",
+      taskArgs.functionid
+    );
+    const execMetadata = await functionsManager.getFunctionExecuteMetadata(
+      taskArgs.functionid
+    );
+    console.log(`Execute Metadata: `, execMetadata);
+
+    console.log(
+      "Getting function request for  functionId: ",
+      taskArgs.functionid
+    );
+    const req = await functionsManager.getFunctionRequest(taskArgs.functionid);
+    console.log(`Functions.Request: `, req);
   });

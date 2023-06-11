@@ -7,4 +7,5 @@ const response = await Functions.makeHttpRequest({
 
 const res = response.data[base][quote];
 
+
 return Functions.encodeUint256(Math.round(res * 100));
